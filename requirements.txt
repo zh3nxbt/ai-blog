@@ -1,11 +1,11 @@
 # API Framework
 fastapi==0.115.0
 uvicorn[standard]==0.32.0
-pydantic==2.9.0
+pydantic==2.12.5
 pydantic-settings==2.5.2
 
 # Database
-supabase==2.9.0
+supabase==2.27.1
 
 # LLM / AI
 anthropic==0.39.0

@@ -26,7 +26,7 @@
 
 **Variables:**
 - `ANTHROPIC_API_KEY` - Your Anthropic API key
-- `ANTHROPIC_MODEL` - Model to use (default: `claude-sonnet-4-5`)
+- `ANTHROPIC_MODEL` - Model to use (default: `claude-opus-4-5`)
 
 **Where to get:**
 1. Go to https://console.anthropic.com/
@@ -94,17 +94,17 @@
 
 ## Cost Estimates
 
-**Anthropic API (Claude Sonnet 4.5):**
-- Input: ~$3 per million tokens
-- Output: ~$15 per million tokens
+**Anthropic API (Claude Opus 4.5):**
+- Input: ~$15 per million tokens
+- Output: ~$75 per million tokens
 - Average blog post: 2-4 iterations
-- Expected cost: $0.15-$0.25 per published post
+- Expected cost: $0.50-$1.00 per published post
 
 **Supabase:**
 - Free tier includes 500MB database + 1GB file storage
 - Plenty for storing blog posts and metadata
 
 **Total monthly cost estimate (30 posts):**
-- Anthropic API: ~$7.50/month
+- Anthropic API: ~$22.50/month
 - Supabase: $0 (within free tier)
-- **Total: ~$7.50/month**
+- **Total: ~$22.50/month**

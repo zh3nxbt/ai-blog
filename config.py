@@ -9,9 +9,17 @@ class Settings(BaseSettings):
     # Supabase
     supabase_url: str
     supabase_key: str
+    supabase_secret: str | None = None
 
     # Anthropic
     anthropic_api_key: str
+    anthropic_model: str = "claude-opus-4-5"
+
+    # Ralph
+    ralph_timeout_minutes: int = 30
+    ralph_quality_threshold: float = 0.85
+    ralph_quality_floor: float = 0.70
+    ralph_cost_limit_cents: int = 100
 
     # Environment
     environment: str = "development"
