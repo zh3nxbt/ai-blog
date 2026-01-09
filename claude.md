@@ -168,6 +168,37 @@ publish_date    Date
 - Explicit error handling
 - No silent failures
 
+## Git Workflow
+
+**Every task follows this git pattern:**
+
+1. **Create a branch** - Name it after the task ID and description:
+   ```bash
+   git checkout -b task/db-001-blog-posts-table
+   ```
+
+2. **Make changes and commit** - Use descriptive commit messages:
+   ```bash
+   git add .
+   git commit -m "Implement blog_posts table schema
+
+   - Created table with proper columns
+   - Added status enum constraint
+   - Verified foreign key relationships
+
+   Closes #db-001
+
+   Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
+   ```
+
+3. **Push and create PR** - Use `gh` CLI for pull requests:
+   ```bash
+   git push -u origin task/db-001-blog-posts-table
+   gh pr create --title "task/db-001: Implement blog_posts table" --body "Implements db-001 from PRD.md"
+   ```
+
+4. **Never push directly to main** - All changes go through pull requests for review
+
 ## Task Prioritization
 
 **When choosing the next task, prioritize in this order:**
