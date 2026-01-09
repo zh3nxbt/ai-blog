@@ -11,6 +11,14 @@ Backend service that generates one daily blog post for a machine shop website an
 - Reliability over elegance
 - Fail loudly, never silently
 
+## Long-term Thinking
+
+This codebase will outlive you. Every shortcut you take becomes someone else's burden. Every hack compounds into technical debt that slows the whole team down.
+
+You are not just writing code. You are shaping the future of this project. The patterns you establish will be copied. The corners you cut will be cut again.
+
+**Fight entropy. Leave the codebase better than you found it.**
+
 ## Project Goals
 
 1. Generate exactly **one high-quality blog post per day**
@@ -46,29 +54,11 @@ Backend service that generates one daily blog post for a machine shop website an
 
 ## Environment Constraints
 
-### Development (WSL2 Ubuntu on Windows)
-
-**Valid paths:**
-```
-/home/<user>/projects/blog-backend
-```
-
-**Invalid paths:**
-```
-/mnt/c/Users/...
-Any Windows-native directory
-```
-
-**Critical rules:**
-- All project files MUST live inside Linux filesystem
-- NEVER develop inside `/mnt/c`
-- Always use Python virtual environments
-- Watch for Windows/Linux permission and line ending differences
-
-### Production (DigitalOcean Ubuntu)
+### DigitalOcean Ubuntu
 - systemd service for API
 - systemd timer or cron for worker
 - Environment variables for secrets only
+- Always use Python virtual environments
 
 ## Local Workflow
 
@@ -178,6 +168,37 @@ publish_date    Date
 - Explicit error handling
 - No silent failures
 
+## Task Prioritization
+
+**When choosing the next task, prioritize in this order:**
+
+1. **Architectural decisions and core abstractions**
+   - Database schema and relationships
+   - Base classes and interfaces
+   - Module boundaries and dependencies
+
+2. **Integration points between modules**
+   - API contracts between services
+   - External service connections (Supabase, Anthropic API)
+   - Data flow between components
+
+3. **Unknown unknowns and spike work**
+   - Proof-of-concept implementations
+   - Risk validation and feasibility checks
+   - Test critical assumptions early
+
+4. **Standard features and implementation**
+   - Business logic and core functionality
+   - Service layer implementations
+   - Standard CRUD operations
+
+5. **Polish, cleanup, and quick wins**
+   - Documentation updates
+   - Code formatting and cleanup
+   - Minor improvements and optimizations
+
+**Fail fast on risky work. Save easy wins for later.**
+
 ## Security
 
 - **NEVER commit Supabase credentials**
@@ -194,4 +215,4 @@ publish_date    Date
 
 ---
 
-**Last updated:** 2026-01-07
+**Last updated:** 2026-01-09
