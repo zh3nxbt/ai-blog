@@ -34,6 +34,17 @@ You are not just writing code. You are shaping the future of this project. The p
 - External LLM API (no local models)
 - No containers
 
+### Supabase Database Connectivity
+
+**For REST API operations:** Use the Supabase Python client with `SUPABASE_URL` and `SUPABASE_KEY`.
+
+**For direct SQL execution (migrations, complex queries):**
+- Use Supabase's connection pooler for IPv4 connectivity
+- Connection format: `postgresql://postgres.{project_ref}:{password}@aws-0-us-east-1.pooler.supabase.com:5432/postgres`
+- Extract project_ref from SUPABASE_URL (e.g., `tvxyxgqgmoizspnmpedr` from `https://tvxyxgqgmoizspnmpedr.supabase.co`)
+- Direct connection to `db.{project_ref}.supabase.co` may fail on IPv6-only networks
+- Store connection string as `DATABASE_URL` in .env for use with psycopg2 or similar drivers
+
 **Components:**
 
 ### 1. API (FastAPI)
