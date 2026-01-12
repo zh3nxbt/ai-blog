@@ -177,3 +177,14 @@ Keep it simple. Add dated entries chronologically.
   - All 11 acceptance criteria verified and passing
   - Ruff linting passes on all new Python files
 ---
+[2026-01-12 - db-004]
+- Implemented blog_rss_sources table for RSS feed management
+- Files changed: migrations/004_create_blog_rss_sources.sql, migrations/apply_db_004.py, migrations/verify_db_004.py, migrations/execute_sql.py
+- **Learnings for future iterations:**
+  - Table includes UNIQUE constraint on url column to prevent duplicate feed sources
+  - Priority field uses CHECK constraint (1-10) for validation at database level
+  - Active boolean defaults to true for easy enable/disable of feed sources
+  - All 11 acceptance criteria verified and passing
+  - Migration pattern continues to work well with SQL + apply + verify scripts
+  - Connection pooler (aws-0-us-east-1.pooler.supabase.com) works reliably for migrations
+---
