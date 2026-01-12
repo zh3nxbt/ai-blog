@@ -150,6 +150,9 @@ def verify_db_002():
         except Exception as e:
             results.append(("All columns have correct types", False))
             print(f"  ❌ FAIL: {e}\n")
+    else:
+        results.append(("All columns have correct types", False))
+        print("  ❌ FAIL: No draft created\n")
 
     # 7. UNIQUE constraint on (blog_post_id, iteration_number)
     print("✓ Checking: UNIQUE constraint on (blog_post_id, iteration_number)...")
@@ -189,6 +192,9 @@ def verify_db_002():
         except Exception as e:
             results.append(("created_at defaults to NOW()", False))
             print(f"  ❌ FAIL: {e}\n")
+    else:
+        results.append(("created_at defaults to NOW()", False))
+        print("  ❌ FAIL: No draft created\n")
 
     # Cleanup: Delete test draft
     print("🧹 Cleaning up test data...")

@@ -61,13 +61,15 @@ def get_db_connection_string() -> str:
     # Check for preferred pooler region from env var
     preferred_pooler = os.getenv("SUPABASE_POOLER_HOST")
 
-    # Try common Supabase connection patterns
+    # Build list of (host, is_pooler) tuples to try
     # Direct connection first, then try poolers in multiple regions
-    possible_hosts = [f"db.{project_ref}.supabase.co"]
+    connection_attempts = [
+        (f"db.{project_ref}.supabase.co", False),  # Direct connection
+    ]
 
     # If user specified a pooler, try it first
     if preferred_pooler:
-        possible_hosts.append(preferred_pooler)
+        connection_attempts.append((preferred_pooler, True))
 
     # Try common pooler regions
     pooler_regions = [
@@ -76,12 +78,13 @@ def get_db_connection_string() -> str:
         "aws-0-eu-west-1.pooler.supabase.com",
         "aws-0-ap-southeast-1.pooler.supabase.com",
     ]
-    possible_hosts.extend(pooler_regions)
+    connection_attempts.extend((region, True) for region in pooler_regions)
 
-    for host in possible_hosts:
-        conn_string = (
-            f"postgresql://postgres.{project_ref}:{db_password}@{host}:5432/postgres"
-        )
+    for host, is_pooler in connection_attempts:
+        # Use postgres.{project_ref} for poolers, just postgres for direct
+        username = f"postgres.{project_ref}" if is_pooler else "postgres"
+        conn_string = f"postgresql://{username}:{db_password}@{host}:5432/postgres"
+
         try:
             conn = psycopg2.connect(conn_string, connect_timeout=5)
             conn.close()
@@ -94,8 +97,9 @@ def get_db_connection_string() -> str:
     print()
     print("❌ Could not connect to database via any available host")
     print("Tried:")
-    for host in possible_hosts:
-        print(f"  - {host}")
+    for host, is_pooler in connection_attempts:
+        conn_type = "pooler" if is_pooler else "direct"
+        print(f"  - {host} ({conn_type})")
     print()
     print("Try setting SUPABASE_POOLER_HOST env var with your region's pooler")
     sys.exit(1)
@@ -116,6 +120,8 @@ def main():
 
     # Connect and execute
     print("🔗 Connecting to database...")
+    conn = None
+    cur = None
     try:
         conn = psycopg2.connect(conn_string)
         cur = conn.cursor()
@@ -135,6 +141,19 @@ def main():
         return 0
 
     except Exception as e:
+        # Clean up connections on failure
+        if cur:
+            try:
+                cur.close()
+            except Exception:
+                pass
+        if conn:
+            try:
+                conn.rollback()
+                conn.close()
+            except Exception:
+                pass
+
         print(f"❌ Migration failed: {e}")
         print()
         print("Try manual execution instead:")
