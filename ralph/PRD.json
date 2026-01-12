@@ -137,7 +137,7 @@
       {
         "id": "svc-001",
         "description": "services package with Supabase client",
-        "passes": false,
+        "passes": true,
         "acceptance_criteria": [
           "`python -c 'import services'` exits with code 0",
           "`python -c 'from services.supabase_service import get_supabase_client'` exits with code 0",
