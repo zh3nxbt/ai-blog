@@ -24,7 +24,15 @@ def verify_db_002():
     except Exception as e:
         results.append(("Table blog_content_drafts exists", False))
         print(f"  ❌ FAIL: {e}\n")
-        return results  # Can't continue if table doesn't exist
+        # Print summary before exiting
+        print("=" * 60)
+        print("VERIFICATION SUMMARY")
+        print("=" * 60)
+        print("❌ FAIL: Table blog_content_drafts exists")
+        print("=" * 60)
+        print("Total: 0/1 criteria passed")
+        print("=" * 60)
+        return False  # Can't continue if table doesn't exist
 
     # 2. Get a valid blog_post_id for testing
     print("✓ Getting valid blog_post_id for tests...")
@@ -51,7 +59,18 @@ def verify_db_002():
             print(f"  ✅ Using existing post: {blog_post_id}\n")
     except Exception as e:
         print(f"  ❌ FAIL: Cannot get blog_post_id: {e}\n")
-        return results
+        # Print summary before exiting
+        print("=" * 60)
+        print("VERIFICATION SUMMARY")
+        print("=" * 60)
+        for criterion, result in results:
+            status = "✅ PASS" if result else "❌ FAIL"
+            print(f"{status}: {criterion}")
+        print("=" * 60)
+        passed = sum(1 for _, result in results if result)
+        print(f"Total: {passed}/{len(results)} criteria passed (cannot continue)")
+        print("=" * 60)
+        return False
 
     # 3. INSERT with iteration_number=1 for valid blog_post_id succeeds
     print("✓ Checking: INSERT with iteration_number=1 succeeds...")
