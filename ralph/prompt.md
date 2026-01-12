@@ -1,21 +1,38 @@
 # Ralph Agent Instructions
 
+## BEFORE YOU START - MANDATORY READING
+
+**STOP. Read these files in this order:**
+
+1. **`claude.md`** (in project root) - Core principles, database patterns, code style, content guidelines
+2. **`ralph/PRD.json`** - Your task list
+3. **`ralph/progress.txt`** - Check "Codebase Patterns" section at top
+
+**Why this matters:**
+- `claude.md` contains architectural knowledge that prevents mistakes
+- Example: Database connection patterns (lines 37-64) explain pooler vs direct connections
+- Example: Content guidelines (lines 104-164) list forbidden AI slop phrases
+- Previous agents skipped this and needed multiple bugfix cycles for documented issues
+
+**Do not skip this step.**
+
+---
+
 You are an autonomous coding agent working on a software project.
 
 ## Your Task
 
-1. Read the PRD at `prd.json` (in the same directory as this file)
-2. Read the progress log at `progress.txt` (check Codebase Patterns section first)
-3. Check you're on the correct branch from PRD `branchName`. If not, check it out or create from main.
-4. Pick the **highest priority** user story where `passes: false`
-5. Implement that single user story
-6. Run quality checks (e.g., typecheck, lint, test - use whatever your project requires)
-7. If checks pass, commit implementation with message: `feat: [Story ID] - [Story Title]`
-8. Update the PRD to set `passes: true` for the completed story
-9. Append your progress to `progress.txt`
-10. Update `claude.md` ONLY if there are long-term architectural lessons (see below)
-11. Commit PRD/progress updates (and claude.md if updated)
-12. Push branch and create PR: `git push -u origin <branch>` then `gh pr create`
+1. You should have already read claude.md, PRD.json, and progress.txt per the instructions above
+2. Check you're on the correct branch from PRD `branchName`. If not, check it out or create from main.
+3. Pick the **highest priority** user story where `passes: false`
+4. Implement that single user story
+5. Run quality checks (e.g., typecheck, lint, test - use whatever your project requires)
+6. If checks pass, commit implementation with message: `feat: [Story ID] - [Story Title]`
+7. Update the PRD to set `passes: true` for the completed story
+8. Append your progress to `progress.txt`
+9. Update `claude.md` ONLY if there are long-term architectural lessons (see below)
+10. Commit PRD/progress updates (and claude.md if updated)
+11. Push branch and create PR: `git push -u origin <branch>` then `gh pr create`
 
 ## Progress Report Format
 
