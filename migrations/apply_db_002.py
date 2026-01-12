@@ -58,24 +58,46 @@ def get_db_connection_string() -> str:
     # Extract project ref from URL (e.g., https://abc123.supabase.co -> abc123)
     project_ref = supabase_url.replace("https://", "").replace(".supabase.co", "")
 
+    # Check for preferred pooler region from env var
+    preferred_pooler = os.getenv("SUPABASE_POOLER_HOST")
+
     # Try common Supabase connection patterns
-    possible_hosts = [
-        f"db.{project_ref}.supabase.co",
+    # Direct connection first, then try poolers in multiple regions
+    possible_hosts = [f"db.{project_ref}.supabase.co"]
+
+    # If user specified a pooler, try it first
+    if preferred_pooler:
+        possible_hosts.append(preferred_pooler)
+
+    # Try common pooler regions
+    pooler_regions = [
+        "aws-0-us-east-1.pooler.supabase.com",
         "aws-0-us-west-1.pooler.supabase.com",
+        "aws-0-eu-west-1.pooler.supabase.com",
+        "aws-0-ap-southeast-1.pooler.supabase.com",
     ]
+    possible_hosts.extend(pooler_regions)
 
     for host in possible_hosts:
         conn_string = (
             f"postgresql://postgres.{project_ref}:{db_password}@{host}:5432/postgres"
         )
         try:
-            conn = psycopg2.connect(conn_string)
+            conn = psycopg2.connect(conn_string, connect_timeout=5)
             conn.close()
+            print(f"✅ Connected successfully via: {host}")
             return conn_string
-        except Exception:
+        except Exception as e:
+            print(f"⚠️  Failed to connect via {host}: {str(e)[:80]}")
             continue
 
-    print("❌ Could not construct valid connection string")
+    print()
+    print("❌ Could not connect to database via any available host")
+    print("Tried:")
+    for host in possible_hosts:
+        print(f"  - {host}")
+    print()
+    print("Try setting SUPABASE_POOLER_HOST env var with your region's pooler")
     sys.exit(1)
 
 
