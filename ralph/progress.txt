@@ -223,3 +223,14 @@ Keep it simple. Add dated entries chronologically.
   - All 6 acceptance criteria verified and passing
   - Manufacturing RSS feeds provide industry news for content generation
 ---
+[2026-01-12 - svc-001]
+- Implemented services package with Supabase client
+- Files changed: services/supabase_service.py
+- **Learnings for future iterations:**
+  - get_supabase_client() function returns configured Supabase Client instance
+  - Function reads SUPABASE_URL and SUPABASE_KEY from environment variables
+  - Raises ValueError with clear message if required env vars are missing
+  - All 5 acceptance criteria verified and passing
+  - Use python-dotenv in tests to load .env file for environment variables
+  - Ruff linting passes on all new Python files
+---
