@@ -103,27 +103,33 @@ def main():
 
     # 2. All seeded sources have active=true
     try:
-        cursor.execute("SELECT COUNT(*) FROM blog_rss_sources WHERE active = false")
+        cursor.execute(
+            "SELECT COUNT(*) FROM blog_rss_sources "
+            "WHERE name IN ('Assembly Magazine', 'Manufacturing Dive', 'Modern Machine Shop', "
+            "'The Fabricator', 'American Machinist') AND active = false"
+        )
         inactive_count = cursor.fetchone()[0]
         if inactive_count == 0:
-            print("✓ [2/6] All sources have active=true")
+            print("✓ [2/6] All seeded sources have active=true")
             passed += 1
         else:
-            print(f"✗ [2/6] Found {inactive_count} inactive sources")
+            print(f"✗ [2/6] Found {inactive_count} inactive seeded sources")
     except Exception as e:
         print(f"✗ [2/6] Error checking active status: {e}")
 
     # 3. All seeded sources have priority between 1-10
     try:
         cursor.execute(
-            "SELECT COUNT(*) FROM blog_rss_sources WHERE priority < 1 OR priority > 10"
+            "SELECT COUNT(*) FROM blog_rss_sources "
+            "WHERE name IN ('Assembly Magazine', 'Manufacturing Dive', 'Modern Machine Shop', "
+            "'The Fabricator', 'American Machinist') AND (priority < 1 OR priority > 10)"
         )
         invalid_priority = cursor.fetchone()[0]
         if invalid_priority == 0:
-            print("✓ [3/6] All sources have priority between 1-10")
+            print("✓ [3/6] All seeded sources have priority between 1-10")
             passed += 1
         else:
-            print(f"✗ [3/6] Found {invalid_priority} sources with invalid priority")
+            print(f"✗ [3/6] Found {invalid_priority} seeded sources with invalid priority")
     except Exception as e:
         print(f"✗ [3/6] Error checking priority: {e}")
 
