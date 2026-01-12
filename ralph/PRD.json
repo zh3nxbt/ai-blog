@@ -122,7 +122,7 @@
       {
         "id": "db-007",
         "description": "5 manufacturing RSS sources seeded",
-        "passes": false,
+        "passes": true,
         "acceptance_criteria": [
           "At least 5 rows exist in blog_rss_sources",
           "All seeded sources have active=true",

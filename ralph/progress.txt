@@ -211,3 +211,15 @@ Keep it simple. Add dated entries chronologically.
   - All 5 acceptance criteria verified and passing (6 total checks including partial index condition verification)
   - Indexes improve performance for common queries: latest drafts, activity logs by agent/type, available RSS items
 ---
+[2026-01-12 - db-007]
+- Seeded 5 manufacturing industry RSS sources into blog_rss_sources table
+- Files changed: migrations/007_seed_manufacturing_rss_sources.sql, migrations/apply_db_007.py, migrations/verify_db_007.py
+- **Learnings for future iterations:**
+  - RSS feeds researched: Assembly Magazine (verified working), Manufacturing Dive, Modern Machine Shop, The Fabricator, American Machinist
+  - Assembly Magazine RSS feed (assemblymag.com/rss/17) confirmed as valid XML feed
+  - DATABASE_URL in .env was using direct connection which fails due to IPv6/IPv4 network issues
+  - Solution: Override DATABASE_URL to use connection pooler (aws-0-us-east-1.pooler.supabase.com) with username format postgres.{project_ref}
+  - Verification includes actual HTTP requests to validate RSS feeds return XML content
+  - All 6 acceptance criteria verified and passing
+  - Manufacturing RSS feeds provide industry news for content generation
+---
