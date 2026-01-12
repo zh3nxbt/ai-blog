@@ -40,11 +40,12 @@ Add reusable patterns to `## Codebase Patterns` section at TOP of progress.txt:
 - General patterns only (e.g., "Use `IF NOT EXISTS` for migrations")
 - Not story-specific details
 
-## Update claude.md (Rare)
+## Update claude.md (When Needed)
 
-Update `claude.md` ONLY for long-term architectural patterns that apply across ALL phases:
-- Database connectivity, infrastructure, security, API patterns
-- NOT: sprint-specific details, task learnings, temporary workarounds
+Update `claude.md` for reusable knowledge that future work will need:
+- **Architectural:** Database connectivity, infrastructure, security, API patterns
+- **Module-specific:** API conventions, gotchas, dependencies, testing requirements
+- **NOT:** Sprint-specific details, temporary workarounds, info already in progress.txt
 
 ## Quality Requirements
 
