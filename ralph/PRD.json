@@ -149,7 +149,7 @@
       {
         "id": "svc-002",
         "description": "create_blog_post() function",
-        "passes": false,
+        "passes": true,
         "acceptance_criteria": [
           "Function create_blog_post(title, content, status) exists",
           "Function returns UUID of created blog post",
