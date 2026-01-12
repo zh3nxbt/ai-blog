@@ -15,7 +15,7 @@
       {
         "id": "db-001",
         "description": "blog_posts table with proper schema",
-        "passes": false,
+        "passes": true,
         "acceptance_criteria": [
           "Table blog_posts exists in Supabase",
           "Column id is UUID primary key",
@@ -34,7 +34,7 @@
       {
         "id": "db-002",
         "description": "blog_content_drafts table with foreign keys",
-        "passes": false,
+        "passes": true,
         "acceptance_criteria": [
           "Table blog_content_drafts exists in Supabase",
           "Column id is UUID primary key",
