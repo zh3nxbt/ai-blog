@@ -36,7 +36,12 @@ You are not just writing code. You are shaping the future of this project. The p
 
 ### Supabase Database Connectivity
 
-**For REST API operations:** Use the Supabase Python client with `SUPABASE_URL` and `SUPABASE_KEY`.
+**For REST API operations (backend services):**
+- Use the Supabase Python client with `SUPABASE_URL` and `SUPABASE_SECRET`
+- `SUPABASE_SECRET` is the **service role key** that bypasses Row Level Security (RLS) policies
+- `SUPABASE_KEY` is the **anon key** subject to RLS - only use for frontend/public operations
+- Backend operations (workers, agents, internal services) must use `SUPABASE_SECRET` to bypass RLS
+- Store both keys in `.env`: `SUPABASE_KEY` for public API, `SUPABASE_SECRET` for backend
 
 **For direct SQL execution (migrations, complex queries):**
 
