@@ -28,15 +28,20 @@ Complete ONE story, then STOP. Do not continue to the next story.
 
 1. You should have already read claude.md, PRD.json, and progress.txt per the instructions above
 2. Pick the **highest priority** user story where `passes: false`
-3. Implement **ONLY that ONE story** (do not continue to the next story)
-4. Run quality checks (typecheck, lint, test)
-5. If checks pass, commit implementation: `feat: [Story ID] - [Story Title]`
-6. Update the PRD to set `passes: true` for the completed story
-7. Append your progress to `progress.txt`
-8. Update `claude.md` ONLY if there are long-term architectural lessons (see below)
-9. Commit PRD/progress updates (and claude.md if updated)
-10. Push to main: `git push origin main`
-11. **STOP** - End your response. Do not start the next story.
+3. **Create feature branch:** `git checkout -b task/[story-id]-[short-description]`
+   - Example: `task/svc-001-supabase-client`
+4. Implement **ONLY that ONE story** (do not continue to the next story)
+5. Run quality checks (typecheck, lint, test)
+6. If checks pass, commit implementation: `feat: [Story ID] - [Story Title]`
+7. Update the PRD to set `passes: true` for the completed story
+8. Append your progress to `progress.txt`
+9. Update `claude.md` ONLY if there are long-term architectural lessons (see below)
+10. Commit PRD/progress updates (and claude.md if updated)
+11. **Push branch:** `git push -u origin task/[story-id]-[short-description]`
+12. **Create PR to main:** `gh pr create --title "feat: [story-id] - [description]" --body "<summary>"`
+13. **STOP** - End your response. Do not start the next story.
+    - PR will be reviewed/merged to main by user
+    - Feature branch will be deleted after merge
 
 ## Progress Report Format
 
@@ -72,10 +77,17 @@ Update `claude.md` for reusable knowledge that future work will need:
 
 For UI changes: Load `dev-browser` skill, verify changes work, screenshot if needed.
 
-## After Completing ONE Story
+## Git Workflow Summary
 
-1. **Push:** `git push origin <branch>`
-2. **Create NEW PR:** `gh pr create --title "feat: <task-id> - <description>" --body "<summary>"`
-   - Each story must have its own dedicated PR
-3. **Check:** If ALL stories have `passes: true`, reply with `<promise>COMPLETE</promise>`
-4. **STOP:** Otherwise, end your response. Next story will be picked up in next iteration.
+Each task follows this pattern:
+1. **Create feature branch** from main: `task/[story-id]-[description]`
+2. **Implement and commit** changes to the branch
+3. **Push branch** to GitHub: `git push -u origin <branch>`
+4. **Create PR** to main for review/approval
+5. **PR gets merged** to main (by user or auto-merge)
+6. **Branch gets deleted** after merge (keeps repo clean)
+
+This ensures:
+- ✅ All work goes through PRs (visible for review/approval)
+- ✅ Clean main branch with proper PR history
+- ✅ No clutter from old feature branches
