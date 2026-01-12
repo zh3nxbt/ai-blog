@@ -111,6 +111,15 @@ Project: Autonomous blog content generation with iterative self-improvement
   - Add summary output before early exits for better debugging
   - Medium severity: incorrect return types can cause scripts to report success when they should fail
 
+[2026-01-12 17:15 - db-002 test cleanup fix]
+- Fixed test blog post cleanup in verification script (5th Bugbot issue)
+- Files changed: migrations/verify_db_002.py
+- **Learnings for future iterations:**
+  - Track all test data created during verification with boolean flags
+  - Clean up ALL test data in cleanup section, not just some of it
+  - Orphan test data can accumulate over multiple test runs
+  - Low severity: doesn't affect functionality but leaves garbage data
+
 ---
 
 ## OPEN QUESTIONS
