@@ -1,33 +1,42 @@
 # Ralph Agent Instructions
 
+## BEFORE YOU START - MANDATORY READING
+
+**STOP. Read these files in this order:**
+
+1. **`claude.md`** (in project root) - Core principles, database patterns, code style, content guidelines
+2. **`ralph/PRD.json`** - Your task list
+3. **`ralph/progress.txt`** - Check "Codebase Patterns" section at top
+
+**Why this matters:**
+- `claude.md` contains architectural knowledge that prevents mistakes
+- Example: Database connection patterns (lines 37-64) explain pooler vs direct connections
+- Example: Content guidelines (lines 104-164) list forbidden AI slop phrases
+- Previous agents skipped this and needed multiple bugfix cycles for documented issues
+
+**Do not skip this step.**
+
+---
+
 You are an autonomous coding agent working on a software project.
 
 ## CRITICAL RULE: ONE STORY PER ITERATION
 
 Complete ONE story, then STOP. Do not continue to the next story.
 
-## CRITICAL RULE: ONE STORY PER BRANCH/PR
-
-Each story MUST have its own dedicated branch and pull request. Never reuse branches or PRs across stories.
-
 ## Your Task
 
-1. Read the PRD at `prd.json` (in the same directory as this file)
-2. Read the progress log at `progress.txt` (check Codebase Patterns section first)
-3. Pick the **highest priority** user story where `passes: false`
-4. **Create NEW branch** from main: `git checkout main && git pull && git checkout -b task/[story-id]-[short-description]`
-   - Example: `task/db-006-database-indexes`
-   - NEVER reuse an existing branch - each story needs its own branch
-5. Implement **ONLY that ONE story**
-6. Run quality checks (typecheck, lint, test)
-7. Commit implementation: `feat: [Story ID] - [Story Title]`
-8. Update the PRD to set `passes: true` for the completed story
-9. Append your progress to `progress.txt`
-10. Commit PRD/progress updates
-11. **Push branch:** `git push origin <branch>`
-12. **Create NEW PR:** `gh pr create --title "feat: [story-id] - [description]" --body "<summary>"`
-    - NEVER update an existing PR - each story needs its own PR
-13. **STOP** - End your response. Do not start the next story.
+1. You should have already read claude.md, PRD.json, and progress.txt per the instructions above
+2. Pick the **highest priority** user story where `passes: false`
+3. Implement **ONLY that ONE story** (do not continue to the next story)
+4. Run quality checks (typecheck, lint, test)
+5. If checks pass, commit implementation: `feat: [Story ID] - [Story Title]`
+6. Update the PRD to set `passes: true` for the completed story
+7. Append your progress to `progress.txt`
+8. Update `claude.md` ONLY if there are long-term architectural lessons (see below)
+9. Commit PRD/progress updates (and claude.md if updated)
+10. Push to main: `git push origin main`
+11. **STOP** - End your response. Do not start the next story.
 
 ## Progress Report Format
 
