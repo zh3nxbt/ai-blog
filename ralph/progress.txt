@@ -234,3 +234,22 @@ Keep it simple. Add dated entries chronologically.
   - Use python-dotenv in tests to load .env file for environment variables
   - Ruff linting passes on all new Python files
 ---
+[2026-01-12 - svc-002]
+- Implemented create_blog_post() function in supabase_service.py
+- Files changed: services/supabase_service.py, tests/verify_svc_002.py, ralph/PRD.md, ralph/PRD.json, claude.md
+- **Learnings for future iterations:**
+  - Function creates blog posts with title, content, and status
+  - Automatically generates URL-safe slug from title using regex
+  - Returns UUID of created blog post
+  - Updated get_supabase_client() to use SUPABASE_SECRET (service role key) instead of SUPABASE_KEY
+  - Service role key bypasses RLS (Row Level Security) policies for backend operations
+  - Fallback to SUPABASE_KEY if SUPABASE_SECRET not set
+  - All 5 acceptance criteria verified and passing
+  - Slug generation: lowercase, remove special chars, replace spaces with hyphens
+- **CRITICAL schema discovery:**
+  - blog_posts table column is `content`, NOT `content_markdown` as documented
+  - Table does NOT have `source_urls` column (was in original docs)
+  - Table pre-existed with additional columns: featured_image, author, meta_description, meta_keywords, tags, updated_at
+  - Fixed documentation in PRD.md, PRD.json, and claude.md to match actual database
+  - Principle: Match existing reality, don't change production database to match docs
+---

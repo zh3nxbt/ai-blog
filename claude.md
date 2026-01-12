@@ -36,7 +36,12 @@ You are not just writing code. You are shaping the future of this project. The p
 
 ### Supabase Database Connectivity
 
-**For REST API operations:** Use the Supabase Python client with `SUPABASE_URL` and `SUPABASE_KEY`.
+**For REST API operations (backend services):**
+- Use the Supabase Python client with `SUPABASE_URL` and `SUPABASE_SECRET`
+- `SUPABASE_SECRET` is the **service role key** that bypasses Row Level Security (RLS) policies
+- `SUPABASE_KEY` is the **anon key** subject to RLS - only use for frontend/public operations
+- Backend operations (workers, agents, internal services) must use `SUPABASE_SECRET` to bypass RLS
+- Store both keys in `.env`: `SUPABASE_KEY` for public API, `SUPABASE_SECRET` for backend
 
 **For direct SQL execution (migrations, complex queries):**
 
@@ -170,18 +175,27 @@ python worker.py --run-once            # Test worker
 
 ## Data Model
 
-### Post
+### blog_posts Table (Pre-existing)
+**Note:** This table existed before Ralph was created. It contains additional columns used by the existing website.
+
 ```
-id              UUID
-title           String
-slug            String
-excerpt         String
-content_markdown Text
-source_urls     Array<String>
-status          Enum(draft, published)
-created_at      Timestamp
-publish_date    Date
+id               UUID
+title            String
+slug             String (unique)
+excerpt          String (nullable)
+content          Text (markdown format)
+featured_image   String (nullable)
+author           String (nullable)
+status           Enum(draft, published, failed) - CHECK constraint
+meta_description String (nullable)
+meta_keywords    String (nullable)
+tags             Array<String> (nullable)
+published_at     Timestamp (nullable)
+created_at       Timestamp (default NOW())
+updated_at       Timestamp (nullable)
 ```
+
+**Ralph usage:** Ralph only writes to: `title`, `slug`, `content`, `status`. Other columns are for the existing website.
 
 ## Code Style
 

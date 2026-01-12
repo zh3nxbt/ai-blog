@@ -169,7 +169,7 @@ See `claude.md` for complete content guidelines.
 ## 9. Data Model
 
 ### blog_posts
-Primary content storage for generated posts.
+Primary content storage for generated posts. **Note:** This table pre-existed and contains additional columns for the existing website.
 
 | Column | Type | Description |
 |--------|------|-------------|
@@ -177,11 +177,16 @@ Primary content storage for generated posts.
 | title | String | Post title |
 | slug | String | URL-safe identifier |
 | excerpt | String | Short summary |
-| content_markdown | Text | Full post content |
-| source_urls | Array | RSS sources used |
+| content | Text | Full post content (markdown) |
+| featured_image | String | URL to featured image (optional) |
+| author | String | Post author (optional) |
 | status | Enum | draft, published, failed |
+| meta_description | String | SEO meta description (optional) |
+| meta_keywords | String | SEO keywords (optional) |
+| tags | Array | Post tags (optional) |
 | published_at | Timestamp | When published |
 | created_at | Timestamp | When created |
+| updated_at | Timestamp | When last updated |
 
 ### blog_content_drafts
 Iteration history for each post.

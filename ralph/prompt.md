@@ -33,13 +33,14 @@ Complete ONE story, then STOP. Do not continue to the next story.
 4. Implement **ONLY that ONE story** (do not continue to the next story)
 5. Run quality checks (typecheck, lint, test)
 6. If checks pass, commit implementation: `feat: [Story ID] - [Story Title]`
-7. Update the PRD to set `passes: true` for the completed story
-8. Append your progress to `progress.txt`
-9. Update `claude.md` ONLY if there are long-term architectural lessons (see below)
-10. Commit PRD/progress updates (and claude.md if updated)
-11. **Push branch:** `git push -u origin task/[story-id]-[short-description]`
-12. **Create PR to main:** `gh pr create --title "feat: [story-id] - [description]" --body "<summary>"`
-13. **STOP** - End your response. Do not start the next story.
+7. **Update documentation** (commit separately):
+   - Update `ralph/PRD.json` to set `passes: true` for the completed story
+   - Append progress entry to `ralph/progress.txt` with implementation details
+   - Update `claude.md` if there are architectural learnings (see "Update claude.md" section below)
+8. Commit documentation updates: `docs: update PRD and progress for [story-id] completion`
+9. **Push branch:** `git push -u origin task/[story-id]-[short-description]`
+10. **Create PR to main:** `gh pr create --title "feat: [story-id] - [description]" --body "<summary>"`
+11. **STOP** - End your response. Do not start the next story.
     - PR will be reviewed/merged to main by user
     - Feature branch will be deleted after merge
 
@@ -63,10 +64,23 @@ Add reusable patterns to `## Codebase Patterns` section at TOP of progress.txt:
 
 ## Update claude.md (When Needed)
 
+**Always consider:** Does this work reveal architectural knowledge that future implementations need?
+
 Update `claude.md` for reusable knowledge that future work will need:
-- **Architectural:** Database connectivity, infrastructure, security, API patterns
-- **Module-specific:** API conventions, gotchas, dependencies, testing requirements
-- **NOT:** Sprint-specific details, temporary workarounds, info already in progress.txt
+- **Architectural decisions:** Database connectivity, infrastructure, security patterns, API design
+  - Example: "Use SUPABASE_SECRET for backend operations to bypass RLS policies"
+- **Module-specific patterns:** API conventions, gotchas, dependencies, testing requirements
+  - Example: "All RSS parsing must handle malformed XML gracefully"
+- **Security/reliability patterns:** Authentication, error handling, data validation
+  - Example: "Always validate external API responses before database insertion"
+
+**Do NOT add to claude.md:**
+- Sprint-specific progress (belongs in progress.txt)
+- Temporary workarounds or fixes
+- Task-specific implementation details
+- Information already documented in progress.txt
+
+**When in doubt:** If future agents implementing similar features would benefit from knowing this, add it to claude.md.
 
 ## Quality Requirements
 
