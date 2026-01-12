@@ -92,6 +92,16 @@ Project: Autonomous blog content generation with iterative self-improvement
   - Migration infrastructure includes multiple execution methods (manual SQL, psycopg2, helper scripts)
   - All 7 acceptance criteria verified and passing
 
+[2026-01-12 16:45 - db-002 bugfixes]
+- Fixed three issues from Cursor Bugbot code review
+- Files changed: migrations/apply_db_002.py, migrations/verify_db_002.py
+- **Learnings for future iterations:**
+  - Username format differs: use 'postgres' for direct connections, 'postgres.{project_ref}' for poolers
+  - Always add else clauses when verification checks are wrapped in conditionals (prevents misleading pass counts)
+  - Use try/except with proper cleanup (close cursors/connections, rollback on failure) to prevent resource leaks
+  - Multiple pooler regions should be tried automatically (us-east-1, us-west-1, eu-west-1, ap-southeast-1)
+  - Add SUPABASE_POOLER_HOST env var to allow users to specify preferred region
+
 ---
 
 ## OPEN QUESTIONS
