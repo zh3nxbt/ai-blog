@@ -54,7 +54,7 @@
       {
         "id": "db-003",
         "description": "blog_agent_activity table for logging",
-        "passes": false,
+        "passes": true,
         "acceptance_criteria": [
           "Table blog_agent_activity exists in Supabase",
           "Column id is UUID primary key",

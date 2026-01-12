@@ -166,3 +166,14 @@ Update this file after each:
 - Quality milestone
 
 Keep it simple. Add dated entries chronologically.
+
+[2026-01-12 - db-003]
+- Implemented blog_agent_activity table with complete schema
+- Files changed: migrations/003_create_blog_agent_activity.sql, migrations/apply_db_003.py, migrations/verify_db_003.py
+- **Learnings for future iterations:**
+  - Migration pattern established: SQL file + apply script + verify script
+  - Apply scripts now handle multiple pooler regions automatically with fallback logic
+  - Verification scripts follow consistent pattern: table existence, insert tests, column type checks, constraint validation
+  - All 11 acceptance criteria verified and passing
+  - Ruff linting passes on all new Python files
+---
