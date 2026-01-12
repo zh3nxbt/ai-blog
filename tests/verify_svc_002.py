@@ -80,7 +80,7 @@ def verify_svc_002() -> bool:
             if record["content"] == test_content:
                 matches.append("content")
             else:
-                print(f"  ✗ Content mismatch")
+                print(f"  ✗ Content mismatch: expected '{test_content}', got '{record.get('content')}'")
 
             if record["status"] == test_status:
                 matches.append("status")

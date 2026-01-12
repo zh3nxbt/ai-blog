@@ -175,18 +175,27 @@ python worker.py --run-once            # Test worker
 
 ## Data Model
 
-### Post
+### blog_posts Table (Pre-existing)
+**Note:** This table existed before Ralph was created. It contains additional columns used by the existing website.
+
 ```
-id              UUID
-title           String
-slug            String
-excerpt         String
-content_markdown Text
-source_urls     Array<String>
-status          Enum(draft, published)
-created_at      Timestamp
-publish_date    Date
+id               UUID
+title            String
+slug             String (unique)
+excerpt          String (nullable)
+content          Text (markdown format)
+featured_image   String (nullable)
+author           String (nullable)
+status           Enum(draft, published, failed) - CHECK constraint
+meta_description String (nullable)
+meta_keywords    String (nullable)
+tags             Array<String> (nullable)
+published_at     Timestamp (nullable)
+created_at       Timestamp (default NOW())
+updated_at       Timestamp (nullable)
 ```
+
+**Ralph usage:** Ralph only writes to: `title`, `slug`, `content`, `status`. Other columns are for the existing website.
 
 ## Code Style
 
