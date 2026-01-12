@@ -88,9 +88,10 @@ def verify_partial_index_condition(cur, index_name: str, expected_condition: str
         return False
 
     condition = result[0].strip()
-    # Normalize for comparison (partial index format varies, may have parentheses)
+    # Normalize both conditions for comparison (format varies, may have parentheses)
     condition_normalized = condition.upper().replace("(", "").replace(")", "")
-    return "USED_IN_BLOG IS NULL" in condition_normalized
+    expected_normalized = expected_condition.upper().replace("(", "").replace(")", "")
+    return expected_normalized in condition_normalized
 
 
 def verify_index_usage_for_unused_items(cur) -> bool:
