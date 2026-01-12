@@ -177,3 +177,37 @@ Keep it simple. Add dated entries chronologically.
   - All 11 acceptance criteria verified and passing
   - Ruff linting passes on all new Python files
 ---
+[2026-01-12 - db-004]
+- Implemented blog_rss_sources table for RSS feed management
+- Files changed: migrations/004_create_blog_rss_sources.sql, migrations/apply_db_004.py, migrations/verify_db_004.py, migrations/execute_sql.py
+- **Learnings for future iterations:**
+  - Table includes UNIQUE constraint on url column to prevent duplicate feed sources
+  - Priority field uses CHECK constraint (1-10) for validation at database level
+  - Active boolean defaults to true for easy enable/disable of feed sources
+  - All 11 acceptance criteria verified and passing
+  - Migration pattern continues to work well with SQL + apply + verify scripts
+  - Connection pooler (aws-0-us-east-1.pooler.supabase.com) works reliably for migrations
+---
+[2026-01-12 - db-005]
+- Implemented blog_rss_items table with foreign key relationships
+- Files changed: migrations/005_create_blog_rss_items.sql, migrations/apply_db_005.py, migrations/verify_db_005.py
+- **Learnings for future iterations:**
+  - Table has two foreign keys: source_id -> blog_rss_sources, used_in_blog -> blog_posts
+  - Foreign key constraints verified with both valid and invalid ID tests
+  - ON DELETE CASCADE for source_id ensures items are deleted when source is removed
+  - ON DELETE SET NULL for used_in_blog preserves items when blog posts are deleted
+  - UNIQUE constraint on url prevents duplicate RSS items
+  - All 11 acceptance criteria verified and passing
+  - Verification script creates test RSS source first, then tests items, then cleans up both
+---
+[2026-01-12 - db-006]
+- Implemented database indexes for query performance optimization
+- Files changed: migrations/006_create_database_indexes.sql, migrations/apply_db_006.py, migrations/verify_db_006.py
+- **Learnings for future iterations:**
+  - Created 4 indexes: blog_content_drafts compound index, 2 blog_agent_activity indexes, partial index for unused RSS items
+  - Partial indexes with WHERE clauses optimize queries for specific conditions (e.g., WHERE used_in_blog IS NULL)
+  - PostgreSQL stores partial index predicates with parentheses in pg_get_expr(), need to normalize when comparing
+  - EXPLAIN (FORMAT JSON) can verify index usage in query plans
+  - All 5 acceptance criteria verified and passing (6 total checks including partial index condition verification)
+  - Indexes improve performance for common queries: latest drafts, activity logs by agent/type, available RSS items
+---
