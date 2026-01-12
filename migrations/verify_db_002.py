@@ -36,6 +36,7 @@ def verify_db_002():
 
     # 2. Get a valid blog_post_id for testing
     print("✓ Getting valid blog_post_id for tests...")
+    created_test_post = False  # Track if we created a test post
     try:
         posts = supabase.table("blog_posts").select("id").limit(1).execute()
         if not posts.data:
@@ -53,6 +54,7 @@ def verify_db_002():
                 .execute()
             )
             blog_post_id = test_post.data[0]["id"]
+            created_test_post = True  # Mark that we created a test post
             print(f"  ✅ Created test post: {blog_post_id}\n")
         else:
             blog_post_id = posts.data[0]["id"]
@@ -215,16 +217,25 @@ def verify_db_002():
         results.append(("created_at defaults to NOW()", False))
         print("  ❌ FAIL: No draft created\n")
 
-    # Cleanup: Delete test draft
+    # Cleanup: Delete test draft and test post if created
     print("🧹 Cleaning up test data...")
     try:
         if test_draft_id:
             supabase.table("blog_content_drafts").delete().eq(
                 "id", test_draft_id
             ).execute()
-            print("  ✅ Test draft deleted\n")
+            print("  ✅ Test draft deleted")
     except Exception as e:
-        print(f"  ⚠️  Could not delete test draft: {e}\n")
+        print(f"  ⚠️  Could not delete test draft: {e}")
+
+    try:
+        if created_test_post:
+            supabase.table("blog_posts").delete().eq("id", blog_post_id).execute()
+            print("  ✅ Test post deleted")
+    except Exception as e:
+        print(f"  ⚠️  Could not delete test post: {e}")
+
+    print()  # Empty line after cleanup
 
     # Summary
     print("=" * 60)
