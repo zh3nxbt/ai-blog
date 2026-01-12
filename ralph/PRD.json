@@ -92,7 +92,7 @@
       {
         "id": "db-005",
         "description": "blog_rss_items table with foreign keys",
-        "passes": false,
+        "passes": true,
         "acceptance_criteria": [
           "Table blog_rss_items exists in Supabase",
           "Column id is UUID primary key",

@@ -188,3 +188,15 @@ Keep it simple. Add dated entries chronologically.
   - Migration pattern continues to work well with SQL + apply + verify scripts
   - Connection pooler (aws-0-us-east-1.pooler.supabase.com) works reliably for migrations
 ---
+[2026-01-12 - db-005]
+- Implemented blog_rss_items table with foreign key relationships
+- Files changed: migrations/005_create_blog_rss_items.sql, migrations/apply_db_005.py, migrations/verify_db_005.py
+- **Learnings for future iterations:**
+  - Table has two foreign keys: source_id -> blog_rss_sources, used_in_blog -> blog_posts
+  - Foreign key constraints verified with both valid and invalid ID tests
+  - ON DELETE CASCADE for source_id ensures items are deleted when source is removed
+  - ON DELETE SET NULL for used_in_blog preserves items when blog posts are deleted
+  - UNIQUE constraint on url prevents duplicate RSS items
+  - All 11 acceptance criteria verified and passing
+  - Verification script creates test RSS source first, then tests items, then cleans up both
+---
