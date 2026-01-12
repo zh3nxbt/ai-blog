@@ -54,13 +54,14 @@ def get_db_connection_string() -> str:
     preferred_pooler = os.getenv("SUPABASE_POOLER_HOST")
 
     # Build list of connection attempts
-    connection_attempts = [
-        (f"db.{project_ref}.supabase.co", False),  # Direct connection
-    ]
+    connection_attempts = []
 
     # If user specified a pooler, try it first
     if preferred_pooler:
         connection_attempts.append((preferred_pooler, True))
+
+    # Try direct connection
+    connection_attempts.append((f"db.{project_ref}.supabase.co", False))
 
     # Try common pooler regions
     pooler_regions = [

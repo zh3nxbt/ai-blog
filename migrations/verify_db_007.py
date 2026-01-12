@@ -45,6 +45,9 @@ def get_db_connection_string() -> str:
     if preferred_pooler:
         connection_attempts.append((preferred_pooler, True))
 
+    # Try direct connection
+    connection_attempts.append((f"db.{project_ref}.supabase.co", False))
+
     # Try common pooler regions
     pooler_regions = [
         "aws-0-us-east-1.pooler.supabase.com",
@@ -55,8 +58,8 @@ def get_db_connection_string() -> str:
     connection_attempts.extend((region, True) for region in pooler_regions)
 
     for host, is_pooler in connection_attempts:
-        # Use postgres.{project_ref} for poolers
-        username = f"postgres.{project_ref}"
+        # Use postgres.{project_ref} for poolers, just postgres for direct
+        username = f"postgres.{project_ref}" if is_pooler else "postgres"
         conn_string = f"postgresql://{username}:{db_password}@{host}:5432/postgres"
 
         try:
