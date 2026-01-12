@@ -110,7 +110,7 @@
       {
         "id": "db-006",
         "description": "Database indexes for query performance",
-        "passes": false,
+        "passes": true,
         "acceptance_criteria": [
           "Index exists on blog_content_drafts(blog_post_id, iteration_number DESC)",
           "Index exists on blog_agent_activity(agent_name, created_at DESC)",

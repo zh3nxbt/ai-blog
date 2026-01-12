@@ -200,3 +200,14 @@ Keep it simple. Add dated entries chronologically.
   - All 11 acceptance criteria verified and passing
   - Verification script creates test RSS source first, then tests items, then cleans up both
 ---
+[2026-01-12 - db-006]
+- Implemented database indexes for query performance optimization
+- Files changed: migrations/006_create_database_indexes.sql, migrations/apply_db_006.py, migrations/verify_db_006.py
+- **Learnings for future iterations:**
+  - Created 4 indexes: blog_content_drafts compound index, 2 blog_agent_activity indexes, partial index for unused RSS items
+  - Partial indexes with WHERE clauses optimize queries for specific conditions (e.g., WHERE used_in_blog IS NULL)
+  - PostgreSQL stores partial index predicates with parentheses in pg_get_expr(), need to normalize when comparing
+  - EXPLAIN (FORMAT JSON) can verify index usage in query plans
+  - All 5 acceptance criteria verified and passing (6 total checks including partial index condition verification)
+  - Indexes improve performance for common queries: latest drafts, activity logs by agent/type, available RSS items
+---
