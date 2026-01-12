@@ -2,145 +2,68 @@
 
 You are an autonomous coding agent working on a software project.
 
+## CRITICAL RULE: ONE STORY PER ITERATION
+
+Complete ONE story, then STOP. Do not continue to the next story.
+
 ## Your Task
 
 1. Read the PRD at `prd.json` (in the same directory as this file)
 2. Read the progress log at `progress.txt` (check Codebase Patterns section first)
 3. Check you're on the correct branch from PRD `branchName`. If not, check it out or create from main.
 4. Pick the **highest priority** user story where `passes: false`
-5. Implement that single user story
-6. Run quality checks (e.g., typecheck, lint, test - use whatever your project requires)
-7. If checks pass, commit implementation with message: `feat: [Story ID] - [Story Title]`
+5. Implement **ONLY that ONE story**
+6. Run quality checks (typecheck, lint, test)
+7. Commit implementation: `feat: [Story ID] - [Story Title]`
 8. Update the PRD to set `passes: true` for the completed story
 9. Append your progress to `progress.txt`
-10. Update `claude.md` ONLY if there are long-term architectural lessons (see below)
-11. Commit PRD/progress updates (and claude.md if updated)
-12. Push branch and create PR: `git push -u origin <branch>` then `gh pr create`
+10. Commit PRD/progress updates
+11. **Push branch:** `git push origin <branch>`
+12. **Create/update PR:** `gh pr create` (or update existing PR)
+13. **STOP** - End your response. Do not start the next story.
 
 ## Progress Report Format
 
-APPEND to progress.txt (never replace, always append):
+APPEND to progress.txt (never replace):
 ```
 [Date/Time - Story ID]
 - What was implemented
 - Files changed
 - **Learnings for future iterations:**
-  - Patterns discovered (e.g., "this codebase uses X for Y")
-  - Gotchas encountered (e.g., "don't forget to update Z when changing W")
-  - Useful context (e.g., "the evaluation panel is in component X")
+  - Patterns, gotchas, useful context
 ---
 ```
 
-The learnings section is critical - it helps future iterations avoid repeating mistakes and understand the codebase better.
-
-## Consolidate Patterns
-
-If you discover a **reusable pattern** that future iterations should know, add it to the `## Codebase Patterns` section at the TOP of progress.txt (create it if it doesn't exist). This section should consolidate the most important learnings:
-
-```
 ## Codebase Patterns
-- Example: Use `sql<number>` template for aggregations
-- Example: Always use `IF NOT EXISTS` for migrations
-- Example: Export types from actions.ts for UI components
-```
 
-Only add patterns that are **general and reusable**, not story-specific details.
+Add reusable patterns to `## Codebase Patterns` section at TOP of progress.txt:
+- General patterns only (e.g., "Use `IF NOT EXISTS` for migrations")
+- Not story-specific details
 
-## Update AGENTS.md Files
+## Update AGENTS.md (Optional)
 
-Before committing, check if any edited files have learnings worth preserving in nearby AGENTS.md files:
+Update nearby AGENTS.md files ONLY if you have genuinely reusable module-specific knowledge:
+- API patterns, gotchas, dependencies, testing requirements
+- NOT: story details, temporary notes, or info already in progress.txt
 
-1. **Identify directories with edited files** - Look at which directories you modified
-2. **Check for existing AGENTS.md** - Look for AGENTS.md in those directories or parent directories
-3. **Add valuable learnings** - If you discovered something future developers/agents should know:
-   - API patterns or conventions specific to that module
-   - Gotchas or non-obvious requirements
-   - Dependencies between files
-   - Testing approaches for that area
-   - Configuration or environment requirements
+## Update claude.md (Rare)
 
-**Examples of good AGENTS.md additions:**
-- "When modifying X, also update Y to keep them in sync"
-- "This module uses pattern Z for all API calls"
-- "Tests require the dev server running on PORT 3000"
-- "Field names must match the template exactly"
-
-**Do NOT add:**
-- Story-specific implementation details
-- Temporary debugging notes
-- Information already in progress.txt
-
-Only update AGENTS.md if you have **genuinely reusable knowledge** that would help future work in that directory.
-
-## Update claude.md (Long-term Architecture)
-
-**When to update claude.md:**
-Update `claude.md` ONLY when you discover long-term architectural patterns or decisions that apply across ALL phases of the project.
-
-**Examples of what belongs in claude.md:**
-- Database connectivity patterns (e.g., connection pooler for Supabase)
-- Architectural decisions affecting multiple components
-- Infrastructure setup patterns
-- Security patterns and requirements
-- API integration patterns
-
-**Examples of what does NOT belong in claude.md:**
-- Sprint or phase-specific implementation details
-- Task-specific learnings (those go in progress.txt)
-- Temporary workarounds or hacks
-- Story-specific patterns
-
-**Rule of thumb:** If it's relevant to the current sprint/phase only, it goes in `progress.txt`. If it's relevant to all future work across all phases, it goes in `claude.md`.
+Update `claude.md` ONLY for long-term architectural patterns that apply across ALL phases:
+- Database connectivity, infrastructure, security, API patterns
+- NOT: sprint-specific details, task learnings, temporary workarounds
 
 ## Quality Requirements
 
-- ALL commits must pass your project's quality checks (typecheck, lint, test)
-- Do NOT commit broken code
-- Keep changes focused and minimal
-- Follow existing code patterns
+- ALL commits must pass quality checks (typecheck, lint, test)
+- Keep changes minimal and follow existing patterns
 
-## Browser Testing (Required for Frontend Stories)
+## Browser Testing (Frontend Stories)
 
-For any story that changes UI, you MUST verify it works in the browser:
+For UI changes: Load `dev-browser` skill, verify changes work, screenshot if needed.
 
-1. Load the `dev-browser` skill
-2. Navigate to the relevant page
-3. Verify the UI changes work as expected
-4. Take a screenshot if helpful for the progress log
+## After Completing ONE Story
 
-A frontend story is NOT complete until browser verification passes.
-
-## Push Branch and Create PR (REQUIRED)
-
-After all commits are complete, you MUST:
-
-1. **Push the branch:**
-   ```bash
-   git push -u origin task/<task-id>-<description>
-   ```
-
-2. **Create a pull request:**
-   ```bash
-   gh pr create --title "feat: <task-id> - <description>" --body "<summary with verification results>"
-   ```
-
-3. **Verify PR is created** - Check that the PR URL is returned
-
-**Do NOT skip this step.** All work must go through pull requests for review.
-
-## Stop Condition
-
-After completing a user story, check if ALL stories have `passes: true`.
-
-If ALL stories are complete and passing, reply with:
-<promise>COMPLETE</promise>
-
-If there are still stories with `passes: false`, end your response normally (another iteration will pick up the next story).
-
-## Important
-
-- Work on ONE story per iteration
-- Commit frequently
-- Keep CI green
-- Read the Codebase Patterns section in progress.txt before starting
-- ALWAYS create a PR after completing a task (never skip this)
+1. **Push:** `git push origin <branch>`
+2. **Create/Update PR:** `gh pr create --title "feat: <task-id> - <description>" --body "<summary>"`
+3. **Check:** If ALL stories have `passes: true`, reply with `<promise>COMPLETE</promise>`
+4. **STOP:** Otherwise, end your response. Next story will be picked up in next iteration.
