@@ -74,7 +74,7 @@
       {
         "id": "db-004",
         "description": "blog_rss_sources table for feed management",
-        "passes": false,
+        "passes": true,
         "acceptance_criteria": [
           "Table blog_rss_sources exists in Supabase",
           "Column id is UUID primary key",
@@ -92,7 +92,7 @@
       {
         "id": "db-005",
         "description": "blog_rss_items table with foreign keys",
-        "passes": false,
+        "passes": true,
         "acceptance_criteria": [
           "Table blog_rss_items exists in Supabase",
           "Column id is UUID primary key",
@@ -110,7 +110,7 @@
       {
         "id": "db-006",
         "description": "Database indexes for query performance",
-        "passes": false,
+        "passes": true,
         "acceptance_criteria": [
           "Index exists on blog_content_drafts(blog_post_id, iteration_number DESC)",
           "Index exists on blog_agent_activity(agent_name, created_at DESC)",
