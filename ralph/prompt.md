@@ -40,12 +40,6 @@ Add reusable patterns to `## Codebase Patterns` section at TOP of progress.txt:
 - General patterns only (e.g., "Use `IF NOT EXISTS` for migrations")
 - Not story-specific details
 
-## Update AGENTS.md (Optional)
-
-Update nearby AGENTS.md files ONLY if you have genuinely reusable module-specific knowledge:
-- API patterns, gotchas, dependencies, testing requirements
-- NOT: story details, temporary notes, or info already in progress.txt
-
 ## Update claude.md (Rare)
 
 Update `claude.md` ONLY for long-term architectural patterns that apply across ALL phases:
