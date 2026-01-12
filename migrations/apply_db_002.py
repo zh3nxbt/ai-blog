@@ -1,0 +1,125 @@
+"""Apply db-002 migration using direct PostgreSQL connection."""
+
+import os
+import sys
+from pathlib import Path
+
+try:
+    import psycopg2
+except ImportError:
+    print("❌ psycopg2 not installed. Install with: pip install psycopg2-binary")
+    sys.exit(1)
+
+
+def read_migration_sql() -> str:
+    """Read the migration SQL file."""
+    migration_path = Path(__file__).parent / "002_create_blog_content_drafts.sql"
+    with open(migration_path, "r") as f:
+        return f.read()
+
+
+def get_db_connection_string() -> str:
+    """Get PostgreSQL connection string from environment."""
+    # Check if DATABASE_URL is set
+    db_url = os.getenv("DATABASE_URL")
+    if db_url:
+        return db_url
+
+    # Try to construct from Supabase URL and password
+    supabase_url = os.getenv("SUPABASE_URL", "")
+    db_password = os.getenv("SUPABASE_DB_PASSWORD", "")
+
+    if not db_password:
+        print()
+        print("=" * 70)
+        print("❌ DATABASE CONNECTION STRING NOT FOUND")
+        print("=" * 70)
+        print()
+        print("To apply this migration automatically, you need to provide one of:")
+        print()
+        print("Option 1: Set DATABASE_URL environment variable")
+        print("  DATABASE_URL=postgresql://postgres:[password]@[host]:5432/postgres")
+        print()
+        print("Option 2: Set SUPABASE_DB_PASSWORD")
+        print("  SUPABASE_DB_PASSWORD=your_database_password")
+        print()
+        print("To find your Supabase database password:")
+        print("  1. Go to: https://app.supabase.com/")
+        print("  2. Select your project")
+        print("  3. Go to: Settings > Database")
+        print("  4. Look for 'Connection string' or 'Database password'")
+        print()
+        print("Or execute the SQL manually in the Supabase SQL Editor:")
+        print("  Run: python migrations/run_migration_002.py")
+        print()
+        sys.exit(1)
+
+    # Construct connection string from Supabase URL
+    # Extract project ref from URL (e.g., https://abc123.supabase.co -> abc123)
+    project_ref = supabase_url.replace("https://", "").replace(".supabase.co", "")
+
+    # Try common Supabase connection patterns
+    possible_hosts = [
+        f"db.{project_ref}.supabase.co",
+        "aws-0-us-west-1.pooler.supabase.com",
+    ]
+
+    for host in possible_hosts:
+        conn_string = (
+            f"postgresql://postgres.{project_ref}:{db_password}@{host}:5432/postgres"
+        )
+        try:
+            conn = psycopg2.connect(conn_string)
+            conn.close()
+            return conn_string
+        except Exception:
+            continue
+
+    print("❌ Could not construct valid connection string")
+    sys.exit(1)
+
+
+def main():
+    """Apply migration."""
+    print("=" * 70)
+    print("APPLYING MIGRATION: db-002 - Create blog_content_drafts table")
+    print("=" * 70)
+    print()
+
+    # Get connection string
+    conn_string = get_db_connection_string()
+
+    # Read migration SQL
+    sql = read_migration_sql()
+
+    # Connect and execute
+    print("🔗 Connecting to database...")
+    try:
+        conn = psycopg2.connect(conn_string)
+        cur = conn.cursor()
+
+        print("📝 Executing migration SQL...")
+        cur.execute(sql)
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        print("✅ Migration applied successfully!")
+        print()
+        print("Next step: Run verification")
+        print("  PYTHONPATH=/workspace/ai-blog python migrations/verify_db_002.py")
+        print()
+        return 0
+
+    except Exception as e:
+        print(f"❌ Migration failed: {e}")
+        print()
+        print("Try manual execution instead:")
+        print("  python migrations/run_migration_002.py")
+        print()
+        return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

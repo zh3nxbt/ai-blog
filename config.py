@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     supabase_url: str
     supabase_key: str
     supabase_secret: str | None = None
+    database_url: str | None = None
 
     # Anthropic
     anthropic_api_key: str
