@@ -346,3 +346,58 @@ Keep it simple. Add dated entries chronologically.
   - spike-003: spike.py orchestrator ✓
   - spike-004: Execute 3 times and verify (NEXT)
 ---
+[2026-01-13 - spike-004]
+- Executed spike.py 3 times successfully, Phase 0 COMPLETE
+- Files changed: ralph/progress.txt, ralph/PRD.json
+- **Execution results:**
+  - Run 1: SUCCESS - "Electric Assembly Plants Keep Popping Up Across America"
+    - Token usage: 832 input + 2091 output = 2923 total
+    - Cost: $0.17 (17 cents)
+    - Duration: 62.27 seconds
+    - Content length: 9623 characters
+  - Run 2: SUCCESS - "Factory Floors Are Changing Fast. Here's What's Happening."
+    - Token usage: 1166 input + 1983 output = 3149 total
+    - Cost: $0.17 (17 cents)
+    - Duration: 51.19 seconds
+    - Content length: 8530 characters
+  - Run 3: SUCCESS - "Big Moves in Manufacturing: What Shops Should Watch"
+    - Token usage: 1382 input + 2320 output = 3702 total
+    - Cost: $0.19 (19 cents)
+    - Duration: 57.76 seconds
+    - Content length: 10026 characters
+- **Average metrics across 3 runs:**
+  - Average token usage: 1127 input + 2131 output = 3258 total
+  - Average cost: $0.18 per post (18 cents)
+  - Average duration: 57.07 seconds
+  - Average content length: 9393 characters
+- **Database verification:**
+  - 4 total draft posts in blog_posts table (including spike-003 test)
+  - 3 new drafts from spike-004 executions
+  - All posts have status='draft' as expected
+  - RSS items correctly marked as used (5 items per run)
+  - Agent activity logged for all runs
+- **Phase 0 Exit Criteria - ALL MET:**
+  - [x] Database schema complete (5 tables, indexes, seed data)
+  - [x] Migration tooling simplified and documented
+  - [x] spike.py runs 3 times successfully
+  - [x] 3+ blog drafts created in Supabase
+  - [x] RSS feeds return valid, parseable content
+  - [x] Claude API generates readable blog posts
+  - [x] Token costs measured and within budget (<$0.50/run)
+- **Learnings for Phase 1:**
+  - End-to-end integration fully validated and working
+  - Cost is consistent and predictable: ~$0.17-0.19 per post
+  - Well under Phase 0 budget of $0.50 per run
+  - Token usage scales with RSS item complexity and count
+  - Content quality is readable but lacks iterative refinement
+  - RSS feeds are reliable and provide diverse manufacturing topics
+  - Auto-fetching mechanism works when unused items are depleted
+  - Database constraints (UNIQUE on URL) handle deduplication correctly
+  - Activity logging provides excellent debugging visibility
+- **Next steps (Phase 1):**
+  - Implement quality validation and scoring system
+  - Build iterative refinement loop (generate → critique → improve)
+  - Add AI slop detection and brand voice validation
+  - Create ProductMarketingAgent and RalphLoop classes
+  - Target: 5 published posts with quality >= 0.85, cost <= $0.25/post
+---
