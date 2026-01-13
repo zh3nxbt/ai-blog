@@ -432,6 +432,20 @@ Keep it simple. Add dated entries chronologically.
   - Services layer building out: svc-001 (client) ✓, svc-002 (blog posts) ✓, svc-003 (drafts) ✓, svc-004 (activity logging) ✓
   - Next: svc-005 (fetch_active_feeds), svc-006 onwards (RSS, quality validation)
 ---
+[2026-01-13 - svc-005]
+- Implemented fetch_active_feeds() function in rss_service.py
+- Files changed: services/rss_service.py, tests/verify_svc_005.py, ralph/PRD.json
+- **Learnings for future iterations:**
+  - Function already existed as fetch_active_sources() from spike-001 implementation
+  - Added fetch_active_feeds as alias to maintain backward compatibility
+  - Both function names now work: fetch_active_sources() and fetch_active_feeds()
+  - Verification test confirms: import, returns list, active=true filter, priority DESC order, 5+ sources
+  - All 5 acceptance criteria verified and passing
+  - Pattern: when PRD specifies different name than existing impl, add alias instead of breaking changes
+- **Phase 1 progress:**
+  - Services layer: svc-001 ✓, svc-002 ✓, svc-003 ✓, svc-004 ✓, svc-005 ✓
+  - Next: svc-006 (fetch_feed_items), svc-007 (mark_items_as_used)
+---
 [2026-01-13 - bugfix-batch-001]
 - Fixed 4 bugs identified during code review
 - Files changed: services/llm_service.py, services/supabase_service.py, spike.py, tests/verify_spike_003.py

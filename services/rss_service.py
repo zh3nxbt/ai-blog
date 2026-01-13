@@ -31,6 +31,10 @@ def fetch_active_sources() -> List[Dict[str, Any]]:
     return response.data
 
 
+# Alias for svc-005 compatibility
+fetch_active_feeds = fetch_active_sources
+
+
 def fetch_feed(url: str) -> feedparser.FeedParserDict:
     """
     Fetch and parse an RSS/Atom feed from a URL.
