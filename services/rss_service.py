@@ -31,6 +31,41 @@ def fetch_active_sources() -> List[Dict[str, Any]]:
     return response.data
 
 
+def fetch_active_feeds() -> List[Dict[str, Any]]:
+    """
+    Fetch all active RSS feed sources from the database.
+
+    This is the canonical function name for retrieving active feeds.
+    Returns RSS source records where active=true, ordered by priority DESC.
+
+    Returns:
+        List[Dict]: List of RSS source records with keys:
+            - id: UUID of the source
+            - name: Display name of the feed
+            - url: RSS feed URL
+            - category: Feed category (nullable)
+            - active: Always True for returned records
+            - priority: Integer 1-10, higher = preferred
+            - last_fetched_at: Timestamp of last fetch (nullable)
+            - created_at: Timestamp when source was added
+
+    Raises:
+        Exception: If the database query fails
+    """
+    client = get_supabase_client()
+
+    response = client.table("blog_rss_sources")\
+        .select("*")\
+        .eq("active", True)\
+        .order("priority", desc=True)\
+        .execute()
+
+    if not response.data:
+        return []
+
+    return response.data
+
+
 def fetch_feed(url: str) -> feedparser.FeedParserDict:
     """
     Fetch and parse an RSS/Atom feed from a URL.
