@@ -275,3 +275,21 @@ Keep it simple. Add dated entries chronologically.
   - "Boring correctness" requires active simplification, not just avoiding complexity
 - **Verification:** All verify_db_XXX.py scripts still pass (4/6, others need DB credentials)
 ---
+[2026-01-13 - spike-001]
+- Implemented RSS feed fetching service for spike.py
+- Files changed: services/rss_service.py, tests/verify_spike_001.py
+- **Learnings for future iterations:**
+  - feedparser library handles both RSS and Atom feeds gracefully
+  - feedparser sets bozo=1 for malformed feeds, but sometimes still has entries
+  - Database UNIQUE constraint on URL naturally handles duplicate detection
+  - Supabase client gracefully handles duplicate insertion with constraint violations
+  - RSS feed items should extract published_at from published_parsed or updated_parsed
+  - Manufacturing RSS feeds (Assembly Magazine) reliably return 30+ entries per fetch
+  - All 5 acceptance criteria verified and passing
+  - Ruff linting passes on all new Python files
+- **Functions implemented:**
+  - fetch_active_sources(): Returns active RSS sources ordered by priority
+  - fetch_feed(url): Parses RSS/Atom feeds using feedparser
+  - store_rss_items(): Saves items to database, skips duplicates
+  - fetch_unused_items(): Retrieves items not yet used in blog posts
+---
