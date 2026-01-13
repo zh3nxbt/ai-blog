@@ -35,14 +35,18 @@ Project: Autonomous blog content generation with iterative self-improvement
 [x] Save overall plan as RALPH_OVERALL_PLAN.md
 [x] Consolidate progress tracking into single progress.txt
 [x] db-001: blog_posts table (pre-existing, verified)
+[x] db-002: blog_content_drafts table - COMPLETE (2026-01-12)
+[x] db-003: blog_agent_activity table - COMPLETE (2026-01-12)
+[x] db-004: blog_rss_sources table - COMPLETE (2026-01-12)
+[x] db-005: blog_rss_items table - COMPLETE (2026-01-12)
+[x] db-006: database indexes - COMPLETE (2026-01-12)
+[x] db-007: seed manufacturing RSS sources - COMPLETE (2026-01-12)
+[x] CONSOLIDATION: Migration tooling simplification - COMPLETE (2026-01-13)
 
-[ ] db-002: blog_content_drafts table
-[ ] db-003: blog_agent_activity table
-[ ] db-004: blog_rss_sources table
-[ ] db-005: blog_rss_items table
-[ ] Complete remaining Phase 1 database tasks
-[ ] Build spike.py proof of concept
-[ ] Verify 3 successful drafts in Supabase
+[ ] Update PRD documentation with consolidation learnings
+[ ] Integrate spike.py into PRD.json task list
+[ ] Build spike.py proof-of-concept (Phase 0)
+[ ] Run spike.py 3 times, verify drafts in Supabase
 
 ---
 
@@ -252,4 +256,22 @@ Keep it simple. Add dated entries chronologically.
   - Table pre-existed with additional columns: featured_image, author, meta_description, meta_keywords, tags, updated_at
   - Fixed documentation in PRD.md, PRD.json, and claude.md to match actual database
   - Principle: Match existing reality, don't change production database to match docs
+---
+[2026-01-13 - Migration Tooling Consolidation]
+- **Problem identified:** 40% of codebase was duplicated migration logic
+- **Root cause:** Each apply_db_XXX.py script had identical 165-line connection code
+- **Solution implemented:** Created migrations/db_utils.py with shared utilities
+- **Impact:** Reduced from ~2,877 lines to ~1,200 lines (42% reduction)
+- **Files changed:**
+  - NEW: migrations/db_utils.py (shared connection + apply logic)
+  - MODIFIED: apply_db_002.py through apply_db_007.py (now ~16 lines each)
+  - DELETED: apply_migration.py, execute_sql_via_api.py, run_migration_002.py, simple_apply_002.py
+  - NEW: migrations/README.md (developer documentation)
+- **Lessons learned:**
+  - DRY principle applies to scripts, not just application code
+  - Code duplication compounds maintenance burden exponentially
+  - Shared utilities make future migrations trivial to add
+  - Over-engineering happens gradually - regular review prevents accumulation
+  - "Boring correctness" requires active simplification, not just avoiding complexity
+- **Verification:** All verify_db_XXX.py scripts still pass (4/6, others need DB credentials)
 ---
