@@ -1,7 +1,6 @@
 {
   "phase": "Phase 1 - Core Ralph Loop",
   "goal": "Single-agent iterative content generation with quality validation",
-
   "success_criteria": {
     "published_posts": 5,
     "quality_threshold": 0.85,
@@ -9,7 +8,6 @@
     "api_cost_per_post": "$0.25",
     "zero_ai_slop": true
   },
-
   "tasks": {
     "database": [
       {
@@ -132,7 +130,60 @@
         ]
       }
     ],
-
+    "spike": [
+      {
+        "id": "spike-001",
+        "description": "RSS feed fetching for spike.py (minimal version)",
+        "passes": false,
+        "acceptance_criteria": [
+          "services/rss_service.py exists",
+          "Function fetch_active_sources() returns list of RSS source records from blog_rss_sources",
+          "Function fetch_feed(url) uses feedparser to fetch RSS content",
+          "Function store_rss_items() saves items to blog_rss_items (skips duplicates by URL)",
+          "Function returns 3-5 RSS items successfully"
+        ]
+      },
+      {
+        "id": "spike-002",
+        "description": "Claude API integration for spike.py (single-pass generation)",
+        "passes": false,
+        "acceptance_criteria": [
+          "services/llm_service.py exists",
+          "Function generate_blog_post(rss_items) accepts list of RSS items",
+          "Function calls Claude API using Anthropic SDK",
+          "Function returns dict with keys: title, excerpt, content",
+          "Token usage tracked (input_tokens + output_tokens)",
+          "Cost calculated based on token pricing"
+        ]
+      },
+      {
+        "id": "spike-003",
+        "description": "spike.py orchestrator script",
+        "passes": false,
+        "acceptance_criteria": [
+          "spike.py exists in project root",
+          "Script fetches RSS items using rss_service",
+          "Script generates blog post using llm_service",
+          "Script saves post to blog_posts using supabase_service.create_blog_post()",
+          "Script logs activity to blog_agent_activity",
+          "Script prints summary (token usage, cost, content preview)"
+        ]
+      },
+      {
+        "id": "spike-004",
+        "description": "Execute spike.py 3 times and verify Phase 0 complete",
+        "passes": false,
+        "acceptance_criteria": [
+          "spike.py executes 3 times without fatal errors",
+          "3 blog drafts exist in blog_posts table with status='draft'",
+          "Content is readable and relevant to manufacturing (manual review)",
+          "Average token usage documented in progress.txt",
+          "Average cost per run documented in progress.txt",
+          "RSS feeds demonstrated as reliable",
+          "Phase 0 exit criteria met"
+        ]
+      }
+    ],
     "services": [
       {
         "id": "svc-001",
@@ -278,7 +329,6 @@
         ]
       }
     ],
-
     "ralph_core": [
       {
         "id": "ralph-001",
@@ -416,7 +466,6 @@
         ]
       }
     ],
-
     "functional": [
       {
         "id": "func-001",
@@ -501,7 +550,6 @@
         ]
       }
     ],
-
     "testing": [
       {
         "id": "test-001",
@@ -569,7 +617,6 @@
         ]
       }
     ],
-
     "documentation": [
       {
         "id": "doc-001",
@@ -598,9 +645,8 @@
       }
     ]
   },
-
   "summary": {
-    "total_tasks": 45,
+    "total_tasks": 49,
     "completed": 0,
     "progress_percentage": 0,
     "breakdown": {
@@ -609,7 +655,8 @@
       "ralph_core": 11,
       "functional": 7,
       "testing": 6,
-      "documentation": 2
+      "documentation": 2,
+      "spike": 4
     }
   }
 }
