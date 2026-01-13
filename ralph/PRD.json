@@ -261,7 +261,7 @@
       {
         "id": "svc-007",
         "description": "mark_items_as_used() function",
-        "passes": false,
+        "passes": true,
         "acceptance_criteria": [
           "Function mark_items_as_used(item_ids, blog_id) exists",
           "Function updates used_in_blog column for specified items",
