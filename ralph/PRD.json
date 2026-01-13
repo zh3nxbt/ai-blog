@@ -172,7 +172,7 @@
       {
         "id": "spike-004",
         "description": "Execute spike.py 3 times and verify Phase 0 complete",
-        "passes": false,
+        "passes": true,
         "acceptance_criteria": [
           "spike.py executes 3 times without fatal errors",
           "3 blog drafts exist in blog_posts table with status='draft'",
