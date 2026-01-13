@@ -401,3 +401,21 @@ Keep it simple. Add dated entries chronologically.
   - Create ProductMarketingAgent and RalphLoop classes
   - Target: 5 published posts with quality >= 0.85, cost <= $0.25/post
 ---
+[2026-01-13 - svc-003]
+- Implemented save_draft_iteration() function in supabase_service.py
+- Files changed: services/supabase_service.py, tests/verify_svc_003.py, ralph/PRD.json
+- **Learnings for future iterations:**
+  - Function saves content drafts to blog_content_drafts table for iteration tracking
+  - Parameters: blog_post_id, iteration_number, title, content, quality_score, critique, api_cost_cents
+  - Validates quality_score between 0.0-1.0, iteration_number >= 1, api_cost_cents >= 0
+  - UNIQUE constraint on (blog_post_id, iteration_number) enforced at database level
+  - Duplicate iteration_number attempts raise constraint error (23505)
+  - Critique stored as JSONB for flexible structure
+  - Returns UUID of created draft iteration record
+  - All 5 acceptance criteria verified and passing
+  - Follows established pattern from svc-001 and svc-002
+  - Pattern: validate params → get client → insert → verify response → return UUID
+- **Phase 1 progress:**
+  - Services layer building out: svc-001 (client) ✓, svc-002 (blog posts) ✓, svc-003 (drafts) ✓
+  - Next: svc-004 (activity logging - already implemented in spike), svc-005 onwards (RSS, quality validation)
+---
