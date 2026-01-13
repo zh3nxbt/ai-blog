@@ -159,7 +159,7 @@
       {
         "id": "spike-003",
         "description": "spike.py orchestrator script",
-        "passes": false,
+        "passes": true,
         "acceptance_criteria": [
           "spike.py exists in project root",
           "Script fetches RSS items using rss_service",

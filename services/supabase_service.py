@@ -88,3 +88,65 @@ def create_blog_post(title: str, content: str, status: str = "draft") -> UUID:
         raise Exception("Failed to create blog post: no data returned")
 
     return UUID(response.data[0]["id"])
+
+
+def log_agent_activity(
+    agent_name: str,
+    activity_type: str,
+    success: bool,
+    context_id: UUID = None,
+    duration_ms: int = None,
+    error_message: str = None,
+    metadata: dict = None
+) -> UUID:
+    """
+    Log agent activity to the database.
+
+    Args:
+        agent_name: Name of the agent performing the activity
+        activity_type: Type of activity (e.g., 'content_draft', 'critique', 'publish')
+        success: Whether the activity succeeded
+        context_id: Optional UUID of related entity (e.g., blog_post_id)
+        duration_ms: Optional duration in milliseconds
+        error_message: Optional error message if success=False
+        metadata: Optional additional metadata as dict
+
+    Returns:
+        UUID: The ID of the created activity log entry
+
+    Raises:
+        ValueError: If required parameters are missing
+        Exception: If the database operation fails
+    """
+    if not agent_name:
+        raise ValueError("agent_name is required")
+
+    if not activity_type:
+        raise ValueError("activity_type is required")
+
+    client = get_supabase_client()
+
+    log_data = {
+        "agent_name": agent_name,
+        "activity_type": activity_type,
+        "success": success
+    }
+
+    if context_id is not None:
+        log_data["context_id"] = str(context_id)
+
+    if duration_ms is not None:
+        log_data["duration_ms"] = duration_ms
+
+    if error_message is not None:
+        log_data["error_message"] = error_message
+
+    if metadata is not None:
+        log_data["metadata"] = metadata
+
+    response = client.table("blog_agent_activity").insert(log_data).execute()
+
+    if not response.data or len(response.data) == 0:
+        raise Exception("Failed to log agent activity: no data returned")
+
+    return UUID(response.data[0]["id"])

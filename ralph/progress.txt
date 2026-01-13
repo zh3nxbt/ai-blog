@@ -316,3 +316,33 @@ Keep it simple. Add dated entries chronologically.
   - JSON output format with title, excerpt, content fields
   - 1000-2500 word target length with markdown structure requirements
 ---
+[2026-01-13 - spike-003]
+- Implemented spike.py orchestrator for end-to-end blog generation
+- Files changed: spike.py, services/supabase_service.py, tests/verify_spike_003.py
+- **Learnings for future iterations:**
+  - End-to-end flow works reliably: RSS → Claude → Database → Logging
+  - Actual generation time: ~52 seconds for single-pass generation
+  - Actual cost: $0.17 per post (Claude Opus 4.5)
+  - Token usage consistent: ~1100-1200 input, ~2000-2500 output tokens
+  - Auto-fetching fresh RSS items when insufficient items available prevents failure
+  - RSS item deduplication works correctly (UNIQUE constraint on URL)
+  - Marking items as used prevents reuse in future generations
+  - Activity logging provides good debugging visibility
+  - All 6 acceptance criteria verified and passing
+  - Ruff linting passes on all new Python files
+- **Functions implemented:**
+  - log_agent_activity(): Logs agent activity with context, duration, metadata to blog_agent_activity table
+  - spike.py main(): Orchestrates full end-to-end blog generation flow
+- **End-to-end test results:**
+  - Blog post successfully generated and saved to database
+  - Title: "December Numbers Are In: Manufacturing Shifts Gears"
+  - Content: 8392 characters (within acceptable range)
+  - RSS items used: 3 (marked as used in database)
+  - Cost: $0.17 (well under $0.50 budget for spike)
+  - Duration: 52.45 seconds
+- **Phase 0 progress:**
+  - spike-001: RSS feed fetching ✓
+  - spike-002: Claude API integration ✓
+  - spike-003: spike.py orchestrator ✓
+  - spike-004: Execute 3 times and verify (NEXT)
+---
