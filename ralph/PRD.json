@@ -212,7 +212,7 @@
       {
         "id": "svc-003",
         "description": "save_draft_iteration() function",
-        "passes": false,
+        "passes": true,
         "acceptance_criteria": [
           "Function save_draft_iteration(blog_id, iteration, content, score, critique) exists",
           "Function inserts row into blog_content_drafts",

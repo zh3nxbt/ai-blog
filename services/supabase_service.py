@@ -90,6 +90,73 @@ def create_blog_post(title: str, content: str, status: str = "draft") -> UUID:
     return UUID(response.data[0]["id"])
 
 
+def save_draft_iteration(
+    blog_post_id: UUID,
+    iteration_number: int,
+    title: str,
+    content: str,
+    quality_score: float,
+    critique: dict,
+    api_cost_cents: int
+) -> UUID:
+    """
+    Save a content draft iteration to the database.
+
+    Args:
+        blog_post_id: UUID of the blog post this draft belongs to
+        iteration_number: Iteration number (1, 2, 3, etc.)
+        title: Title of the draft
+        content: Content of the draft (markdown)
+        quality_score: Quality score (0.0-1.0)
+        critique: Critique feedback as dict
+        api_cost_cents: API cost in cents for this iteration
+
+    Returns:
+        UUID: The ID of the created draft iteration record
+
+    Raises:
+        ValueError: If required parameters are missing or invalid
+        Exception: If the database operation fails (e.g., duplicate iteration_number)
+    """
+    if not blog_post_id:
+        raise ValueError("blog_post_id is required")
+
+    if iteration_number is None or iteration_number < 1:
+        raise ValueError("iteration_number must be >= 1")
+
+    if not title:
+        raise ValueError("title is required")
+
+    if not content:
+        raise ValueError("content is required")
+
+    if quality_score is None or not (0.0 <= quality_score <= 1.0):
+        raise ValueError("quality_score must be between 0.0 and 1.0")
+
+    if critique is None:
+        raise ValueError("critique is required")
+
+    if api_cost_cents is None or api_cost_cents < 0:
+        raise ValueError("api_cost_cents must be >= 0")
+
+    client = get_supabase_client()
+
+    response = client.table("blog_content_drafts").insert({
+        "blog_post_id": str(blog_post_id),
+        "iteration_number": iteration_number,
+        "title": title,
+        "content": content,
+        "quality_score": quality_score,
+        "critique": critique,
+        "api_cost_cents": api_cost_cents
+    }).execute()
+
+    if not response.data or len(response.data) == 0:
+        raise Exception("Failed to save draft iteration: no data returned")
+
+    return UUID(response.data[0]["id"])
+
+
 def log_agent_activity(
     agent_name: str,
     activity_type: str,
