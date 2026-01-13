@@ -486,3 +486,18 @@ Keep it simple. Add dated entries chronologically.
   - Services layer: svc-001 ✓, svc-002 ✓, svc-003 ✓, svc-004 ✓, svc-005 ✓, svc-006 ✓
   - Next: svc-007 (mark_items_as_used)
 ---
+[2026-01-13 - svc-007]
+- Implemented mark_items_as_used() function in rss_service.py
+- Files changed: services/rss_service.py, tests/verify_svc_007.py, ralph/PRD.json
+- **Learnings for future iterations:**
+  - Function updates used_in_blog column for specified item IDs in a single query
+  - Uses Supabase .in_() filter for efficient bulk updates
+  - Returns count of updated items for verification
+  - Input validation prevents empty item_ids list or empty blog_id
+  - Items not in list remain unchanged (verified in test)
+  - All 4 acceptance criteria verified and passing
+  - Pattern: validate params → get client → update with in_ filter → return count
+- **Phase 1 progress:**
+  - Services layer: svc-001 ✓, svc-002 ✓, svc-003 ✓, svc-004 ✓, svc-005 ✓, svc-006 ✓, svc-007 ✓
+  - Next: svc-008 onwards (quality validation)
+---

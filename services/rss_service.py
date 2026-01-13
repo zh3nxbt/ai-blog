@@ -183,3 +183,44 @@ def fetch_unused_items(limit: int = 5) -> List[Dict[str, Any]]:
         return []
 
     return response.data
+
+
+def mark_items_as_used(item_ids: List[str], blog_id: str) -> int:
+    """
+    Mark RSS items as used in a blog post.
+
+    Updates the used_in_blog column for the specified items to reference
+    the blog post that used them. Only updates items that are not already
+    used (used_in_blog IS NULL) to prevent race conditions where multiple
+    workers could overwrite each other's associations.
+
+    Args:
+        item_ids: List of RSS item UUIDs to mark as used
+        blog_id: UUID of the blog post that used these items
+
+    Returns:
+        int: Number of items successfully updated (may be less than
+             len(item_ids) if some items were already used)
+
+    Raises:
+        ValueError: If item_ids is empty or blog_id is invalid
+        Exception: If database operations fail
+    """
+    if not item_ids:
+        raise ValueError("item_ids cannot be empty")
+
+    if not blog_id:
+        raise ValueError("blog_id cannot be empty")
+
+    client = get_supabase_client()
+
+    # Update only unused items to prevent race conditions
+    # Items already marked as used by another blog post are left untouched
+    response = client.table("blog_rss_items")\
+        .update({"used_in_blog": blog_id})\
+        .in_("id", item_ids)\
+        .is_("used_in_blog", "null")\
+        .execute()
+
+    # Return count of updated items
+    return len(response.data) if response.data else 0
