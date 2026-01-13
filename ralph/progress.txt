@@ -293,3 +293,26 @@ Keep it simple. Add dated entries chronologically.
   - store_rss_items(): Saves items to database, skips duplicates
   - fetch_unused_items(): Retrieves items not yet used in blog posts
 ---
+[2026-01-13 - spike-002]
+- Implemented Claude API integration for spike.py
+- Files changed: services/llm_service.py, tests/verify_spike_002.py
+- **Learnings for future iterations:**
+  - Anthropic SDK provides clean interface for Claude API integration
+  - Token usage tracking via response.usage.input_tokens and response.usage.output_tokens
+  - Cost calculation based on model-specific pricing (per million tokens)
+  - Claude Opus 4.5 pricing: $15/MTok input, $75/MTok output
+  - Claude Sonnet 4.5 pricing: $3/MTok input, $15/MTok output
+  - Typical blog post generation: ~500 input tokens, ~2000-2500 output tokens
+  - Estimated cost per generation: $0.18-$0.20 for Opus 4.5
+  - JSON response parsing requires handling potential markdown code block wrapping
+  - All 6 acceptance criteria verified and passing
+  - Ruff linting passes on all new Python files
+- **Functions implemented:**
+  - generate_blog_post(rss_items): Generates blog post from RSS items using Claude API
+  - calculate_api_cost(input_tokens, output_tokens, model): Calculates cost in cents
+- **Prompt design:**
+  - Manufacturing context for MAS Precision Parts brand voice
+  - Explicit AI slop keyword avoidance (delve, leverage, unlock, etc.)
+  - JSON output format with title, excerpt, content fields
+  - 1000-2500 word target length with markdown structure requirements
+---
