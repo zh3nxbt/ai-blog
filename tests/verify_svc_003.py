@@ -142,13 +142,15 @@ def verify_svc_003() -> bool:
         )
         print("✗ Function allowed duplicate iteration_number (should have raised error)")
     except Exception as e:
-        # We expect an error here
-        if "duplicate" in str(e).lower() or "unique" in str(e).lower() or "constraint" in str(e).lower():
+        # We expect a constraint violation error here
+        error_str = str(e).lower()
+        if "duplicate" in error_str or "unique" in error_str or "constraint" in error_str or "23505" in str(e):
             print(f"✓ Duplicate correctly rejected: {e}")
             passed += 1
         else:
-            print(f"⚠ Error raised but unexpected message: {e}")
-            passed += 1  # Still counts as pass since it prevented the duplicate
+            # Unrelated error (network, auth, etc.) - doesn't verify the constraint
+            print(f"✗ Unexpected error (not a constraint violation): {e}")
+            # Do NOT increment passed - this doesn't prove the UNIQUE constraint exists
 
     # Cleanup
     cleanup(test_blog_id, draft_id)
