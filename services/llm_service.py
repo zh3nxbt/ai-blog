@@ -110,6 +110,10 @@ Do not include any text before or after the JSON object."""
     except json.JSONDecodeError as e:
         raise ValueError(f"Failed to parse JSON response from Claude API: {e}\nResponse: {response_text[:500]}")
 
+    # Validate response is a dict (json.loads can return list, string, number, bool, or null)
+    if not isinstance(post_data, dict):
+        raise ValueError(f"Expected JSON object, got {type(post_data).__name__}: {str(post_data)[:200]}")
+
     # Validate required keys
     required_keys = ["title", "excerpt", "content"]
     missing_keys = [key for key in required_keys if key not in post_data]

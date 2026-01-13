@@ -432,3 +432,28 @@ Keep it simple. Add dated entries chronologically.
   - Services layer building out: svc-001 (client) ✓, svc-002 (blog posts) ✓, svc-003 (drafts) ✓, svc-004 (activity logging) ✓
   - Next: svc-005 (fetch_active_feeds), svc-006 onwards (RSS, quality validation)
 ---
+[2026-01-13 - bugfix-batch-001]
+- Fixed 4 bugs identified during code review
+- Files changed: services/llm_service.py, services/supabase_service.py, spike.py, tests/verify_spike_003.py
+- **Bug 1 (Medium): Missing dict type check in llm_service.py**
+  - json.loads() can return any JSON type (list, string, number, etc.)
+  - Added isinstance(post_data, dict) check after parsing
+  - Now raises clear ValueError instead of confusing TypeError
+- **Bug 2 (Low): Undefined variable in verify_spike_003.py**
+  - content variable was defined inside Test 2's try block
+  - Tests 3-6 would fail with NameError if file read failed
+  - Moved content initialization to function scope, read file in Test 1
+- **Bug 3 (P2): Fetch all sources when replenishing RSS items in spike.py**
+  - Only fetched from first 2 sources when replenishing
+  - Changed to iterate all sources until 3+ items available
+  - Added error handling for individual feed fetch failures
+- **Bug 4 (P2): save_draft_iteration signature mismatch with PRD spec**
+  - PRD specified 5 args: (blog_id, iteration, content, score, critique)
+  - Implementation required 7 args including title and api_cost_cents
+  - Made title and api_cost_cents optional with sensible defaults
+- **Learnings:**
+  - Always validate JSON response type, not just JSON syntax
+  - Variable scoping in Python: define at function scope if needed across blocks
+  - Iteration limits ([:2]) can cause subtle failures when early items are depleted
+  - API signatures should match documented specs; make extras optional
+---

@@ -49,13 +49,23 @@ def main():
             if not sources:
                 raise Exception("No active RSS sources found in database")
 
-            for source in sources[:2]:  # Fetch from first 2 sources
+            # Fetch from all sources until we have enough items
+            for source in sources:
                 print(f"  Fetching from: {source['name']}")
-                feed = fetch_feed(source['url'])
-                stored = store_rss_items(source['id'], feed, limit=10)
-                print(f"    Stored {len(stored)} new items")
+                try:
+                    feed = fetch_feed(source['url'])
+                    stored = store_rss_items(source['id'], feed, limit=10)
+                    print(f"    Stored {len(stored)} new items")
+                except Exception as fetch_error:
+                    print(f"    Warning: Failed to fetch from {source['name']}: {fetch_error}")
+                    continue
 
-            # Try fetching unused items again
+                # Check if we have enough items now
+                unused_items = fetch_unused_items(limit=5)
+                if len(unused_items) >= 3:
+                    break
+
+            # Final check for unused items
             unused_items = fetch_unused_items(limit=5)
 
         if len(unused_items) < 3:
