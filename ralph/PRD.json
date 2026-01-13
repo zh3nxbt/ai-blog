@@ -134,7 +134,7 @@
       {
         "id": "spike-001",
         "description": "RSS feed fetching for spike.py (minimal version)",
-        "passes": false,
+        "passes": true,
         "acceptance_criteria": [
           "services/rss_service.py exists",
           "Function fetch_active_sources() returns list of RSS source records from blog_rss_sources",
