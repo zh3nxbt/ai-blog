@@ -136,8 +136,8 @@ def save_draft_iteration(
     if api_cost_cents is None or api_cost_cents < 0:
         raise ValueError("api_cost_cents must be >= 0")
 
-    # Default title if not provided
-    if title is None:
+    # Default title if not provided or empty
+    if not title:
         title = f"Draft {iteration_number}"
 
     client = get_supabase_client()
