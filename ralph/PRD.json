@@ -146,7 +146,7 @@
       {
         "id": "spike-002",
         "description": "Claude API integration for spike.py (single-pass generation)",
-        "passes": false,
+        "passes": true,
         "acceptance_criteria": [
           "services/llm_service.py exists",
           "Function generate_blog_post(rss_items) accepts list of RSS items",
