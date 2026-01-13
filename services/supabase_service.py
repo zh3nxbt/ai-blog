@@ -93,11 +93,11 @@ def create_blog_post(title: str, content: str, status: str = "draft") -> UUID:
 def save_draft_iteration(
     blog_post_id: UUID,
     iteration_number: int,
-    title: str,
     content: str,
     quality_score: float,
     critique: dict,
-    api_cost_cents: int
+    title: str = None,
+    api_cost_cents: int = 0
 ) -> UUID:
     """
     Save a content draft iteration to the database.
@@ -105,11 +105,11 @@ def save_draft_iteration(
     Args:
         blog_post_id: UUID of the blog post this draft belongs to
         iteration_number: Iteration number (1, 2, 3, etc.)
-        title: Title of the draft
         content: Content of the draft (markdown)
         quality_score: Quality score (0.0-1.0)
         critique: Critique feedback as dict
-        api_cost_cents: API cost in cents for this iteration
+        title: Title of the draft (optional, defaults to "Draft {iteration_number}")
+        api_cost_cents: API cost in cents for this iteration (optional, defaults to 0)
 
     Returns:
         UUID: The ID of the created draft iteration record
@@ -124,9 +124,6 @@ def save_draft_iteration(
     if iteration_number is None or iteration_number < 1:
         raise ValueError("iteration_number must be >= 1")
 
-    if not title:
-        raise ValueError("title is required")
-
     if not content:
         raise ValueError("content is required")
 
@@ -138,6 +135,10 @@ def save_draft_iteration(
 
     if api_cost_cents is None or api_cost_cents < 0:
         raise ValueError("api_cost_cents must be >= 0")
+
+    # Default title if not provided
+    if title is None:
+        title = f"Draft {iteration_number}"
 
     client = get_supabase_client()
 

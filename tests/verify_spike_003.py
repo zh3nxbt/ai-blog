@@ -20,6 +20,7 @@ def verify_spike_003():
     print("=" * 70)
 
     passes = []
+    content = None  # Initialize content variable for use across all tests
 
     # Test 1: spike.py exists in project root
     print("\n[1/6] Checking if spike.py exists in project root...")
@@ -27,16 +28,22 @@ def verify_spike_003():
     if os.path.exists(spike_path):
         print("✓ spike.py exists in project root")
         passes.append(True)
+        # Read file content for subsequent tests
+        try:
+            with open(spike_path, 'r') as f:
+                content = f.read()
+        except Exception as e:
+            print(f"  Warning: Could not read spike.py contents: {e}")
     else:
         print("✗ spike.py not found in project root")
         passes.append(False)
 
     # Test 2: Script fetches RSS items using rss_service
     print("\n[2/6] Checking if script uses rss_service...")
-    try:
-        with open(spike_path, 'r') as f:
-            content = f.read()
-
+    if content is None:
+        print("✗ Cannot verify - spike.py content not available")
+        passes.append(False)
+    else:
         has_import = 'from services.rss_service import' in content
         has_fetch_call = 'fetch_unused_items' in content or 'fetch_active_sources' in content
 
@@ -46,13 +53,13 @@ def verify_spike_003():
         else:
             print("✗ Script does not properly use rss_service")
             passes.append(False)
-    except Exception as e:
-        print(f"✗ Failed to verify rss_service usage: {e}")
-        passes.append(False)
 
     # Test 3: Script generates blog post using llm_service
     print("\n[3/6] Checking if script uses llm_service...")
-    try:
+    if content is None:
+        print("✗ Cannot verify - spike.py content not available")
+        passes.append(False)
+    else:
         has_llm_import = 'from services.llm_service import' in content
         has_generate_call = 'generate_blog_post' in content
 
@@ -62,13 +69,13 @@ def verify_spike_003():
         else:
             print("✗ Script does not properly use llm_service")
             passes.append(False)
-    except Exception as e:
-        print(f"✗ Failed to verify llm_service usage: {e}")
-        passes.append(False)
 
     # Test 4: Script saves post using supabase_service.create_blog_post()
     print("\n[4/6] Checking if script uses supabase_service.create_blog_post()...")
-    try:
+    if content is None:
+        print("✗ Cannot verify - spike.py content not available")
+        passes.append(False)
+    else:
         has_supabase_import = 'from services.supabase_service import' in content
         has_create_call = 'create_blog_post' in content
 
@@ -78,13 +85,13 @@ def verify_spike_003():
         else:
             print("✗ Script does not properly use supabase_service.create_blog_post()")
             passes.append(False)
-    except Exception as e:
-        print(f"✗ Failed to verify supabase_service usage: {e}")
-        passes.append(False)
 
     # Test 5: Script logs activity to blog_agent_activity
     print("\n[5/6] Checking if script logs activity...")
-    try:
+    if content is None:
+        print("✗ Cannot verify - spike.py content not available")
+        passes.append(False)
+    else:
         has_log_activity = 'log_agent_activity' in content
 
         if has_log_activity:
@@ -93,13 +100,13 @@ def verify_spike_003():
         else:
             print("✗ Script does not log activity")
             passes.append(False)
-    except Exception as e:
-        print(f"✗ Failed to verify activity logging: {e}")
-        passes.append(False)
 
     # Test 6: Script prints summary (token usage, cost, content preview)
     print("\n[6/6] Checking if script prints summary...")
-    try:
+    if content is None:
+        print("✗ Cannot verify - spike.py content not available")
+        passes.append(False)
+    else:
         has_token_output = 'input_tokens' in content or 'token' in content.lower()
         has_cost_output = 'cost' in content.lower()
         has_content_preview = 'preview' in content.lower() or 'content[:' in content
@@ -117,9 +124,6 @@ def verify_spike_003():
                 missing.append("content preview")
             print(f"✗ Script missing summary elements: {', '.join(missing)}")
             passes.append(False)
-    except Exception as e:
-        print(f"✗ Failed to verify summary output: {e}")
-        passes.append(False)
 
     # Summary
     print("\n" + "=" * 70)
