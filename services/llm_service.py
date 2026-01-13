@@ -100,8 +100,8 @@ Do not include any text before or after the JSON object."""
         lines = response_text.split("\n")
         # Remove first line (```json or ```)
         lines = lines[1:]
-        # Remove last line (```)
-        if lines[-1].strip() == "```":
+        # Remove last line (```) if present and non-empty
+        if lines and lines[-1].strip() == "```":
             lines = lines[:-1]
         response_text = "\n".join(lines)
 

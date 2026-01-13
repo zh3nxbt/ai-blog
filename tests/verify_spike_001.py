@@ -1,7 +1,12 @@
 """Verification script for spike-001: RSS feed fetching service."""
 
 import sys
-from dotenv import load_dotenv
+import os
+
+# Add parent directory to path so we can import from services
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from dotenv import load_dotenv  # noqa: E402
 
 # Load environment variables
 load_dotenv()
@@ -67,7 +72,7 @@ def main():
     print("\n[4/5] Checking store_rss_items() function...")
     total_checks += 1
     try:
-        from services.rss_service import store_rss_items, fetch_active_sources
+        from services.rss_service import store_rss_items, fetch_active_sources, fetch_feed
 
         # Get first active source
         sources = fetch_active_sources()
@@ -107,12 +112,14 @@ def main():
 
         if isinstance(items, list):
             item_count = len(items)
-            print(f"✓ PASS: fetch_unused_items() returned {item_count} items")
-            if item_count >= 3:
-                print("  Sufficient items available for spike.py")
-            else:
-                print(f"  WARNING: Only {item_count} items available (need at least 3)")
-            passed_checks += 1
+            if 3 <= item_count <= 5:
+                print(f"✓ PASS: fetch_unused_items() returned {item_count} items (within 3-5 range)")
+                passed_checks += 1
+            elif item_count < 3:
+                print(f"✗ FAIL: fetch_unused_items() returned {item_count} items (need at least 3)")
+                print("  Run spike.py or fetch more RSS items to populate the database")
+            else:  # item_count > 5
+                print(f"✗ FAIL: fetch_unused_items() returned {item_count} items (expected max 5 with limit=5)")
         else:
             print(f"✗ FAIL: fetch_unused_items() returned {type(items)}, expected list")
     except Exception as e:
