@@ -224,7 +224,7 @@
       {
         "id": "svc-004",
         "description": "log_agent_activity() function",
-        "passes": false,
+        "passes": true,
         "acceptance_criteria": [
           "Function log_agent_activity(agent, activity_type, success, metadata) exists",
           "Function inserts row into blog_agent_activity",
