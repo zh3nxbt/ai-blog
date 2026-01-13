@@ -248,7 +248,7 @@
       {
         "id": "svc-006",
         "description": "fetch_feed_items() function",
-        "passes": false,
+        "passes": true,
         "acceptance_criteria": [
           "Function fetch_feed_items(source_id, limit) exists",
           "Function fetches RSS/XML from source URL",

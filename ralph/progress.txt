@@ -471,3 +471,18 @@ Keep it simple. Add dated entries chronologically.
   - Iteration limits ([:2]) can cause subtle failures when early items are depleted
   - API signatures should match documented specs; make extras optional
 ---
+[2026-01-13 - svc-006]
+- Implemented fetch_feed_items() function in rss_service.py
+- Files changed: services/rss_service.py, tests/verify_svc_006.py, ralph/PRD.json
+- **Learnings for future iterations:**
+  - Function combines fetch_feed() and store_rss_items() into single operation
+  - Gets source URL from database using source_id, then fetches and stores items
+  - Returns list of newly stored items (empty list if all are duplicates)
+  - Duplicate handling is delegated to store_rss_items() which catches UNIQUE constraint violations
+  - All 6 acceptance criteria verified and passing
+  - Also included fetch_active_feeds alias from svc-005 since PR not yet merged
+  - Pattern: higher-level function composes existing lower-level functions
+- **Phase 1 progress:**
+  - Services layer: svc-001 ✓, svc-002 ✓, svc-003 ✓, svc-004 ✓, svc-005 ✓, svc-006 ✓
+  - Next: svc-007 (mark_items_as_used)
+---
