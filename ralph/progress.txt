@@ -419,3 +419,16 @@ Keep it simple. Add dated entries chronologically.
   - Services layer building out: svc-001 (client) ✓, svc-002 (blog posts) ✓, svc-003 (drafts) ✓
   - Next: svc-004 (activity logging - already implemented in spike), svc-005 onwards (RSS, quality validation)
 ---
+[2026-01-13 - svc-004]
+- Verified log_agent_activity() function in supabase_service.py
+- Files changed: tests/verify_svc_004.py, ralph/PRD.json
+- **Learnings for future iterations:**
+  - Function was already implemented during spike-003 development
+  - Task required verification test to confirm acceptance criteria
+  - Function supports additional optional parameters: context_id, duration_ms, error_message
+  - All 5 acceptance criteria verified and passing
+  - Pattern: validate params → get client → build log_data → insert → return UUID
+- **Phase 1 progress:**
+  - Services layer building out: svc-001 (client) ✓, svc-002 (blog posts) ✓, svc-003 (drafts) ✓, svc-004 (activity logging) ✓
+  - Next: svc-005 (fetch_active_feeds), svc-006 onwards (RSS, quality validation)
+---
