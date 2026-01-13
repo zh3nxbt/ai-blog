@@ -272,7 +272,7 @@
       {
         "id": "svc-008",
         "description": "detect_ai_slop() function",
-        "passes": false,
+        "passes": true,
         "acceptance_criteria": [
           "`python -c 'from services.quality_validator import detect_ai_slop'` exits with code 0",
           "detect_ai_slop('Let us delve into') returns (True, ['delve'])",
