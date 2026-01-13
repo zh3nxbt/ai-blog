@@ -115,6 +115,48 @@ def store_rss_items(source_id: str, feed: feedparser.FeedParserDict, limit: int 
     return stored_items
 
 
+def fetch_feed_items(source_id: str, limit: int = 10) -> List[Dict[str, Any]]:
+    """
+    Fetch and store RSS items from a specific source.
+
+    Combines feed fetching and item storage into a single operation.
+    Gets the source URL from the database, fetches the RSS feed,
+    parses items, and stores new items (skipping duplicates by URL).
+
+    Args:
+        source_id: UUID of the RSS source
+        limit: Maximum number of items to fetch and store (default 10)
+
+    Returns:
+        List[Dict]: List of newly stored RSS items
+
+    Raises:
+        ValueError: If source_id does not exist or feed cannot be parsed
+        Exception: If database operations fail
+    """
+    client = get_supabase_client()
+
+    # Get the source URL from the database
+    response = client.table("blog_rss_sources")\
+        .select("url, name")\
+        .eq("id", source_id)\
+        .execute()
+
+    if not response.data or len(response.data) == 0:
+        raise ValueError(f"Source with id {source_id} not found")
+
+    source = response.data[0]
+    url = source["url"]
+
+    # Fetch and parse the RSS feed
+    feed = fetch_feed(url)
+
+    # Store the items (duplicates are skipped automatically)
+    stored_items = store_rss_items(source_id, feed, limit)
+
+    return stored_items
+
+
 def fetch_unused_items(limit: int = 5) -> List[Dict[str, Any]]:
     """
     Fetch RSS items that haven't been used in a blog post yet.
