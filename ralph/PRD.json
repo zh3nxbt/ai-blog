@@ -293,7 +293,7 @@
         ],
         "description": "API cost calculation",
         "id": "ralph-003",
-        "passes": false
+        "passes": true
       },
       {
         "acceptance_criteria": [
