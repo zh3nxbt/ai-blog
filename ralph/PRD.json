@@ -150,7 +150,7 @@
           "README.md has section titled 'Phase 1 - Core Ralph Loop'",
           "Database setup steps are documented",
           "Environment variables are listed with descriptions",
-          "Manual run command documented: `python -m ralph.core.ralph_loop`",
+          "Manual run command documented: `python -m ralph.ralph_loop`",
           "Expected output format is described"
         ],
         "description": "README Phase 1 documentation",
@@ -244,7 +244,7 @@
       },
       {
         "acceptance_criteria": [
-          "`python -m ralph.core.ralph_loop` executes without import errors",
+          "`python -m ralph.ralph_loop` executes without import errors",
           "Script generates one blog post",
           "Summary printed to stdout includes: status, quality, iterations, cost",
           "Exit code is 0 on success",
@@ -259,9 +259,9 @@
       {
         "acceptance_criteria": [
           "`python -c 'import ralph'` exits with code 0",
-          "`python -c 'import ralph.core'` exits with code 0",
-          "`python -c 'import ralph.agents'` exits with code 0",
-          "`python -c 'import ralph.prompts'` exits with code 0",
+          "`python -c 'import ralph_content.core'` exits with code 0",
+          "`python -c 'import ralph_content.agents'` exits with code 0",
+          "`python -c 'import ralph_content.prompts'` exits with code 0",
           "ralph/__init__.py exists",
           "ralph/core/__init__.py exists",
           "ralph/agents/__init__.py exists",
@@ -273,7 +273,7 @@
       },
       {
         "acceptance_criteria": [
-          "`python -c 'from ralph.core.timeout_manager import TimeoutManager'` exits with code 0",
+          "`python -c 'from ralph_content.core.timeout_manager import TimeoutManager'` exits with code 0",
           "TimeoutManager(timeout_minutes=30, cost_limit_cents=100) instantiates",
           "is_timeout_exceeded() returns False immediately after creation",
           "is_cost_limit_exceeded(50) returns False when limit is 100",
@@ -297,7 +297,7 @@
       },
       {
         "acceptance_criteria": [
-          "`python -c 'from ralph.prompts.critique import AI_SLOP_KEYWORDS; print(len(AI_SLOP_KEYWORDS))'` prints >= 15",
+          "`python -c 'from ralph_content.prompts.critique import AI_SLOP_KEYWORDS; print(len(AI_SLOP_KEYWORDS))'` prints >= 15",
           "AI_SLOP_KEYWORDS contains 'delve'",
           "AI_SLOP_KEYWORDS contains 'leverage'",
           "AI_SLOP_KEYWORDS contains 'unlock'",
@@ -309,7 +309,7 @@
       },
       {
         "acceptance_criteria": [
-          "`python -c 'from ralph.prompts.critique import CRITIQUE_PROMPT_TEMPLATE'` exits with code 0",
+          "`python -c 'from ralph_content.prompts.critique import CRITIQUE_PROMPT_TEMPLATE'` exits with code 0",
           "Template contains 'quality_score' field specification",
           "Template contains 'ai_slop_detected' field specification",
           "Template contains 'improvements' field specification",
@@ -321,8 +321,8 @@
       },
       {
         "acceptance_criteria": [
-          "`python -c 'from ralph.prompts.content_generation import INITIAL_DRAFT_PROMPT'` exits with code 0",
-          "`python -c 'from ralph.prompts.content_generation import IMPROVEMENT_PROMPT_TEMPLATE'` exits with code 0",
+          "`python -c 'from ralph_content.prompts.content_generation import INITIAL_DRAFT_PROMPT'` exits with code 0",
+          "`python -c 'from ralph_content.prompts.content_generation import IMPROVEMENT_PROMPT_TEMPLATE'` exits with code 0",
           "INITIAL_DRAFT_PROMPT mentions manufacturing industry",
           "INITIAL_DRAFT_PROMPT mentions MAS Precision Parts",
           "IMPROVEMENT_PROMPT_TEMPLATE has placeholder for critique"
@@ -333,7 +333,7 @@
       },
       {
         "acceptance_criteria": [
-          "`python -c 'from ralph.agents.base_agent import BaseAgent'` exits with code 0",
+          "`python -c 'from ralph_content.agents.base_agent import BaseAgent'` exits with code 0",
           "BaseAgent is abstract (cannot instantiate directly)",
           "BaseAgent has _call_claude() method",
           "BaseAgent has total_input_tokens attribute",
@@ -358,7 +358,7 @@
       },
       {
         "acceptance_criteria": [
-          "`python -c 'from ralph.agents.product_marketing import ProductMarketingAgent'` exits with code 0",
+          "`python -c 'from ralph_content.agents.product_marketing import ProductMarketingAgent'` exits with code 0",
           "agent.generate_content(rss_items) returns (title, content) tuple",
           "Returned title is non-empty string",
           "Returned content is >= 1000 words",
@@ -381,7 +381,7 @@
       },
       {
         "acceptance_criteria": [
-          "`python -c 'from ralph.core.ralph_loop import RalphLoop'` exits with code 0",
+          "`python -c 'from ralph.ralph_loop import RalphLoop'` exits with code 0",
           "loop.generate_initial_draft() creates blog_posts record with status='draft'",
           "blog_content_drafts has iteration_number=1 for created post",
           "RSS items used are marked with used_in_blog = blog_post_id",

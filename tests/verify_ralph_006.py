@@ -2,8 +2,8 @@
 """Verification script for ralph-006: Content generation prompts.
 
 Acceptance Criteria:
-1. `python -c 'from ralph.prompts.content_generation import INITIAL_DRAFT_PROMPT'` exits with code 0
-2. `python -c 'from ralph.prompts.content_generation import IMPROVEMENT_PROMPT_TEMPLATE'` exits with code 0
+1. `python -c 'from ralph_content.prompts.content_generation import INITIAL_DRAFT_PROMPT'` exits with code 0
+2. `python -c 'from ralph_content.prompts.content_generation import IMPROVEMENT_PROMPT_TEMPLATE'` exits with code 0
 3. INITIAL_DRAFT_PROMPT mentions manufacturing industry
 4. INITIAL_DRAFT_PROMPT mentions MAS Precision Parts
 5. IMPROVEMENT_PROMPT_TEMPLATE has placeholder for critique
@@ -29,7 +29,7 @@ def verify_ralph_006() -> bool:
     # Test 1: Import INITIAL_DRAFT_PROMPT
     print("\n[1/5] Verifying INITIAL_DRAFT_PROMPT import...")
     try:
-        from ralph.prompts.content_generation import INITIAL_DRAFT_PROMPT
+        from ralph_content.prompts.content_generation import INITIAL_DRAFT_PROMPT
         print("✓ Successfully imported INITIAL_DRAFT_PROMPT")
         passed += 1
     except ImportError as e:
@@ -39,7 +39,7 @@ def verify_ralph_006() -> bool:
     # Test 2: Import IMPROVEMENT_PROMPT_TEMPLATE
     print("\n[2/5] Verifying IMPROVEMENT_PROMPT_TEMPLATE import...")
     try:
-        from ralph.prompts.content_generation import IMPROVEMENT_PROMPT_TEMPLATE
+        from ralph_content.prompts.content_generation import IMPROVEMENT_PROMPT_TEMPLATE
         print("✓ Successfully imported IMPROVEMENT_PROMPT_TEMPLATE")
         passed += 1
     except ImportError as e:

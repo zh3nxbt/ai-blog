@@ -589,10 +589,10 @@ Keep it simple. Add dated entries chronologically.
   - Ralph core scaffolding started: ralph-001 ✓
   - Next: ralph-002 (TimeoutManager class)
 ---
-[2026-01-14 - ralph-content]
-- Added `ralph-content/` folder to separate content-generation assets from system code
-- Added `ralph-content/README.md` to document intended usage
-- Moved `ralph/prompt.md` to `ralph-content/prompt.md`
+[2026-01-14 - ralph_content]
+- Added `ralph_content/` folder to separate content-generation assets from system code
+- Added `ralph_content/README.md` to document intended usage
+- Moved `ralph/prompt.md` to `ralph_content/prompt.md`
 [2026-01-14 - ralph-002]
 - Implemented TimeoutManager class for runtime guardrails
 - Files added: ralph/core/timeout_manager.py, tests/verify_ralph_002.py
@@ -642,4 +642,11 @@ Keep it simple. Add dated entries chronologically.
 - **Learnings for future iterations:**
   - Centralized token tracking simplifies downstream cost accounting
   - Abstract agent_name keeps logging consistent across agent implementations
+---
+[2026-01-14 - ralph-structure]
+- Moved ralph-001 through ralph-007 modules into `ralph_content/` package
+- Files changed: moved ralph/{agents,core,prompts} to ralph_content, updated imports/tests/docs
+- **Learnings for future iterations:**
+  - Keep app entrypoints in `ralph/` and shared content logic in `ralph_content/`
+  - Package names should avoid hyphens to stay importable
 ---

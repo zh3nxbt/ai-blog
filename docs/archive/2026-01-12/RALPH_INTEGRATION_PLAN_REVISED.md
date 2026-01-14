@@ -502,7 +502,7 @@ ai-blog/
   ```
 
 **Days 12-14: Testing & Refinement**
-- Manual tests: `python -m ralph.core.ralph_loop`
+- Manual tests: `python -m ralph.ralph_loop`
 - Test cases:
   1. High-quality on first try (quality > 0.85)
   2. Needs 2-3 iterations to reach 0.85

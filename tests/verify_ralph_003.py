@@ -29,7 +29,7 @@ def verify_ralph_003() -> bool:
     # Test 1: Import test
     print("\n[1/5] Verifying import works...")
     try:
-        from ralph.core.api_cost import calculate_api_cost
+        from ralph_content.core.api_cost import calculate_api_cost
         print("✓ Successfully imported calculate_api_cost")
         passed += 1
     except ImportError as e:

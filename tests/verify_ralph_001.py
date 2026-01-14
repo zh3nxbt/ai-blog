@@ -3,9 +3,9 @@
 
 Acceptance Criteria:
 1. `python -c 'import ralph'` exits with code 0
-2. `python -c 'import ralph.core'` exits with code 0
-3. `python -c 'import ralph.agents'` exits with code 0
-4. `python -c 'import ralph.prompts'` exits with code 0
+2. `python -c 'import ralph_content.core'` exits with code 0
+3. `python -c 'import ralph_content.agents'` exits with code 0
+4. `python -c 'import ralph_content.prompts'` exits with code 0
 5. ralph/__init__.py exists
 6. ralph/core/__init__.py exists
 7. ralph/agents/__init__.py exists
@@ -38,29 +38,29 @@ def verify_ralph_001() -> bool:
     except ImportError as e:
         print(f"✗ Import failed: {e}")
 
-    # Test 2: Import ralph.core
-    print("\n[2/8] Verifying import ralph.core...")
+    # Test 2: Import ralph_content.core
+    print("\n[2/8] Verifying import ralph_content.core...")
     try:
-        import ralph.core  # noqa: F401
-        print("✓ Successfully imported ralph.core")
+        import ralph_content.core  # noqa: F401
+        print("✓ Successfully imported ralph_content.core")
         passed += 1
     except ImportError as e:
         print(f"✗ Import failed: {e}")
 
-    # Test 3: Import ralph.agents
-    print("\n[3/8] Verifying import ralph.agents...")
+    # Test 3: Import ralph_content.agents
+    print("\n[3/8] Verifying import ralph_content.agents...")
     try:
-        import ralph.agents  # noqa: F401
-        print("✓ Successfully imported ralph.agents")
+        import ralph_content.agents  # noqa: F401
+        print("✓ Successfully imported ralph_content.agents")
         passed += 1
     except ImportError as e:
         print(f"✗ Import failed: {e}")
 
-    # Test 4: Import ralph.prompts
-    print("\n[4/8] Verifying import ralph.prompts...")
+    # Test 4: Import ralph_content.prompts
+    print("\n[4/8] Verifying import ralph_content.prompts...")
     try:
-        import ralph.prompts  # noqa: F401
-        print("✓ Successfully imported ralph.prompts")
+        import ralph_content.prompts  # noqa: F401
+        print("✓ Successfully imported ralph_content.prompts")
         passed += 1
     except ImportError as e:
         print(f"✗ Import failed: {e}")

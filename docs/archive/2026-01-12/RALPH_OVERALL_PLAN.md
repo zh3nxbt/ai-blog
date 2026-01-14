@@ -236,7 +236,7 @@ Build an autonomous blog content generation system (Ralph Wiggum) that produces 
   - Graceful degradation
 
 **Testing:**
-- Manual runs: `python -m ralph.core.ralph_loop`
+- Manual runs: `python -m ralph.ralph_loop`
 - Test high-quality first draft (quality > 0.85)
 - Test 2-3 iterations to reach 0.85
 - Test timeout before 0.85 (save as draft)

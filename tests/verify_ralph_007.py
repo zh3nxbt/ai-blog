@@ -2,7 +2,7 @@
 """Verification script for ralph-007: BaseAgent abstract class.
 
 Acceptance Criteria:
-1. `python -c 'from ralph.agents.base_agent import BaseAgent'` exits with code 0
+1. `python -c 'from ralph_content.agents.base_agent import BaseAgent'` exits with code 0
 2. BaseAgent is abstract (cannot instantiate directly)
 3. BaseAgent has _call_claude() method
 4. BaseAgent has total_input_tokens attribute
@@ -30,7 +30,7 @@ def verify_ralph_007() -> bool:
     # Test 1: Import test
     print("\n[1/6] Verifying import works...")
     try:
-        from ralph.agents.base_agent import BaseAgent
+        from ralph_content.agents.base_agent import BaseAgent
         print("✓ Successfully imported BaseAgent")
         passed += 1
     except ImportError as e:
