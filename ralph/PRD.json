@@ -284,7 +284,7 @@
       {
         "id": "svc-009",
         "description": "validate_length() function",
-        "passes": false,
+        "passes": true,
         "acceptance_criteria": [
           "Function validate_length(content) exists",
           "Content with 500 words returns (False, 500, score < 0.5)",

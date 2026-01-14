@@ -517,3 +517,19 @@ Keep it simple. Add dated entries chronologically.
   - Services layer: svc-001 ✓, svc-002 ✓, svc-003 ✓, svc-004 ✓, svc-005 ✓, svc-006 ✓, svc-007 ✓, svc-008 ✓
   - Next: svc-009 (validate_length), svc-010 (validate_structure), svc-011 (validate_brand_voice), svc-012 (validate_content aggregator)
 ---
+[2026-01-14 - svc-009]
+- Implemented validate_length() function in services/quality_validator.py
+- Files changed: services/quality_validator.py, tests/verify_svc_009.py (new), ralph/PRD.json
+- **Learnings for future iterations:**
+  - Function validates content length against target range of 1000-2500 words
+  - Returns tuple (is_valid: bool, word_count: int, score: float)
+  - Score calculation uses tiered approach based on distance from ideal range (1200-2000 words)
+  - Score scaling: 0-500 words (0.0-0.3), 500-1000 (0.3-0.7), 1000-1200 (0.7-0.9), 1200-2000 (0.9-1.0), 2000-2500 (0.9-0.7), 2500-3500 (0.7-0.4), >3500 (decreasing from 0.4)
+  - Added count_words() helper function for reusability
+  - Exported MIN_WORDS and MAX_WORDS constants for use by other validators
+  - All 5 acceptance criteria verified and passing
+  - Pattern: pure function, no database dependencies, returns consistent tuple structure
+- **Phase 1 progress:**
+  - Services layer: svc-001 ✓, svc-002 ✓, svc-003 ✓, svc-004 ✓, svc-005 ✓, svc-006 ✓, svc-007 ✓, svc-008 ✓, svc-009 ✓
+  - Next: svc-010 (validate_structure), svc-011 (validate_brand_voice), svc-012 (validate_content aggregator)
+---
