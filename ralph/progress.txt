@@ -636,3 +636,10 @@ Keep it simple. Add dated entries chronologically.
   - Prompt templates should enforce JSON-only output with explicit keys
   - Improvement prompts must include critique placeholders for deterministic formatting
 ---
+[2026-01-14 - ralph-007]
+- Implemented BaseAgent abstract class with Claude API call helper
+- Files changed: ralph/agents/base_agent.py, ralph/agents/__init__.py, tests/verify_ralph_007.py, ralph/PRD.json
+- **Learnings for future iterations:**
+  - Centralized token tracking simplifies downstream cost accounting
+  - Abstract agent_name keeps logging consistent across agent implementations
+---
