@@ -329,7 +329,7 @@
         ],
         "description": "Content generation prompts",
         "id": "ralph-006",
-        "passes": false
+        "passes": true
       },
       {
         "acceptance_criteria": [
