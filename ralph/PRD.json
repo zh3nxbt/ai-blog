@@ -390,7 +390,7 @@
         ],
         "description": "RalphLoop.generate_initial_draft()",
         "id": "ralph-011",
-        "passes": false
+        "passes": true
       }
     ],
     "services": [
