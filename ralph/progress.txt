@@ -616,3 +616,9 @@ Keep it simple. Add dated entries chronologically.
 [2026-01-14 - test-ralph-001-003]
 - Added verification script for ralph-001 package structure
 - Adjusted ralph-003 linear scaling test to allow rounding variance
+[2026-01-14 - ralph-004]
+- Added AI_SLOP_KEYWORDS constant for critique prompts
+- Files changed: ralph/prompts/critique.py, ralph/PRD.json
+- **Learnings for future iterations:**
+  - Keep prompt constants centralized in ralph/prompts for reuse
+  - Align prompt filters with quality validator keyword list
