@@ -319,7 +319,7 @@
       {
         "id": "svc-012",
         "description": "validate_content() aggregator function",
-        "passes": false,
+        "passes": true,
         "acceptance_criteria": [
           "Function validate_content(content, title) exists",
           "High-quality content (1500 words, headings, no slop) returns score >= 0.85",

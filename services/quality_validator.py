@@ -348,3 +348,70 @@ def validate_brand_voice(content: str) -> Tuple[bool, List[str], float]:
     is_valid = len(issues) == 0 and score >= 0.8
 
     return (is_valid, issues, round(score, 2))
+
+
+def validate_content(content: str, title: str) -> dict:
+    """
+    Aggregate all content validation checks into a single quality score.
+
+    Runs AI slop detection, length, structure, and brand voice validation,
+    then combines the results into an overall score. Applies hard caps for
+    AI slop and missing headings to ensure strict quality enforcement.
+
+    Args:
+        content: The full markdown content to validate.
+        title: Title of the blog post (reserved for future checks).
+
+    Returns:
+        Dict containing overall_score and detailed sub-validator results.
+    """
+    if not content:
+        return {
+            "title": title,
+            "overall_score": 0.0,
+            "ai_slop": {"has_slop": False, "found_keywords": []},
+            "length": {"is_valid": False, "word_count": 0, "score": 0.0},
+            "structure": {"is_valid": False, "issues": ["empty content"], "score": 0.0},
+            "brand_voice": {"is_valid": False, "issues": ["empty content"], "score": 0.0},
+        }
+
+    has_slop, found_keywords = detect_ai_slop(content)
+    length_valid, word_count, length_score = validate_length(content)
+    structure_valid, structure_issues, structure_score = validate_structure(content)
+    voice_valid, voice_issues, voice_score = validate_brand_voice(content)
+
+    # Weighted average for base score before hard caps.
+    base_score = (
+        (length_score * 0.35)
+        + (structure_score * 0.35)
+        + (voice_score * 0.30)
+    )
+
+    overall_score = base_score
+
+    # Hard caps for critical failures.
+    if has_slop:
+        overall_score = min(overall_score, 0.49)
+    if "missing headings" in structure_issues:
+        overall_score = min(overall_score, 0.69)
+
+    return {
+        "title": title,
+        "overall_score": round(overall_score, 2),
+        "ai_slop": {"has_slop": has_slop, "found_keywords": found_keywords},
+        "length": {
+            "is_valid": length_valid,
+            "word_count": word_count,
+            "score": length_score,
+        },
+        "structure": {
+            "is_valid": structure_valid,
+            "issues": structure_issues,
+            "score": structure_score,
+        },
+        "brand_voice": {
+            "is_valid": voice_valid,
+            "issues": voice_issues,
+            "score": voice_score,
+        },
+    }
