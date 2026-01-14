@@ -354,7 +354,7 @@
         ],
         "description": "BaseAgent token tracking",
         "id": "ralph-008",
-        "passes": false
+        "passes": true
       },
       {
         "acceptance_criteria": [
