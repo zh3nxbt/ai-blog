@@ -6,7 +6,10 @@ import json
 from typing import Any, Dict, List, Tuple
 
 from ralph_content.agents.base_agent import BaseAgent
-from ralph_content.prompts.content_generation import INITIAL_DRAFT_PROMPT
+from ralph_content.prompts.content_generation import (
+    IMPROVEMENT_PROMPT_TEMPLATE,
+    INITIAL_DRAFT_PROMPT,
+)
 
 
 class ProductMarketingAgent(BaseAgent):
@@ -44,6 +47,28 @@ class ProductMarketingAgent(BaseAgent):
 
         return title, content
 
+    def improve_content(self, content: str, critique: str | Dict[str, Any]) -> str:
+        """Improve a draft blog post using critique feedback."""
+        if not isinstance(content, str) or not content.strip():
+            raise ValueError("content must be a non-empty string")
+
+        critique_text = _format_critique(critique)
+        prompt = IMPROVEMENT_PROMPT_TEMPLATE.format(
+            critique=critique_text,
+            content_markdown=content,
+        )
+        response_text = self._call_claude(messages=[{"role": "user", "content": prompt}])
+        post_data = _parse_json_response(response_text)
+
+        improved = post_data.get("content_markdown")
+        if improved is None:
+            improved = post_data.get("content")
+
+        if not isinstance(improved, str) or not improved.strip():
+            raise ValueError("content_markdown must be a non-empty string")
+
+        return improved
+
 
 def _parse_json_response(response_text: str) -> Dict[str, Any]:
     """Parse Claude JSON response, handling optional code fences."""
@@ -72,3 +97,16 @@ def _get_required_string(payload: Dict[str, Any], key: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise ValueError(f"{key} must be a non-empty string")
     return value
+
+
+def _format_critique(critique: str | Dict[str, Any]) -> str:
+    """Normalize critique input for prompt injection."""
+    if isinstance(critique, str):
+        if not critique.strip():
+            raise ValueError("critique must be a non-empty string")
+        return critique.strip()
+    if isinstance(critique, dict):
+        if not critique:
+            raise ValueError("critique cannot be empty")
+        return json.dumps(critique, indent=2, sort_keys=True)
+    raise ValueError("critique must be a string or dict")

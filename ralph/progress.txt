@@ -674,3 +674,10 @@ Keep it simple. Add dated entries chronologically.
   - Parsing Claude JSON responses should handle optional code fences
   - Prompt templates stay centralized in ralph_content/prompts for reuse
 ---
+[2026-01-14 - ralph-010]
+- Implemented ProductMarketingAgent.improve_content() for critique-driven revisions
+- Files changed: ralph_content/agents/product_marketing.py, tests/verify_ralph_010.py, ralph/PRD.json
+- **Learnings for future iterations:**
+  - Improvement flow reuses JSON parsing helpers to keep response handling consistent
+  - Critique input accepts strings or dicts for flexible prompt formatting
+---
