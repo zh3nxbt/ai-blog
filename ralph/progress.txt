@@ -622,3 +622,9 @@ Keep it simple. Add dated entries chronologically.
 - **Learnings for future iterations:**
   - Keep prompt constants centralized in ralph/prompts for reuse
   - Align prompt filters with quality validator keyword list
+[2026-01-14 - ralph-005]
+- Added CRITIQUE_PROMPT_TEMPLATE for critique agent output
+- Files changed: ralph/prompts/critique.py, ralph/PRD.json, AGENTS.md
+- **Learnings for future iterations:**
+  - Keep critique output JSON fields explicit to enforce evaluation structure
+  - Include AI slop detection requirements directly in prompts
