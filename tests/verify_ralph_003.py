@@ -73,15 +73,16 @@ def verify_ralph_003() -> bool:
         print(f"✗ Call failed: {e}")
 
     # Test 5: Linear scaling
-    print("\n[5/5] Verifying linear scaling...")
+    print("\n[5/5] Verifying linear scaling (allow rounding)...")
     try:
         cost_small = calculate_api_cost(1000, 2000, "claude-sonnet-4-5")
         cost_double = calculate_api_cost(2000, 4000, "claude-sonnet-4-5")
-        if cost_double == cost_small * 2:
-            print("✓ Cost scales linearly with token count")
+        expected = cost_small * 2
+        if abs(cost_double - expected) <= 1:
+            print("✓ Cost scales linearly with token count (within rounding)")
             passed += 1
         else:
-            print(f"✗ Expected {cost_small * 2}, got {cost_double}")
+            print(f"✗ Expected {expected} +/- 1, got {cost_double}")
     except Exception as e:
         print(f"✗ Call failed: {e}")
 
