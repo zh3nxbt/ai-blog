@@ -579,7 +579,6 @@ Keep it simple. Add dated entries chronologically.
   - Services layer: svc-001 through svc-012 complete
   - Next: ralph-001 (agent framework) and func-001 (iterative loop)
 ---
----
 [2026-01-14 - ralph-001]
 - Created ralph package structure
 - Files added: ralph/__init__.py, ralph/core/__init__.py, ralph/agents/__init__.py, ralph/prompts/__init__.py
@@ -589,3 +588,8 @@ Keep it simple. Add dated entries chronologically.
 - **Phase 1 progress:**
   - Ralph core scaffolding started: ralph-001 ✓
   - Next: ralph-002 (TimeoutManager class)
+---
+[2026-01-14 - ralph-content]
+- Added `ralph-content/` folder to separate content-generation assets from system code
+- Added `ralph-content/README.md` to document intended usage
+- Moved `ralph/prompt.md` to `ralph-content/prompt.md`
