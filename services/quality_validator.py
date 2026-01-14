@@ -286,3 +286,65 @@ def validate_structure(content: str) -> Tuple[bool, List[str], float]:
     is_valid = has_any_headings and paragraph_count >= min_paragraphs
 
     return (is_valid, issues, round(score, 2))
+
+
+BRAND_VOICE_FORBIDDEN = [
+    "revolutionary",
+    "game-changer",
+]
+
+
+def validate_brand_voice(content: str) -> Tuple[bool, List[str], float]:
+    """
+    Validate content tone against MAS Precision Parts brand voice.
+
+    Flags overly salesy language, excessive excitement, and buzzwords that
+    conflict with the practical shop-veteran tone.
+
+    Args:
+        content: The text content to validate.
+
+    Returns:
+        Tuple of (is_valid: bool, issues: List[str], score: float)
+        - is_valid: True if content matches brand voice expectations
+        - issues: List of brand voice issues found
+        - score: Quality score between 0.0-1.0 based on tone
+
+    Examples:
+        >>> validate_brand_voice("Revolutionary tooling!!!")
+        (False, ['marketing buzzwords: revolutionary', 'excessive exclamation marks'], 0.1)
+        >>> validate_brand_voice("Surface finish affects how parts fail.")
+        (True, [], 0.9)
+    """
+    if not content:
+        return (False, ["empty content"], 0.0)
+
+    issues = []
+    score = 1.0
+
+    exclamation_count = content.count("!")
+    if exclamation_count >= 5:
+        issues.append("excessive exclamation marks")
+        score -= 0.5
+
+    content_lower = content.lower()
+    found_terms = []
+    for term in BRAND_VOICE_FORBIDDEN:
+        term_lower = term.lower()
+        if " " in term_lower:
+            pattern = re.escape(term_lower).replace(r"\ ", r"\s+")
+            if re.search(pattern, content_lower):
+                found_terms.append(term)
+        else:
+            pattern = r"\b" + re.escape(term_lower) + r"\b"
+            if re.search(pattern, content_lower):
+                found_terms.append(term)
+
+    if found_terms:
+        issues.append(f"marketing buzzwords: {', '.join(found_terms)}")
+        score -= 0.5
+
+    score = max(0.0, min(1.0, score))
+    is_valid = len(issues) == 0 and score >= 0.8
+
+    return (is_valid, issues, round(score, 2))
