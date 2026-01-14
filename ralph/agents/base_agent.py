@@ -13,11 +13,11 @@ from config import settings
 class BaseAgent(ABC):
     """Abstract base class for Claude-backed agents with token tracking."""
 
-    def __init__(self, model: str | None = None) -> None:
+    def __init__(self, model: str | None = None, client: Anthropic | None = None) -> None:
         self.model = model or settings.anthropic_model
         self.total_input_tokens = 0
         self.total_output_tokens = 0
-        self._client = Anthropic(api_key=settings.anthropic_api_key)
+        self._client = client or Anthropic(api_key=settings.anthropic_api_key)
 
     @property
     @abstractmethod

@@ -643,3 +643,10 @@ Keep it simple. Add dated entries chronologically.
   - Centralized token tracking simplifies downstream cost accounting
   - Abstract agent_name keeps logging consistent across agent implementations
 ---
+[2026-01-14 - ralph-008]
+- Verified BaseAgent token tracking with injectable Claude client
+- Files changed: ralph/agents/base_agent.py, tests/verify_ralph_008.py, ralph/PRD.json
+- **Learnings for future iterations:**
+  - Dependency injection keeps tests deterministic without network calls
+  - Token totals should accumulate across multiple API calls
+---
