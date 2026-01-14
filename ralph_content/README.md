@@ -6,4 +6,4 @@ Application code and system workflow live under `ralph/`.
 
 ## Contents
 
-- `prompt.md`: Primary content generation prompt and guidelines.
+- `prompt.md`: Primary content generation prompt and guidelines (now in `ralph/prompt.md`).
