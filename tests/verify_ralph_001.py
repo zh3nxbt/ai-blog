@@ -3,13 +3,14 @@
 
 Acceptance Criteria:
 1. `python -c 'import ralph'` exits with code 0
-2. `python -c 'import ralph.core'` exits with code 0
-3. `python -c 'import ralph.agents'` exits with code 0
-4. `python -c 'import ralph.prompts'` exits with code 0
+2. `python -c 'import ralph_content.core'` exits with code 0
+3. `python -c 'import ralph_content.agents'` exits with code 0
+4. `python -c 'import ralph_content.prompts'` exits with code 0
 5. ralph/__init__.py exists
-6. ralph/core/__init__.py exists
-7. ralph/agents/__init__.py exists
-8. ralph/prompts/__init__.py exists
+6. ralph_content/__init__.py exists
+7. ralph_content/core/__init__.py exists
+8. ralph_content/agents/__init__.py exists
+9. ralph_content/prompts/__init__.py exists
 """
 
 import sys
@@ -27,10 +28,10 @@ def verify_ralph_001() -> bool:
     print("=" * 60)
 
     passed = 0
-    total = 8
+    total = 9
 
     # Test 1: Import ralph
-    print("\n[1/8] Verifying import ralph...")
+    print("\n[1/9] Verifying import ralph...")
     try:
         import ralph  # noqa: F401
         print("✓ Successfully imported ralph")
@@ -38,64 +39,72 @@ def verify_ralph_001() -> bool:
     except ImportError as e:
         print(f"✗ Import failed: {e}")
 
-    # Test 2: Import ralph.core
-    print("\n[2/8] Verifying import ralph.core...")
+    # Test 2: Import ralph_content.core
+    print("\n[2/9] Verifying import ralph_content.core...")
     try:
-        import ralph.core  # noqa: F401
-        print("✓ Successfully imported ralph.core")
+        import ralph_content.core  # noqa: F401
+        print("✓ Successfully imported ralph_content.core")
         passed += 1
     except ImportError as e:
         print(f"✗ Import failed: {e}")
 
-    # Test 3: Import ralph.agents
-    print("\n[3/8] Verifying import ralph.agents...")
+    # Test 3: Import ralph_content.agents
+    print("\n[3/9] Verifying import ralph_content.agents...")
     try:
-        import ralph.agents  # noqa: F401
-        print("✓ Successfully imported ralph.agents")
+        import ralph_content.agents  # noqa: F401
+        print("✓ Successfully imported ralph_content.agents")
         passed += 1
     except ImportError as e:
         print(f"✗ Import failed: {e}")
 
-    # Test 4: Import ralph.prompts
-    print("\n[4/8] Verifying import ralph.prompts...")
+    # Test 4: Import ralph_content.prompts
+    print("\n[4/9] Verifying import ralph_content.prompts...")
     try:
-        import ralph.prompts  # noqa: F401
-        print("✓ Successfully imported ralph.prompts")
+        import ralph_content.prompts  # noqa: F401
+        print("✓ Successfully imported ralph_content.prompts")
         passed += 1
     except ImportError as e:
         print(f"✗ Import failed: {e}")
 
     # Test 5: ralph/__init__.py exists
-    print("\n[5/8] Verifying ralph/__init__.py exists...")
+    print("\n[5/9] Verifying ralph/__init__.py exists...")
     if (project_root / "ralph" / "__init__.py").exists():
         print("✓ ralph/__init__.py exists")
         passed += 1
     else:
         print("✗ ralph/__init__.py missing")
 
-    # Test 6: ralph/core/__init__.py exists
-    print("\n[6/8] Verifying ralph/core/__init__.py exists...")
-    if (project_root / "ralph" / "core" / "__init__.py").exists():
-        print("✓ ralph/core/__init__.py exists")
+    # Test 6: ralph_content/__init__.py exists
+    print("\n[6/9] Verifying ralph_content/__init__.py exists...")
+    if (project_root / "ralph_content" / "__init__.py").exists():
+        print("✓ ralph_content/__init__.py exists")
         passed += 1
     else:
-        print("✗ ralph/core/__init__.py missing")
+        print("✗ ralph_content/__init__.py missing")
 
-    # Test 7: ralph/agents/__init__.py exists
-    print("\n[7/8] Verifying ralph/agents/__init__.py exists...")
-    if (project_root / "ralph" / "agents" / "__init__.py").exists():
-        print("✓ ralph/agents/__init__.py exists")
+    # Test 7: ralph_content/core/__init__.py exists
+    print("\n[7/9] Verifying ralph_content/core/__init__.py exists...")
+    if (project_root / "ralph_content" / "core" / "__init__.py").exists():
+        print("✓ ralph_content/core/__init__.py exists")
         passed += 1
     else:
-        print("✗ ralph/agents/__init__.py missing")
+        print("✗ ralph_content/core/__init__.py missing")
 
-    # Test 8: ralph/prompts/__init__.py exists
-    print("\n[8/8] Verifying ralph/prompts/__init__.py exists...")
-    if (project_root / "ralph" / "prompts" / "__init__.py").exists():
-        print("✓ ralph/prompts/__init__.py exists")
+    # Test 8: ralph_content/agents/__init__.py exists
+    print("\n[8/9] Verifying ralph_content/agents/__init__.py exists...")
+    if (project_root / "ralph_content" / "agents" / "__init__.py").exists():
+        print("✓ ralph_content/agents/__init__.py exists")
         passed += 1
     else:
-        print("✗ ralph/prompts/__init__.py missing")
+        print("✗ ralph_content/agents/__init__.py missing")
+
+    # Test 9: ralph_content/prompts/__init__.py exists
+    print("\n[9/9] Verifying ralph_content/prompts/__init__.py exists...")
+    if (project_root / "ralph_content" / "prompts" / "__init__.py").exists():
+        print("✓ ralph_content/prompts/__init__.py exists")
+        passed += 1
+    else:
+        print("✗ ralph_content/prompts/__init__.py missing")
 
     # Summary
     print("\n" + "=" * 60)

@@ -589,10 +589,10 @@ Keep it simple. Add dated entries chronologically.
   - Ralph core scaffolding started: ralph-001 ✓
   - Next: ralph-002 (TimeoutManager class)
 ---
-[2026-01-14 - ralph-content]
-- Added `ralph-content/` folder to separate content-generation assets from system code
-- Added `ralph-content/README.md` to document intended usage
-- Moved `ralph/prompt.md` to `ralph-content/prompt.md`
+[2026-01-14 - ralph_content]
+- Added `ralph_content/` folder to separate content-generation assets from system code
+- Added `ralph_content/README.md` to document intended usage
+- Moved `ralph/prompt.md` to `ralph_content/prompt.md`
 [2026-01-14 - ralph-002]
 - Implemented TimeoutManager class for runtime guardrails
 - Files added: ralph/core/timeout_manager.py, tests/verify_ralph_002.py
@@ -645,8 +645,21 @@ Keep it simple. Add dated entries chronologically.
 ---
 [2026-01-14 - ralph-008]
 - Verified BaseAgent token tracking with injectable Claude client
-- Files changed: ralph/agents/base_agent.py, tests/verify_ralph_008.py, ralph/PRD.json
+- Files changed: ralph_content/agents/base_agent.py, tests/verify_ralph_008.py, ralph/PRD.json
 - **Learnings for future iterations:**
   - Dependency injection keeps tests deterministic without network calls
   - Token totals should accumulate across multiple API calls
+---
+[2026-01-14 - ralph-structure]
+- Moved ralph-001 through ralph-007 modules into `ralph_content/` package
+- Files changed: moved ralph/{agents,core,prompts} to ralph_content, updated imports/tests/docs
+- **Learnings for future iterations:**
+  - Keep app entrypoints in `ralph/` and shared content logic in `ralph_content/`
+  - Package names should avoid hyphens to stay importable
+---
+[2026-01-14 - ralph-004-005]
+- Added verification scripts for ralph-004 and ralph-005 acceptance criteria
+- Files changed: tests/verify_ralph_004.py, tests/verify_ralph_005.py
+- **Learnings for future iterations:**
+  - Keep verification coverage aligned with PRD acceptance criteria
 ---

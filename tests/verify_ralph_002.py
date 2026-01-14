@@ -2,7 +2,7 @@
 """Verification script for ralph-002: TimeoutManager class.
 
 Acceptance Criteria:
-1. `python -c 'from ralph.core.timeout_manager import TimeoutManager'` exits with code 0
+1. `python -c 'from ralph_content.core.timeout_manager import TimeoutManager'` exits with code 0
 2. TimeoutManager(timeout_minutes=30, cost_limit_cents=100) instantiates
 3. is_timeout_exceeded() returns False immediately after creation
 4. is_cost_limit_exceeded(50) returns False when limit is 100
@@ -29,7 +29,7 @@ def verify_ralph_002() -> bool:
     # Test 1: Import test
     print("\n[1/5] Verifying import works...")
     try:
-        from ralph.core.timeout_manager import TimeoutManager
+        from ralph_content.core.timeout_manager import TimeoutManager
         print("✓ Successfully imported TimeoutManager")
         passed += 1
     except ImportError as e:

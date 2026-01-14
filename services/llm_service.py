@@ -5,7 +5,7 @@ from typing import Dict, Any, List, Tuple
 from anthropic import Anthropic
 
 from config import settings
-from ralph.core.api_cost import calculate_api_cost
+from ralph_content.core.api_cost import calculate_api_cost
 
 
 def generate_blog_post(rss_items: List[Dict[str, Any]]) -> Tuple[Dict[str, Any], int, int]:
@@ -127,4 +127,3 @@ Do not include any text before or after the JSON object."""
             raise ValueError(f"Key '{key}' must be a non-empty string")
 
     return post_data, input_tokens, output_tokens
-

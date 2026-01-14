@@ -64,7 +64,7 @@ def verify_ralph_008() -> bool:
     total = 5
 
     try:
-        from ralph.agents.base_agent import BaseAgent
+        from ralph_content.agents.base_agent import BaseAgent
     except ImportError as e:
         print(f"✗ Import failed: {e}")
         return False
