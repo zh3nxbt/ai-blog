@@ -663,3 +663,7 @@ Keep it simple. Add dated entries chronologically.
 - **Learnings for future iterations:**
   - Keep verification coverage aligned with PRD acceptance criteria
 ---
+[2026-01-14 - ralph-content-prompt]
+- Moved `ralph_content/prompt.md` back to `ralph/prompt.md` per updated layout preference
+- Files changed: ralph/prompt.md, ralph_content/README.md, ralph/progress.txt
+---
