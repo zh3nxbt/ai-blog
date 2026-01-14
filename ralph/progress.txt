@@ -628,3 +628,11 @@ Keep it simple. Add dated entries chronologically.
 - **Learnings for future iterations:**
   - Keep critique output JSON fields explicit to enforce evaluation structure
   - Include AI slop detection requirements directly in prompts
+---
+[2026-01-14 - ralph-006]
+- Added content generation prompt templates for initial drafts and improvements
+- Files changed: ralph/prompts/content_generation.py, tests/verify_ralph_006.py, ralph/PRD.json
+- **Learnings for future iterations:**
+  - Prompt templates should enforce JSON-only output with explicit keys
+  - Improvement prompts must include critique placeholders for deterministic formatting
+---
