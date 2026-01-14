@@ -603,3 +603,16 @@ Keep it simple. Add dated entries chronologically.
 - **Phase 1 progress:**
   - Ralph core scaffolding: ralph-001 ✓, ralph-002 ✓
   - Next: ralph-003 (RalphRunContext dataclass)
+[2026-01-14 - ralph-003]
+- Implemented calculate_api_cost() in ralph core utilities
+- Files added: ralph/core/api_cost.py, tests/verify_ralph_003.py
+- Files updated: ralph/core/__init__.py, services/llm_service.py, ralph/PRD.json
+- **Learnings for future iterations:**
+  - Centralize shared utilities in ralph/core to avoid service duplication
+  - Keep pricing logic consistent across spike and production paths
+- **Phase 1 progress:**
+  - Ralph core scaffolding: ralph-001 ✓, ralph-002 ✓, ralph-003 ✓
+  - Next: ralph-004 (AI slop keywords constant)
+[2026-01-14 - test-ralph-001-003]
+- Added verification script for ralph-001 package structure
+- Adjusted ralph-003 linear scaling test to allow rounding variance
