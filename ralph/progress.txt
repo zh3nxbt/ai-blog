@@ -683,7 +683,7 @@ Keep it simple. Add dated entries chronologically.
 ---
 [2026-01-14 - ralph-011]
 - Implemented RalphLoop.generate_initial_draft() for initial draft creation
-- Files changed: ralph/ralph_loop.py, tests/verify_ralph_011.py, ralph/PRD.json
+- Files changed: ralph_content/ralph_loop.py, ralph/ralph_loop.py, tests/verify_ralph_011.py, ralph/PRD.json
 - **Learnings for future iterations:**
   - Dependency injection keeps loop logic testable without Supabase or network calls
   - Initial draft saves iteration 1 before quality scoring starts
