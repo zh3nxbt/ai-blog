@@ -263,9 +263,10 @@
           "`python -c 'import ralph_content.agents'` exits with code 0",
           "`python -c 'import ralph_content.prompts'` exits with code 0",
           "ralph/__init__.py exists",
-          "ralph/core/__init__.py exists",
-          "ralph/agents/__init__.py exists",
-          "ralph/prompts/__init__.py exists"
+          "ralph_content/__init__.py exists",
+          "ralph_content/core/__init__.py exists",
+          "ralph_content/agents/__init__.py exists",
+          "ralph_content/prompts/__init__.py exists"
         ],
         "description": "ralph package structure",
         "id": "ralph-001",

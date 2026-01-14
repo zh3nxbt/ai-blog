@@ -657,3 +657,9 @@ Keep it simple. Add dated entries chronologically.
   - Keep app entrypoints in `ralph/` and shared content logic in `ralph_content/`
   - Package names should avoid hyphens to stay importable
 ---
+[2026-01-14 - ralph-004-005]
+- Added verification scripts for ralph-004 and ralph-005 acceptance criteria
+- Files changed: tests/verify_ralph_004.py, tests/verify_ralph_005.py
+- **Learnings for future iterations:**
+  - Keep verification coverage aligned with PRD acceptance criteria
+---
