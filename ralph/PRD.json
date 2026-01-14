@@ -308,7 +308,7 @@
       {
         "id": "svc-011",
         "description": "validate_brand_voice() function",
-        "passes": false,
+        "passes": true,
         "acceptance_criteria": [
           "Function validate_brand_voice(content) exists",
           "Content with 5+ exclamation marks returns (False, issues, low_score)",
