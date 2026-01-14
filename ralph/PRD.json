@@ -367,7 +367,7 @@
         ],
         "description": "ProductMarketingAgent.generate_content()",
         "id": "ralph-009",
-        "passes": false
+        "passes": true
       },
       {
         "acceptance_criteria": [
