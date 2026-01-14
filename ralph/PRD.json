@@ -281,7 +281,7 @@
         ],
         "description": "TimeoutManager class",
         "id": "ralph-002",
-        "passes": false
+        "passes": true
       },
       {
         "acceptance_criteria": [

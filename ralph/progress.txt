@@ -593,3 +593,13 @@ Keep it simple. Add dated entries chronologically.
 - Added `ralph-content/` folder to separate content-generation assets from system code
 - Added `ralph-content/README.md` to document intended usage
 - Moved `ralph/prompt.md` to `ralph-content/prompt.md`
+[2026-01-14 - ralph-002]
+- Implemented TimeoutManager class for runtime guardrails
+- Files added: ralph/core/timeout_manager.py, tests/verify_ralph_002.py
+- Files updated: ralph/core/__init__.py, ralph/PRD.json
+- **Learnings for future iterations:**
+  - Use monotonic time to avoid wall-clock drift in timeout checks
+  - Validate input limits to fail loudly on invalid configuration
+- **Phase 1 progress:**
+  - Ralph core scaffolding: ralph-001 ✓, ralph-002 ✓
+  - Next: ralph-003 (RalphRunContext dataclass)
