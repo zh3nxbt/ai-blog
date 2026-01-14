@@ -317,7 +317,7 @@
         ],
         "description": "CRITIQUE_PROMPT_TEMPLATE",
         "id": "ralph-005",
-        "passes": false
+        "passes": true
       },
       {
         "acceptance_criteria": [

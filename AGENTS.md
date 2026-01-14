@@ -230,7 +230,7 @@ updated_at       Timestamp (nullable)
 
    Closes #db-001
 
-   Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
+   Co-Authored-By: Codex <noreply@openai.com>"
    ```
 
 3. **Push and create PR** - Use `gh` CLI for pull requests:
