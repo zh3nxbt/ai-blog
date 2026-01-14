@@ -154,18 +154,18 @@ python worker.py --run-once            # Test worker
   - Vary sentence structure (not every paragraph needs 3 bullet points)
   - Lead with the interesting detail, not context-setting
   - Use specific numbers and examples
-  - No formulaic "Introduction -> 3 points -> Conclusion" structure every time
+  - No formulaic "Introduction → 3 points → Conclusion" structure every time
 
 **Anti-patterns to reject:**
 ```
-BAD:  "In the ever-evolving landscape of manufacturing..."
-GOOD: "Carbide tooling costs dropped 15% last quarter."
+❌ "In the ever-evolving landscape of manufacturing..."
+✅ "Carbide tooling costs dropped 15% last quarter."
 
-BAD:  "Let's delve into the intricacies of tolerance stacking..."
-GOOD: "Tolerance stacking breaks projects. Here's why."
+❌ "Let's delve into the intricacies of tolerance stacking..."
+✅ "Tolerance stacking breaks projects. Here's why."
 
-BAD:  "It's important to note that surface finish impacts..."
-GOOD: "Surface finish isn't cosmetic - it changes how parts fail."
+❌ "It's important to note that surface finish impacts..."
+✅ "Surface finish isn't cosmetic—it changes how parts fail."
 ```
 
 **Safety:**
