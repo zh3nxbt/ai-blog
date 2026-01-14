@@ -296,7 +296,7 @@
       {
         "id": "svc-010",
         "description": "validate_structure() function",
-        "passes": false,
+        "passes": true,
         "acceptance_criteria": [
           "Function validate_structure(content) exists",
           "Content without headings returns (False, issues, score < 0.5)",

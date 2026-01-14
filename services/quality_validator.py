@@ -181,3 +181,108 @@ def validate_length(content: str) -> Tuple[bool, int, float]:
         score = max(0.1, 0.4 - (excess / 2000) * 0.3)
 
     return (is_valid, word_count, round(score, 2))
+
+
+def validate_structure(content: str) -> Tuple[bool, List[str], float]:
+    """
+    Validate content structure including headings and paragraph breaks.
+
+    Checks if content has proper markdown structure with headings (## and ###)
+    and adequate paragraph breaks for readability.
+
+    Args:
+        content: The markdown text content to validate.
+
+    Returns:
+        Tuple of (is_valid: bool, issues: List[str], score: float)
+        - is_valid: True if content has acceptable structure
+        - issues: List of specific structural issues found
+        - score: Quality score between 0.0-1.0 based on structure
+
+    Structure checks:
+        - Presence of H2 (##) headings
+        - Presence of H3 (###) headings (optional but adds to score)
+        - Adequate paragraph breaks (double newlines)
+        - Minimum paragraph count for readability
+
+    Examples:
+        >>> validate_structure("No headings here.\\n\\nJust paragraphs.")
+        (False, ['missing headings'], 0.3)
+        >>> validate_structure("## Title\\n\\nContent here.\\n\\n### Section\\n\\nMore content.")
+        (True, [], 0.9)
+    """
+    if not content:
+        return (False, ["empty content"], 0.0)
+
+    issues = []
+    score = 1.0
+
+    # Check for H2 headings (##)
+    h2_pattern = r"^##\s+.+$"
+    h2_matches = re.findall(h2_pattern, content, re.MULTILINE)
+    has_h2 = len(h2_matches) > 0
+
+    # Check for H3 headings (###)
+    h3_pattern = r"^###\s+.+$"
+    h3_matches = re.findall(h3_pattern, content, re.MULTILINE)
+    has_h3 = len(h3_matches) > 0
+
+    # Check for any markdown headings (including # H1)
+    any_heading_pattern = r"^#{1,6}\s+.+$"
+    any_heading_matches = re.findall(any_heading_pattern, content, re.MULTILINE)
+    has_any_headings = len(any_heading_matches) > 0
+
+    # Check for paragraph breaks (double newlines or content blocks separated by blank lines)
+    paragraphs = [p.strip() for p in re.split(r"\n\s*\n", content) if p.strip()]
+    paragraph_count = len(paragraphs)
+
+    # Calculate score based on structure elements
+
+    # No headings at all is a major issue
+    if not has_any_headings:
+        issues.append("missing headings")
+        score -= 0.55
+
+    # Having H2 headings is important for structure
+    if not has_h2 and has_any_headings:
+        # Has some headings but not H2 - minor issue
+        issues.append("no H2 (##) headings")
+        score -= 0.2
+
+    # Having H3 headings adds to score (bonus for good sub-structure)
+    if has_h2 and has_h3:
+        score += 0.05  # Small bonus for good hierarchy
+    elif has_h2 and not has_h3:
+        # H2 only is fine, no penalty
+        pass
+
+    # Check heading count for longer content
+    total_headings = len(any_heading_matches)
+    if paragraph_count > 5 and total_headings < 2:
+        issues.append("insufficient headings for content length")
+        score -= 0.15
+
+    # Check for adequate paragraph breaks
+    min_paragraphs = 3
+    if paragraph_count < min_paragraphs:
+        issues.append("insufficient paragraph breaks")
+        score -= 0.2
+
+    # Bonus for good paragraph structure (5-15 paragraphs is ideal for blog posts)
+    if 5 <= paragraph_count <= 15:
+        score += 0.05
+
+    # Check for very long paragraphs (walls of text)
+    long_paragraph_threshold = 500  # characters
+    long_paragraphs = [p for p in paragraphs if len(p) > long_paragraph_threshold]
+    if len(long_paragraphs) > 2:
+        issues.append("contains very long paragraphs")
+        score -= 0.1
+
+    # Ensure score stays within bounds
+    score = max(0.0, min(1.0, score))
+
+    # Determine validity: must have headings and adequate paragraphs
+    is_valid = has_any_headings and paragraph_count >= min_paragraphs
+
+    return (is_valid, issues, round(score, 2))

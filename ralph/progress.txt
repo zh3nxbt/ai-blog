@@ -532,4 +532,24 @@ Keep it simple. Add dated entries chronologically.
 - **Phase 1 progress:**
   - Services layer: svc-001 ✓, svc-002 ✓, svc-003 ✓, svc-004 ✓, svc-005 ✓, svc-006 ✓, svc-007 ✓, svc-008 ✓, svc-009 ✓
   - Next: svc-010 (validate_structure), svc-011 (validate_brand_voice), svc-012 (validate_content aggregator)
+[2026-01-14 - svc-010]
+- Implemented validate_structure() function in services/quality_validator.py
+- Files changed: services/quality_validator.py, tests/verify_svc_010.py (new), ralph/PRD.json
+- **Learnings for future iterations:**
+  - Function validates markdown content structure (headings and paragraph breaks)
+  - Checks for H2 (##) and H3 (###) headings using regex with MULTILINE flag
+  - Paragraph detection via splitting on double newlines (\n\s*\n)
+  - Score calculation uses penalty-based approach starting from 1.0
+  - Missing headings: -0.55 penalty (ensures score < 0.5)
+  - No H2 headings: -0.2 penalty (when other headings exist)
+  - Insufficient paragraph breaks (< 3): -0.2 penalty
+  - Very long paragraphs (> 500 chars, > 2 count): -0.1 penalty
+  - Bonus for good paragraph count (5-15): +0.05
+  - Bonus for H2 + H3 hierarchy: +0.05
+  - Returns tuple (is_valid: bool, issues: List[str], score: float)
+  - All 5 acceptance criteria verified and passing
+  - Pattern: pure function, regex-based structure analysis, consistent tuple return type
+- **Phase 1 progress:**
+  - Services layer: svc-001 ✓, svc-002 ✓, svc-003 ✓, svc-004 ✓, svc-005 ✓, svc-006 ✓, svc-007 ✓, svc-008 ✓, svc-009 ✓, svc-010 ✓
+  - Next: svc-011 (validate_brand_voice), svc-012 (validate_content aggregator)
 ---
