@@ -342,7 +342,7 @@
         ],
         "description": "BaseAgent abstract class",
         "id": "ralph-007",
-        "passes": false
+        "passes": true
       },
       {
         "acceptance_criteria": [
