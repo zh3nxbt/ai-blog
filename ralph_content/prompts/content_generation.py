@@ -29,12 +29,12 @@ Your task: Write a single blog post that synthesizes insights from the following
 
 **Output format:**
 Return ONLY a JSON object with these exact keys:
-{
+{{
   "title": "Post title (5-10 words, engaging)",
   "excerpt": "Brief summary (2-3 sentences, 150-200 chars)",
   "content_markdown": "Full blog post content in markdown format",
   "source_urls": ["https://example.com/source-1", "https://example.com/source-2"]
-}
+}}
 
 Do not include any text before or after the JSON object."""
 
@@ -59,11 +59,11 @@ Your task: Improve the draft using the critique below. Address the issues direct
 
 **Output format:**
 Return ONLY a JSON object with these exact keys:
-{
+{{
   "title": "Improved title (5-10 words, engaging)",
   "excerpt": "Brief summary (2-3 sentences, 150-200 chars)",
   "content_markdown": "Improved blog post content in markdown format",
   "source_urls": ["https://example.com/source-1", "https://example.com/source-2"]
-}
+}}
 
 Do not include any text before or after the JSON object."""
