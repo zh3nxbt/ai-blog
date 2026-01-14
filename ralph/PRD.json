@@ -305,7 +305,7 @@
         ],
         "description": "AI slop keywords constant",
         "id": "ralph-004",
-        "passes": false
+        "passes": true
       },
       {
         "acceptance_criteria": [
