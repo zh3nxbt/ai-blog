@@ -858,3 +858,18 @@ Keep it simple. Add dated entries chronologically.
   - Testing: test-001 ✓, test-002 ✓
   - Next: test-003 through test-006
 ---
+[2026-01-15 - test-003]
+- Verified AI slop detection penalties and critique fields
+- Files changed: tests/verify_test_003.py (new), ralph/PRD.json
+- **Verification confirms:**
+  - validate_content caps score below 0.50 when 'delve' is present
+  - validate_content caps score below 0.50 when 'leverage' is present
+  - Critique output includes ai_slop_detected=true when slop appears
+  - Critique output lists detected forbidden keywords
+- **Learnings for future iterations:**
+  - Reusing detect_ai_slop in tests keeps slop detection consistent with production logic
+  - Scoring caps for AI slop stay isolated from other validator penalties
+- **Phase 1 progress:**
+  - Testing: test-001 ✓, test-002 ✓, test-003 ✓
+  - Next: test-004 through test-006
+---
