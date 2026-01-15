@@ -976,3 +976,11 @@ Keep it simple. Add dated entries chronologically.
   - Supabase client can validate key constraints with insert/duplicate attempts
   - Returned row fields provide a practical proxy for column presence checks
 ---
+---
+[2026-01-16 - mix-003]
+- Implemented non-RSS source registration and ingestion service
+- Files changed: services/topic_source_service.py, tests/verify_mix_003.py, ralph/PRD.json
+- **Sources registered:** USPTO News (gov), American Wood Council (standards), Autodesk News (vendor)
+- **Learnings for future iterations:**
+  - Store feed URLs in source notes to keep configuration explicit
+  - Ingestion handles per-source failures while continuing other sources
