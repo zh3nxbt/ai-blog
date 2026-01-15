@@ -18,6 +18,8 @@ Your task: Write a single blog post that synthesizes insights from the following
 8. Short sentences. Active voice. No hedging.
 9. Summarize sources; do not copy or quote large blocks
 10. Include a short "Sources" section with links
+11. If sources are unrelated, choose a single coherent theme and ignore unrelated items
+12. Only cite sources you actually used
 
 **CRITICAL - Avoid AI slop language:**
 - NEVER use: delve, unveil, landscape, realm, unlock, leverage, utilize, robust, streamline, cutting-edge,
@@ -56,6 +58,8 @@ Your task: Improve the draft using the critique below. Address the issues direct
 4. Keep facts grounded in the provided sources
 5. Remove any AI slop language
 6. Preserve or improve clarity and flow
+7. If sources feel unrelated, keep one coherent theme and drop unrelated material
+8. Only cite sources you actually used
 
 **Output format:**
 Return ONLY a JSON object with these exact keys:
