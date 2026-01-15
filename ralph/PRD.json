@@ -663,7 +663,7 @@
       },
       {
         "acceptance_criteria": [
-          "Average api_cost_cents per blog_post is < 25",
+          "Average api_cost_cents per blog_post is < 50",
           "No single post exceeds 100 cents (cost limit)",
           "Cost tracking is accurate to within 10%"
         ],

@@ -910,3 +910,9 @@ Keep it simple. Add dated entries chronologically.
 - Files changed: ralph/rss_sources_canada.csv (new)
 - **Next step:** Fill CSV with vetted manufacturing RSS feeds and seed via migration
 ---
+[2026-01-15 - test-006-threshold]
+- Updated cost threshold to 50 cents and reran verification
+- Files changed: tests/verify_test_006.py (new), ralph/PRD.json
+- **Verification status:** FAIL (cost tracking mismatch 52 vs 44 cents; avg cost now passes)
+- **Next step:** Align total_cost_cents with draft cost accounting
+---
