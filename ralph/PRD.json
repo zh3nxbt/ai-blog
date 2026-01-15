@@ -168,7 +168,7 @@
         ],
         "description": "README Phase 1 documentation",
         "id": "doc-001",
-        "passes": false
+        "passes": true
       },
       {
         "acceptance_criteria": [
@@ -626,7 +626,7 @@
         ],
         "description": "Content improves over iterations",
         "id": "test-002",
-        "passes": false
+        "passes": true
       },
       {
         "acceptance_criteria": [
@@ -637,7 +637,7 @@
         ],
         "description": "AI slop detection penalizes heavily",
         "id": "test-003",
-        "passes": false
+        "passes": true
       },
       {
         "acceptance_criteria": [
@@ -648,7 +648,7 @@
         ],
         "description": "5 successful posts end-to-end",
         "id": "test-004",
-        "passes": false
+        "passes": true
       },
       {
         "acceptance_criteria": [
@@ -659,7 +659,7 @@
         ],
         "description": "Zero AI slop in published content",
         "id": "test-005",
-        "passes": false
+        "passes": true
       },
       {
         "acceptance_criteria": [

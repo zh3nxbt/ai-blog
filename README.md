@@ -34,8 +34,38 @@ python worker.py --run-once
 Copy `.env.example` to `.env` and fill in:
 
 - `SUPABASE_URL` - Your Supabase project URL
-- `SUPABASE_KEY` - Supabase anon or service key
+- `SUPABASE_KEY` - Supabase anon key (frontend/public use)
+- `SUPABASE_SECRET` - Supabase service role key (backend use, bypasses RLS)
 - `ANTHROPIC_API_KEY` - Anthropic API key for Claude
+- `RALPH_TIMEOUT_MINUTES` - Max runtime per generation (minutes)
+- `RALPH_QUALITY_THRESHOLD` - Quality score to publish (0.0-1.0)
+- `RALPH_COST_LIMIT_CENTS` - Max cost per run (cents)
+
+## Phase 1 - Core Ralph Loop
+
+### Database Setup
+
+Follow the migration steps in `migrations/README.md` to apply schema and seed data
+before running Ralph. The expected tables are:
+
+- `blog_posts`
+- `blog_content_drafts`
+- `blog_agent_activity`
+- `blog_rss_sources`
+- `blog_rss_items`
+
+### Manual Run
+
+```bash
+python -m ralph.ralph_loop
+```
+
+Expected output (example):
+
+```text
+RalphLoop config: threshold=0.85 timeout_minutes=30 cost_limit_cents=100
+RalphLoop result: status=published quality=0.87 iterations=3 cost_cents=18 blog_post_id=...
+```
 
 ## Project Structure
 

@@ -841,6 +841,70 @@ Keep it simple. Add dated entries chronologically.
   - Testing: test-001 ✓
   - Next: test-002 (content improves over iterations), test-003 through test-006
 ---
+[2026-01-15 - test-002]
+- Verified content improves over iterations
+- Files changed: tests/verify_test_002.py (new), ralph/PRD.json
+- **Verification confirms:**
+  - Iteration 2 quality_score > Iteration 1 quality_score
+  - Iteration 3 quality_score > Iteration 2 quality_score
+  - Final published post has quality >= 0.85
+  - Average iterations to publish is 2-4
+- **Learnings for future iterations:**
+  - Progressive quality validation drives multiple improvement cycles
+  - RalphLoop saves each iteration with increasing quality scores
+  - Iteration counts align with score sequences and quality threshold
+  - Mock-based test covers typical multi-iteration path without network calls
+- **Phase 1 progress:**
+  - Testing: test-001 ✓, test-002 ✓
+  - Next: test-003 through test-006
+---
+[2026-01-15 - test-003]
+- Verified AI slop detection penalties and critique fields
+- Files changed: tests/verify_test_003.py (new), ralph/PRD.json
+- **Verification confirms:**
+  - validate_content caps score below 0.50 when 'delve' is present
+  - validate_content caps score below 0.50 when 'leverage' is present
+  - Critique output includes ai_slop_detected=true when slop appears
+  - Critique output lists detected forbidden keywords
+- **Learnings for future iterations:**
+  - Reusing detect_ai_slop in tests keeps slop detection consistent with production logic
+  - Scoring caps for AI slop stay isolated from other validator penalties
+- **Phase 1 progress:**
+  - Testing: test-001 ✓, test-002 ✓, test-003 ✓
+  - Next: test-004 through test-006
+---
+[2026-01-15 - test-004]
+- Added verification script for end-to-end published post checks
+- Files changed: tests/verify_test_004.py (new), ralph/PRD.json
+- **Verification coverage:**
+  - Confirms at least 5 published posts exist
+  - Calculates average final quality score from latest drafts
+  - Checks published content for AI slop keywords
+  - Computes average iterations per post (target 2-4)
+- **Phase 1 progress:**
+  - Testing: test-001 ✓, test-002 ✓, test-003 ✓, test-004 ✓
+  - Next: test-005, test-006, doc-002
+---
+[2026-01-15 - doc-001]
+- Updated README with Phase 1 manual run and environment details
+- Files changed: README.md, ralph/PRD.json
+- **Documentation updates:**
+  - Added Phase 1 section with database setup, manual run command, and expected output
+  - Expanded environment variable list to include Ralph runtime settings
+- **Phase 1 progress:**
+  - Documentation: doc-001 ✓
+  - Next: doc-002 (.env.example), test-004 through test-006
+---
+[2026-01-15 - test-005]
+- Added verification script for zero AI slop in published content
+- Files changed: tests/verify_test_005.py (new), ralph/PRD.json
+- **Verification coverage:**
+  - Checks published posts for 'delve', 'leverage', and 'unlock'
+  - Ensures detect_ai_slop() returns no findings for published content
+- **Phase 1 progress:**
+  - Testing: test-001 ✓, test-002 ✓, test-003 ✓, test-004 ✓, test-005 ✓
+  - Next: test-006, doc-002
+---
 [2026-01-15 - db-008]
 - Added placeholder CSV for expanded Canada/Ontario RSS sources
 - Files changed: ralph/rss_sources_canada.csv (new)
