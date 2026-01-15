@@ -27,9 +27,10 @@ PYTHONPATH=/workspace/ai-blog python migrations/verify_db_002.py
 - `006_create_database_indexes.sql` - Performance indexes
 - `007_seed_manufacturing_rss_sources.sql` - Initial RSS feed data
 - `008_create_blog_topic_sources_items.sql` - Unified topic source tables
+- `009_seed_evergreen_topics.sql` - Evergreen topic bank seed data
 
 ### Application Scripts
-- `apply_db_002.py` through `apply_db_008.py` - Apply migrations automatically
+- `apply_db_002.py` through `apply_db_009.py` - Apply migrations automatically
 - `db_utils.py` - Shared connection and migration utilities
 
 ### Verification Scripts

@@ -960,6 +960,13 @@ Keep it simple. Add dated entries chronologically.
 - Updated verification to use SUPABASE_SECRET when available to bypass RLS
 - mix-001 verification now passes all 7/7 acceptance checks
 ---
+[2026-01-15 - mix-002]
+- Seeded evergreen topic bank with 25 manufacturing topics
+- Files changed: migrations/009_seed_evergreen_topics.sql, migrations/apply_db_009.py, migrations/verify_db_009.py, migrations/README.md, ralph/PRD.json
+- **Learnings for future iterations:**
+  - Seed scripts should be idempotent with "insert if missing" patterns
+  - Evergreen topics can stay URL-less to avoid brittle source dependencies
+  - Keep summaries concise to support prompt assembly later
 ---
 [2026-01-15 - db-001]
 - Added verification script for blog_posts schema after schema changes
