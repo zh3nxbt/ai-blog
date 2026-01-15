@@ -624,7 +624,7 @@
         ],
         "description": "AI slop detection penalizes heavily",
         "id": "test-003",
-        "passes": false
+        "passes": true
       },
       {
         "acceptance_criteria": [
