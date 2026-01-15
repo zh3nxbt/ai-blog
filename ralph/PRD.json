@@ -205,7 +205,7 @@
         ],
         "description": "RalphLoop saves draft on timeout",
         "id": "func-003",
-        "passes": false
+        "passes": true
       },
       {
         "acceptance_criteria": [
