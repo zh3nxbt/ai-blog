@@ -34,6 +34,7 @@ PYTHONPATH=/workspace/ai-blog python migrations/verify_db_002.py
 - `db_utils.py` - Shared connection and migration utilities
 
 ### Verification Scripts
+- `verify_db_001.py` - blog_posts schema verification
 - `verify_db_002.py` through `verify_db_009.py` - Comprehensive acceptance tests
 
 ## How Migrations Work
