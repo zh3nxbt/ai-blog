@@ -602,7 +602,7 @@
         ],
         "description": "High-quality first draft publishes immediately",
         "id": "test-001",
-        "passes": false
+        "passes": true
       },
       {
         "acceptance_criteria": [
