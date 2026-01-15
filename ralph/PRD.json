@@ -304,7 +304,7 @@
         ],
         "description": "Register and ingest non-RSS stable sources",
         "id": "mix-003",
-        "passes": false
+        "passes": true
       },
       {
         "acceptance_criteria": [
