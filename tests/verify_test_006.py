@@ -80,8 +80,8 @@ def _latest_activity_by_post(activities: List[dict]) -> Dict[str, dict]:
     return latest
 
 
-def _max_draft_cost_by_post(drafts: List[dict]) -> Dict[str, int]:
-    """Return max api_cost_cents per blog post from drafts."""
+def _sum_draft_cost_by_post(drafts: List[dict]) -> Dict[str, int]:
+    """Return summed api_cost_cents per blog post from drafts."""
     costs: Dict[str, int] = {}
     for draft in drafts:
         post_id = draft.get("blog_post_id")
@@ -91,9 +91,7 @@ def _max_draft_cost_by_post(drafts: List[dict]) -> Dict[str, int]:
         if cost is None:
             continue
         cost_int = int(cost)
-        current = costs.get(post_id)
-        if current is None or cost_int > current:
-            costs[post_id] = cost_int
+        costs[post_id] = costs.get(post_id, 0) + cost_int
     return costs
 
 
@@ -109,11 +107,11 @@ def _extract_total_cost(activity: dict) -> int | None:
         return None
 
 
-def _cost_accuracy_ok(total_cost: int, max_draft_cost: int) -> bool:
-    """Check that total cost is within 10% of recorded draft costs."""
+def _cost_accuracy_ok(total_cost: int, draft_cost_sum: int) -> bool:
+    """Check that total cost is within 10% of summed draft costs."""
     if total_cost <= 0:
         return False
-    diff = abs(total_cost - max_draft_cost)
+    diff = abs(total_cost - draft_cost_sum)
     return diff / total_cost <= 0.10
 
 
@@ -180,16 +178,16 @@ def run_tests() -> bool:
     print("\nTest 3: Cost tracking is accurate to within 10%")
     try:
         drafts = _fetch_draft_costs(post_ids)
-        max_draft_costs = _max_draft_cost_by_post(drafts)
+        draft_costs = _sum_draft_cost_by_post(drafts)
 
         accuracy_failures: List[Tuple[str, int, int]] = []
         for post_id, activity in latest_activity.items():
             total_cost = _extract_total_cost(activity)
-            max_draft_cost = max_draft_costs.get(post_id)
-            if total_cost is None or max_draft_cost is None:
+            draft_cost_sum = draft_costs.get(post_id)
+            if total_cost is None or draft_cost_sum is None:
                 continue
-            if not _cost_accuracy_ok(total_cost, max_draft_cost):
-                accuracy_failures.append((post_id, total_cost, max_draft_cost))
+            if not _cost_accuracy_ok(total_cost, draft_cost_sum):
+                accuracy_failures.append((post_id, total_cost, draft_cost_sum))
 
         if missing_costs:
             print(f"  FAIL: Missing total_cost_cents for {len(missing_costs)} posts")
@@ -198,7 +196,7 @@ def run_tests() -> bool:
             for post_id, total_cost, max_draft_cost in accuracy_failures:
                 print(
                     f"    - Post {post_id}: total={total_cost} cents, "
-                    f"max_draft={max_draft_cost} cents"
+                    f"draft_sum={draft_cost_sum} cents"
                 )
         else:
             print("  PASS: Total cost within 10% of draft costs for all posts")
