@@ -745,3 +745,22 @@ Keep it simple. Add dated entries chronologically.
   - func-001 (iterative loop) ✓, func-002 (publish on quality threshold) ✓, func-003 (timeout handling) ✓
   - Next: func-004 (cost limit handling), func-005 (explicit failure below floor)
 ---
+[2026-01-15 - func-004]
+- Verified RalphLoop cost limit handling (already implemented in func-001)
+- Files changed: tests/verify_func_004.py (new), ralph/PRD.json
+- **Verification confirms:**
+  - With RALPH_COST_LIMIT_CENTS=10, loop stops when cost exceeded
+  - blog_posts.status becomes 'draft' when quality >= 0.70 at cost limit
+  - blog_posts.status becomes 'failed' when quality < 0.70 at cost limit
+  - Cost limit is logged with activity_type='cost_limit' and reason='cost_limit_exceeded'
+  - Total cost recorded in final log metadata as 'total_cost_cents'
+- **Learnings for future iterations:**
+  - func-004 functionality was already implemented as part of func-001's run() method
+  - Task requires only verification test to confirm acceptance criteria
+  - Mock agents with configurable token usage enable cost limit testing without API calls
+  - TimeoutManager.is_cost_limit_exceeded() checked before and after critique calls
+  - Cost tracking is cumulative across agent instances (get_total_tokens())
+- **Phase 1 progress:**
+  - func-001 (iterative loop) ✓, func-002 (publish on quality threshold) ✓, func-003 (timeout handling) ✓, func-004 (cost limit handling) ✓
+  - Next: func-005 (explicit failure below floor), func-006 (activity logging)
+---
