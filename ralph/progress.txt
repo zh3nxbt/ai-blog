@@ -726,3 +726,22 @@ Keep it simple. Add dated entries chronologically.
   - func-001 (iterative loop) ✓, func-002 (publish on quality threshold) ✓
   - Next: func-003 (timeout handling), func-004 (cost limit handling)
 ---
+[2026-01-15 - func-003]
+- Verified RalphLoop timeout handling (already implemented in func-001)
+- Files changed: tests/verify_func_003.py (new), ralph/PRD.json
+- **Verification confirms:**
+  - Timeout triggers when configured timeout_minutes elapsed exceeds elapsed time
+  - blog_posts.status becomes 'draft' when quality >= 0.70 at timeout
+  - blog_posts.status becomes 'failed' when quality < 0.70 at timeout
+  - Timeout is logged with activity_type='timeout' and reason='timeout_exceeded'
+  - All draft iterations preserved in blog_content_drafts
+- **Learnings for future iterations:**
+  - func-003 functionality was already implemented as part of func-001's run() method
+  - Testing timeout behavior requires artificial delays in mock agents
+  - TimeoutManager.is_timeout_exceeded() checked at start of each iteration loop
+  - Very short timeouts (0.01-0.04 minutes) useful for testing timeout scenarios
+  - Mock-based testing with configurable delays validates timeout workflow
+- **Phase 1 progress:**
+  - func-001 (iterative loop) ✓, func-002 (publish on quality threshold) ✓, func-003 (timeout handling) ✓
+  - Next: func-004 (cost limit handling), func-005 (explicit failure below floor)
+---
