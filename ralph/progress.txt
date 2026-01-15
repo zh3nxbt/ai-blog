@@ -764,3 +764,21 @@ Keep it simple. Add dated entries chronologically.
   - func-001 (iterative loop) ✓, func-002 (publish on quality threshold) ✓, func-003 (timeout handling) ✓, func-004 (cost limit handling) ✓
   - Next: func-005 (explicit failure below floor), func-006 (activity logging)
 ---
+[2026-01-15 - func-005]
+- Verified RalphLoop explicit failure below quality floor (already implemented in func-001)
+- Files changed: tests/verify_func_005.py (new), ralph/PRD.json
+- **Verification confirms:**
+  - blog_posts.status is 'failed' when quality < 0.70 at limit (timeout/cost/iteration)
+  - Error log entry created in blog_agent_activity with success=False and final_status='failed'
+  - All iterations preserved in blog_content_drafts despite failure status
+  - loop.run() returns RalphLoopResult with status='failed' and quality < 0.70
+- **Learnings for future iterations:**
+  - func-005 functionality was already implemented as part of func-001's run() method (lines 350-355)
+  - Task requires only verification test to confirm acceptance criteria
+  - Mock-based testing with low quality scores validates explicit failure behavior
+  - Quality floor check: score < 0.70 results in 'failed' status, >= 0.70 results in 'draft'
+  - Finalize activity log has success=False when status='failed'
+- **Phase 1 progress:**
+  - func-001 (iterative loop) ✓, func-002 (publish on quality threshold) ✓, func-003 (timeout handling) ✓, func-004 (cost limit handling) ✓, func-005 (explicit failure below floor) ✓
+  - Next: func-006 (activity logging), func-007 (CLI entrypoint)
+---
