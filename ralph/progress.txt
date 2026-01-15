@@ -910,6 +910,19 @@ Keep it simple. Add dated entries chronologically.
 - Files changed: ralph/rss_sources_canada.csv (new)
 - **Next step:** Fill CSV with vetted manufacturing RSS feeds and seed via migration
 ---
+<<<<<<< HEAD
+[2026-01-15 - test-006]
+- Added verification script for API cost targets
+- Files changed: tests/verify_test_006.py (new), ralph/PRD.json
+- **Verification coverage:**
+  - Calculates average cost from publish/finalize logs
+  - Flags posts exceeding 100 cents
+  - Checks total cost within 10% of draft cost entries
+- **Verification status:** FAIL (avg cost 32 cents; cost mismatch 52 vs 44 cents on latest post)
+- **Phase 1 progress:**
+  - Testing: test-001 ✓, test-002 ✓, test-003 ✓, test-004 ✓, test-005 ✓
+  - Next: test-006 (needs cost reduction + tracking alignment)
+---
 [2026-01-15 - doc-002]
 - Verified .env.example contains required placeholders and defaults
 - Files changed: ralph/PRD.json
