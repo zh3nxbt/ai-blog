@@ -688,3 +688,25 @@ Keep it simple. Add dated entries chronologically.
   - Dependency injection keeps loop logic testable without Supabase or network calls
   - Initial draft saves iteration 1 before quality scoring starts
 ---
+[2026-01-15 - func-001]
+- Implemented RalphLoop.run() with full iterative quality refinement loop
+- Files changed: ralph_content/ralph_loop.py, ralph_content/agents/critique_agent.py (new), ralph_content/agents/__init__.py, ralph/ralph_loop.py, tests/verify_func_001.py (new), ralph/PRD.json
+- **Implementation details:**
+  - Added RalphLoopResult dataclass for structured return values
+  - Added CritiqueAgent to evaluate content using CRITIQUE_PROMPT_TEMPLATE
+  - run() method orchestrates: generate → validate → [critique → improve → validate]* → finalize
+  - Iteration continues until quality >= threshold (0.85 default) or limits hit
+  - Limits include: timeout (30 min default), cost ($1.00 default), max iterations (10)
+  - Each iteration saves to blog_content_drafts with quality_score and critique
+  - Final status: "published" (>= 0.85), "draft" (>= 0.70), "failed" (< 0.70)
+  - All activity logged to blog_agent_activity for observability
+- **Learnings for future iterations:**
+  - Dependency injection enables unit testing without network/database calls
+  - Mock objects with configurable score progressions allow predictable test scenarios
+  - TimeoutManager centralizes timeout + cost limit checks
+  - Separating CritiqueAgent from ProductMarketingAgent keeps responsibilities clear
+  - Token tracking is cumulative per agent instance
+- **Phase 1 progress:**
+  - func-001 (iterative loop) ✓
+  - Next: func-002 (publish on quality threshold), func-003 (timeout handling)
+---

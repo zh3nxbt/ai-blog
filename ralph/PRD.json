@@ -182,7 +182,7 @@
         ],
         "description": "RalphLoop iterates until quality threshold",
         "id": "func-001",
-        "passes": false
+        "passes": true
       },
       {
         "acceptance_criteria": [

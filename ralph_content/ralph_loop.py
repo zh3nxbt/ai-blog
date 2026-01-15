@@ -1,23 +1,50 @@
-"""RalphLoop orchestrator for initial draft generation."""
+"""RalphLoop orchestrator for iterative blog post generation."""
 
 from __future__ import annotations
 
+import time
+from dataclasses import dataclass
 from typing import Any, Dict, List
 from uuid import UUID
 
+from ralph_content.agents.critique_agent import CritiqueAgent
 from ralph_content.agents.product_marketing import ProductMarketingAgent
+from ralph_content.core.api_cost import calculate_api_cost
+from ralph_content.core.timeout_manager import TimeoutManager
+from services.quality_validator import validate_content
+
+
+@dataclass
+class RalphLoopResult:
+    """Result of a RalphLoop.run() execution."""
+
+    blog_post_id: UUID
+    final_quality_score: float
+    iteration_count: int
+    total_cost_cents: int
+    status: str  # "published", "draft", "failed"
 
 
 class RalphLoop:
     """Generate and refine blog posts with Ralph."""
 
+    DEFAULT_QUALITY_THRESHOLD = 0.85
+    DEFAULT_TIMEOUT_MINUTES = 30
+    DEFAULT_COST_LIMIT_CENTS = 100
+    MAX_ITERATIONS = 10
+
     def __init__(
         self,
         agent: ProductMarketingAgent | None = None,
+        critique_agent: CritiqueAgent | None = None,
         rss_service: Any | None = None,
         supabase_service: Any | None = None,
+        quality_validator: Any | None = None,
         min_items: int = 3,
         max_items: int = 5,
+        quality_threshold: float | None = None,
+        timeout_minutes: int | None = None,
+        cost_limit_cents: int | None = None,
     ) -> None:
         if min_items < 1:
             raise ValueError("min_items must be >= 1")
@@ -35,10 +62,16 @@ class RalphLoop:
             supabase_service = supabase_service_module
 
         self.agent = agent or ProductMarketingAgent()
+        self.critique_agent = critique_agent or CritiqueAgent()
         self.rss_service = rss_service
         self.supabase_service = supabase_service
+        self.quality_validator = quality_validator or validate_content
         self.min_items = min_items
         self.max_items = max_items
+
+        self.quality_threshold = quality_threshold or self.DEFAULT_QUALITY_THRESHOLD
+        self.timeout_minutes = timeout_minutes or self.DEFAULT_TIMEOUT_MINUTES
+        self.cost_limit_cents = cost_limit_cents or self.DEFAULT_COST_LIMIT_CENTS
 
     def generate_initial_draft(self) -> UUID:
         """
@@ -101,3 +134,254 @@ class RalphLoop:
             )
 
         return unused_items
+
+    def run(self) -> RalphLoopResult:
+        """
+        Execute the full generate-critique-refine loop.
+
+        Creates an initial draft, evaluates quality, and iteratively improves
+        until the quality threshold is met or limits (timeout, cost, iterations)
+        are exceeded.
+
+        Returns:
+            RalphLoopResult with blog_post_id, final_quality_score, iteration_count,
+            total_cost_cents, and status ("published", "draft", or "failed")
+        """
+        timeout_manager = TimeoutManager(
+            timeout_minutes=self.timeout_minutes,
+            cost_limit_cents=self.cost_limit_cents,
+        )
+
+        # Generate initial draft
+        rss_items = self._get_rss_items()
+        rss_items_for_generation = rss_items[: self.max_items]
+
+        title, content = self.agent.generate_content(rss_items_for_generation)
+
+        # Create blog post record
+        blog_post_id = self.supabase_service.create_blog_post(
+            title=title,
+            content=content,
+            status="draft",
+        )
+
+        # Mark RSS items as used
+        item_ids = [item["id"] for item in rss_items_for_generation if item.get("id")]
+        if item_ids:
+            self.rss_service.mark_items_as_used(item_ids, str(blog_post_id))
+
+        # Track costs
+        input_tokens, output_tokens = self.agent.get_total_tokens()
+        total_cost_cents = calculate_api_cost(input_tokens, output_tokens)
+
+        # Evaluate initial quality
+        validation_result = self.quality_validator(content, title)
+        quality_score = validation_result["overall_score"]
+
+        # Save initial draft iteration
+        self.supabase_service.save_draft_iteration(
+            blog_post_id=blog_post_id,
+            iteration_number=1,
+            content=content,
+            quality_score=quality_score,
+            critique=validation_result,
+            title=title,
+            api_cost_cents=total_cost_cents,
+        )
+
+        iteration_count = 1
+
+        # Log initial draft activity
+        self.supabase_service.log_agent_activity(
+            agent_name=self.agent.agent_name,
+            activity_type="content_draft",
+            success=True,
+            context_id=blog_post_id,
+            metadata={
+                "iteration": iteration_count,
+                "quality_score": quality_score,
+                "cost_cents": total_cost_cents,
+            },
+        )
+
+        # Iterate until quality threshold is met or limits exceeded
+        current_title = title
+        current_content = content
+
+        while quality_score < self.quality_threshold:
+            # Check iteration limit
+            if iteration_count >= self.MAX_ITERATIONS:
+                self.supabase_service.log_agent_activity(
+                    agent_name="ralph-loop",
+                    activity_type="iteration_limit",
+                    success=False,
+                    context_id=blog_post_id,
+                    metadata={
+                        "final_iteration": iteration_count,
+                        "quality_score": quality_score,
+                        "reason": "max_iterations_exceeded",
+                    },
+                )
+                break
+
+            # Check timeout
+            if timeout_manager.is_timeout_exceeded():
+                self.supabase_service.log_agent_activity(
+                    agent_name="ralph-loop",
+                    activity_type="timeout",
+                    success=False,
+                    context_id=blog_post_id,
+                    metadata={
+                        "final_iteration": iteration_count,
+                        "quality_score": quality_score,
+                        "reason": "timeout_exceeded",
+                    },
+                )
+                break
+
+            # Check cost limit
+            if timeout_manager.is_cost_limit_exceeded(total_cost_cents):
+                self.supabase_service.log_agent_activity(
+                    agent_name="ralph-loop",
+                    activity_type="cost_limit",
+                    success=False,
+                    context_id=blog_post_id,
+                    metadata={
+                        "final_iteration": iteration_count,
+                        "quality_score": quality_score,
+                        "total_cost_cents": total_cost_cents,
+                        "reason": "cost_limit_exceeded",
+                    },
+                )
+                break
+
+            # Get critique for current content
+            start_time = time.monotonic()
+            critique = self.critique_agent.evaluate_content(
+                title=current_title,
+                content=current_content,
+                current_score=quality_score,
+            )
+            critique_duration_ms = int((time.monotonic() - start_time) * 1000)
+
+            # Update cost tracking
+            crit_input, crit_output = self.critique_agent.get_total_tokens()
+            critique_cost = calculate_api_cost(crit_input, crit_output)
+            total_cost_cents = critique_cost  # Critique agent tracks cumulative
+
+            # Log critique activity
+            self.supabase_service.log_agent_activity(
+                agent_name=self.critique_agent.agent_name,
+                activity_type="critique",
+                success=True,
+                context_id=blog_post_id,
+                duration_ms=critique_duration_ms,
+                metadata={
+                    "iteration": iteration_count,
+                    "critique_score": critique.get("quality_score", 0.0),
+                },
+            )
+
+            # Check cost again after critique
+            if timeout_manager.is_cost_limit_exceeded(total_cost_cents):
+                self.supabase_service.log_agent_activity(
+                    agent_name="ralph-loop",
+                    activity_type="cost_limit",
+                    success=False,
+                    context_id=blog_post_id,
+                    metadata={
+                        "final_iteration": iteration_count,
+                        "quality_score": quality_score,
+                        "total_cost_cents": total_cost_cents,
+                        "reason": "cost_limit_exceeded_after_critique",
+                    },
+                )
+                break
+
+            # Improve content based on critique
+            start_time = time.monotonic()
+            improved_content = self.agent.improve_content(
+                content=current_content,
+                critique=critique,
+            )
+            improve_duration_ms = int((time.monotonic() - start_time) * 1000)
+
+            # Update cost tracking
+            imp_input, imp_output = self.agent.get_total_tokens()
+            improvement_cost = calculate_api_cost(imp_input, imp_output)
+            total_cost_cents = improvement_cost + critique_cost
+
+            # Evaluate improved content
+            validation_result = self.quality_validator(improved_content, current_title)
+            new_quality_score = validation_result["overall_score"]
+
+            iteration_count += 1
+
+            # Save improved draft iteration
+            self.supabase_service.save_draft_iteration(
+                blog_post_id=blog_post_id,
+                iteration_number=iteration_count,
+                content=improved_content,
+                quality_score=new_quality_score,
+                critique=validation_result,
+                title=current_title,
+                api_cost_cents=improvement_cost,
+            )
+
+            # Log improvement activity
+            self.supabase_service.log_agent_activity(
+                agent_name=self.agent.agent_name,
+                activity_type="content_draft",
+                success=True,
+                context_id=blog_post_id,
+                duration_ms=improve_duration_ms,
+                metadata={
+                    "iteration": iteration_count,
+                    "quality_score": new_quality_score,
+                    "previous_score": quality_score,
+                    "improvement": new_quality_score - quality_score,
+                },
+            )
+
+            current_content = improved_content
+            quality_score = new_quality_score
+
+        # Determine final status based on quality
+        if quality_score >= self.quality_threshold:
+            status = "published"
+        elif quality_score >= 0.70:
+            status = "draft"
+        else:
+            status = "failed"
+
+        # Update blog post with final content and status
+        client = self.supabase_service.get_supabase_client()
+        update_data = {"content": current_content, "status": status}
+        if status == "published":
+            from datetime import datetime, timezone
+
+            update_data["published_at"] = datetime.now(timezone.utc).isoformat()
+
+        client.table("blog_posts").update(update_data).eq("id", str(blog_post_id)).execute()
+
+        # Log final status
+        self.supabase_service.log_agent_activity(
+            agent_name="ralph-loop",
+            activity_type="publish" if status == "published" else "finalize",
+            success=status != "failed",
+            context_id=blog_post_id,
+            metadata={
+                "final_status": status,
+                "final_quality_score": quality_score,
+                "iteration_count": iteration_count,
+                "total_cost_cents": total_cost_cents,
+            },
+        )
+
+        return RalphLoopResult(
+            blog_post_id=blog_post_id,
+            final_quality_score=quality_score,
+            iteration_count=iteration_count,
+            total_cost_cents=total_cost_cents,
+            status=status,
+        )
