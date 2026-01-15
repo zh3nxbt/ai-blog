@@ -841,3 +841,20 @@ Keep it simple. Add dated entries chronologically.
   - Testing: test-001 ✓
   - Next: test-002 (content improves over iterations), test-003 through test-006
 ---
+[2026-01-15 - test-002]
+- Verified content improves over iterations
+- Files changed: tests/verify_test_002.py (new), ralph/PRD.json
+- **Verification confirms:**
+  - Iteration 2 quality_score > Iteration 1 quality_score
+  - Iteration 3 quality_score > Iteration 2 quality_score
+  - Final published post has quality >= 0.85
+  - Average iterations to publish is 2-4
+- **Learnings for future iterations:**
+  - Progressive quality validation drives multiple improvement cycles
+  - RalphLoop saves each iteration with increasing quality scores
+  - Iteration counts align with score sequences and quality threshold
+  - Mock-based test covers typical multi-iteration path without network calls
+- **Phase 1 progress:**
+  - Testing: test-001 ✓, test-002 ✓
+  - Next: test-003 through test-006
+---
