@@ -782,3 +782,22 @@ Keep it simple. Add dated entries chronologically.
   - func-001 (iterative loop) ✓, func-002 (publish on quality threshold) ✓, func-003 (timeout handling) ✓, func-004 (cost limit handling) ✓, func-005 (explicit failure below floor) ✓
   - Next: func-006 (activity logging), func-007 (CLI entrypoint)
 ---
+[2026-01-15 - func-006]
+- Verified RalphLoop activity logging (already implemented in func-001)
+- Files changed: tests/verify_func_006.py (new), ralph/PRD.json
+- **Verification confirms:**
+  - blog_agent_activity has entry with activity_type='content_draft' for each iteration
+  - blog_agent_activity has entry with activity_type='critique' for each critique call
+  - blog_agent_activity has entry with activity_type='publish' on successful publish
+  - Each critique and improvement entry has duration_ms recorded
+  - Each entry has success boolean set (True for normal operations, False for failures)
+- **Learnings for future iterations:**
+  - func-006 functionality was already implemented as part of func-001's run() method
+  - Activity logging occurs at lines 195-205 (initial draft), 273-283 (critique), 332-344 (improvement)
+  - Publish/finalize logging at lines 368-379 includes final_status and total_cost_cents
+  - Mock-based testing with configurable quality score progressions validates logging behavior
+  - duration_ms is recorded for timed operations (critique, improvement) but not initial draft
+- **Phase 1 progress:**
+  - func-001 (iterative loop) ✓, func-002 (publish on quality threshold) ✓, func-003 (timeout handling) ✓, func-004 (cost limit handling) ✓, func-005 (explicit failure below floor) ✓, func-006 (activity logging) ✓
+  - Next: func-007 (CLI entrypoint)
+---
