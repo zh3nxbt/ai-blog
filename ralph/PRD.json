@@ -38,11 +38,12 @@
           "Column created_at defaults to NOW()",
           "INSERT with status='draft' succeeds",
           "INSERT with status='invalid' fails with constraint error",
-          "Note: Table pre-existed with additional columns (featured_image, author, meta_description, meta_keywords, tags, updated_at)"
+          "Note: Table pre-existed with additional columns (featured_image, author, meta_description, meta_keywords, tags, updated_at)",
+          "Note: Re-verified after schema changes; see migrations/verify_db_001.py"
         ],
         "description": "blog_posts table with proper schema (pre-existing table)",
         "id": "db-001",
-        "passes": false
+        "passes": true
       },
       {
         "acceptance_criteria": [
