@@ -26,13 +26,14 @@ PYTHONPATH=/workspace/ai-blog python migrations/verify_db_002.py
 - `005_create_blog_rss_items.sql` - RSS items storage
 - `006_create_database_indexes.sql` - Performance indexes
 - `007_seed_manufacturing_rss_sources.sql` - Initial RSS feed data
+- `008_create_blog_topic_sources_items.sql` - Unified topic source tables
 
 ### Application Scripts
-- `apply_db_002.py` through `apply_db_007.py` - Apply migrations automatically
+- `apply_db_002.py` through `apply_db_008.py` - Apply migrations automatically
 - `db_utils.py` - Shared connection and migration utilities
 
 ### Verification Scripts
-- `verify_db_002.py` through `verify_db_007.py` - Comprehensive acceptance tests
+- `verify_db_002.py` through `verify_db_008.py` - Comprehensive acceptance tests
 
 ## How Migrations Work
 
