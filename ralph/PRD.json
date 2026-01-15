@@ -42,7 +42,7 @@
         ],
         "description": "blog_posts table with proper schema (pre-existing table)",
         "id": "db-001",
-        "passes": true
+        "passes": false
       },
       {
         "acceptance_criteria": [
@@ -155,7 +155,7 @@
         ],
         "description": "Seed expanded manufacturing RSS sources (Canada/Ontario focus)",
         "id": "db-008",
-        "passes": false
+        "passes": true
       }
     ],
     "documentation": [
@@ -281,7 +281,7 @@
         ],
         "description": "Unified topic source tables for mixed sourcing",
         "id": "mix-001",
-        "passes": false
+        "passes": true
       },
       {
         "acceptance_criteria": [

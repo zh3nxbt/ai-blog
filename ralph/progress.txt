@@ -946,3 +946,13 @@ Keep it simple. Add dated entries chronologically.
   - Documentation: doc-001 ✓, doc-002 ✓
   - Next: test-006
 ---
+[2026-01-15 - mix-001]
+- Implemented unified topic source tables for mixed sourcing
+- Files changed: migrations/008_create_blog_topic_sources_items.sql, migrations/apply_db_008.py, migrations/verify_db_008.py, migrations/README.md, ralph/PRD.json
+- **Acceptance criteria coverage:**
+  - blog_topic_sources and blog_topic_items tables created with constraints
+  - source_type CHECK constraint supports rss, evergreen, standards, vendor, internal
+  - blog_topic_items.url nullable with unique index for non-null values
+  - used_in_blog foreign key references blog_posts
+  - Verification script covers inserts, constraint failures, and cleanup
+---
