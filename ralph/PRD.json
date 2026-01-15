@@ -217,7 +217,7 @@
         ],
         "description": "RalphLoop saves draft on cost limit",
         "id": "func-004",
-        "passes": false
+        "passes": true
       },
       {
         "acceptance_criteria": [
