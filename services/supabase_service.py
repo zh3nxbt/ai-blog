@@ -55,7 +55,7 @@ def create_blog_post(title: str, content: str, status: str = "draft") -> UUID:
 
     Args:
         title: The title of the blog post
-        content: The content of the blog post (markdown)
+        content: The content of the blog post (HTML)
         status: The status of the post (draft, published, failed)
 
     Returns:

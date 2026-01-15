@@ -23,6 +23,7 @@ load_dotenv()
 from services.rss_service import fetch_unused_items, fetch_active_sources, fetch_feed, store_rss_items  # noqa: E402
 from services.llm_service import generate_blog_post, calculate_api_cost  # noqa: E402
 from services.supabase_service import create_blog_post, log_agent_activity, get_supabase_client  # noqa: E402
+from ralph_content.core.markdown_renderer import markdown_to_html  # noqa: E402
 
 
 def main():
@@ -95,9 +96,10 @@ def main():
 
         # Step 4: Save blog post to database
         print("\n[3/5] Saving blog post to database...")
+        content_html = markdown_to_html(post_data["content"])
         blog_post_id = create_blog_post(
             title=post_data['title'],
-            content=post_data['content'],
+            content=content_html,
             status='draft'
         )
 

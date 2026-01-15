@@ -10,6 +10,7 @@ from uuid import UUID
 from ralph_content.agents.critique_agent import CritiqueAgent
 from ralph_content.agents.product_marketing import ProductMarketingAgent
 from ralph_content.core.api_cost import calculate_api_cost
+from ralph_content.core.markdown_renderer import markdown_to_html
 from ralph_content.core.timeout_manager import TimeoutManager
 from services.quality_validator import validate_content
 
@@ -83,17 +84,18 @@ class RalphLoop:
         rss_items = self._get_rss_items()
         rss_items_for_generation = rss_items[: self.max_items]
 
-        title, content = self.agent.generate_content(rss_items_for_generation)
+        title, content_markdown = self.agent.generate_content(rss_items_for_generation)
+        content_html = markdown_to_html(content_markdown)
         blog_post_id = self.supabase_service.create_blog_post(
             title=title,
-            content=content,
+            content=content_html,
             status="draft",
         )
 
         self.supabase_service.save_draft_iteration(
             blog_post_id=blog_post_id,
             iteration_number=1,
-            content=content,
+            content=content_markdown,
             quality_score=0.0,
             critique={"note": "initial draft"},
             title=title,
@@ -156,12 +158,13 @@ class RalphLoop:
         rss_items = self._get_rss_items()
         rss_items_for_generation = rss_items[: self.max_items]
 
-        title, content = self.agent.generate_content(rss_items_for_generation)
+        title, content_markdown = self.agent.generate_content(rss_items_for_generation)
+        content_html = markdown_to_html(content_markdown)
 
         # Create blog post record
         blog_post_id = self.supabase_service.create_blog_post(
             title=title,
-            content=content,
+            content=content_html,
             status="draft",
         )
 
@@ -187,14 +190,14 @@ class RalphLoop:
         total_cost_cents += generation_cost
 
         # Evaluate initial quality
-        validation_result = self.quality_validator(content, title)
+        validation_result = self.quality_validator(content_markdown, title)
         quality_score = validation_result["overall_score"]
 
         # Save initial draft iteration
         self.supabase_service.save_draft_iteration(
             blog_post_id=blog_post_id,
             iteration_number=1,
-            content=content,
+            content=content_markdown,
             quality_score=quality_score,
             critique=validation_result,
             title=title,
@@ -218,7 +221,7 @@ class RalphLoop:
 
         # Iterate until quality threshold is met or limits exceeded
         current_title = title
-        current_content = content
+        current_content = content_markdown
 
         while quality_score < self.quality_threshold:
             # Check iteration limit
@@ -379,7 +382,7 @@ class RalphLoop:
 
         # Update blog post with final content and status
         client = self.supabase_service.get_supabase_client()
-        update_data = {"content": current_content, "status": status}
+            update_data = {"content": markdown_to_html(current_content), "status": status}
         if status == "published":
             from datetime import datetime, timezone
 
