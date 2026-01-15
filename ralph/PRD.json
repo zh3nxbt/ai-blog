@@ -15,12 +15,13 @@
       "functional": 7,
       "ralph_core": 11,
       "services": 12,
+      "sourcing_mix": 5,
       "spike": 4,
       "testing": 6
     },
     "completed": 0,
     "progress_percentage": 0,
-    "total_tasks": 49
+    "total_tasks": 54
   },
   "tasks": {
     "database": [
@@ -266,6 +267,65 @@
         "description": "RalphLoop CLI entrypoint",
         "id": "func-007",
         "passes": true
+      }
+    ],
+    "sourcing_mix": [
+      {
+        "acceptance_criteria": [
+          "Table blog_topic_sources exists in Supabase",
+          "Table blog_topic_items exists in Supabase",
+          "blog_topic_sources.source_type supports rss, evergreen, standards, vendor, internal",
+          "blog_topic_items.url is nullable",
+          "blog_topic_items.used_in_blog references blog_posts",
+          "UNIQUE constraint prevents duplicate topic items by url when url is present"
+        ],
+        "description": "Unified topic source tables for mixed sourcing",
+        "id": "mix-001",
+        "passes": false
+      },
+      {
+        "acceptance_criteria": [
+          "At least 25 evergreen topics seeded in blog_topic_items",
+          "Evergreen topics have source_type='evergreen'",
+          "Evergreen topics include title and summary",
+          "Evergreen topics may omit url without validation errors"
+        ],
+        "description": "Seed evergreen topic bank",
+        "id": "mix-002",
+        "passes": false
+      },
+      {
+        "acceptance_criteria": [
+          "At least 3 non-RSS stable sources registered (standards/gov/vendor)",
+          "Sources use RSS or official APIs only (no scraping)",
+          "Ingestion stores items in blog_topic_items",
+          "Ingestion handles per-source failures without stopping other sources"
+        ],
+        "description": "Register and ingest non-RSS stable sources",
+        "id": "mix-003",
+        "passes": false
+      },
+      {
+        "acceptance_criteria": [
+          "RalphLoop selects 3-5 items using a source mix (default ratio documented)",
+          "Selection falls back gracefully when a source type is short",
+          "All selected items are marked used_in_blog",
+          "Agent activity logs include source mix metadata"
+        ],
+        "description": "Mixed-source selection integrated into RalphLoop",
+        "id": "mix-004",
+        "passes": false
+      },
+      {
+        "acceptance_criteria": [
+          "Content generation prompt mentions mixed sources",
+          "Prompt forbids fabricated URLs",
+          "source_urls output includes only items with url",
+          "Tests cover mixed-source prompt behavior"
+        ],
+        "description": "Prompt + validation for mixed sources",
+        "id": "mix-005",
+        "passes": false
       }
     ],
     "ralph_core": [

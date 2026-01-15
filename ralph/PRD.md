@@ -51,14 +51,16 @@ Generate exactly **one high-quality blog post per day** that:
 
 ## 4. Functional Requirements
 
-### 4.1 Content Sourcing
+### 4.1 Content Sourcing (Mixed Sources)
 - Fetch articles from manufacturing industry RSS feeds
-- Store and deduplicate RSS items in database
-- Track which items have been used in posts
-- Support 5+ active feed sources at launch
+- Maintain an evergreen topic bank (durable, non-news topics)
+- Allow stable, legal non-RSS sources (standards/gov/vendor updates) via RSS or official APIs only
+- Store and deduplicate all source items with a source_type (rss, evergreen, standards, vendor, internal)
+- Track which items have been used in posts across all source types
+- Support 5+ active feed sources at launch, plus evergreen coverage
 
 ### 4.2 Content Generation
-- Generate initial draft from 3-5 RSS source items
+- Generate initial draft from 3-5 source items (mixed RSS + evergreen + other stable sources)
 - Use Claude API for content generation
 - Output structured JSON with title, excerpt, content_markdown, source_urls
 - Iteratively improve content based on critique feedback
@@ -224,6 +226,36 @@ Individual articles from feeds.
 | summary | Text | Article excerpt |
 | used_in_blog | UUID | Foreign key to blog_posts (nullable) |
 
+### blog_topic_sources
+Unified sources registry for mixed sourcing.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| source_type | Enum | rss, evergreen, standards, vendor, internal |
+| name | String | Source name |
+| category | String | Manufacturing, tooling, standards, etc. |
+| active | Boolean | Is source enabled |
+| priority | Integer | 1-10, higher = preferred |
+| notes | String | Optional notes |
+| created_at | Timestamp | When created |
+
+### blog_topic_items
+Unified topic items across all source types.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| source_id | UUID | Foreign key to blog_topic_sources |
+| title | String | Topic or article title |
+| summary | Text | Short summary or outline |
+| url | String | Source URL (nullable) |
+| content | Text | Optional full text or notes |
+| published_at | Timestamp | When published (nullable) |
+| used_in_blog | UUID | Foreign key to blog_posts |
+| metadata | JSON | Extra fields (source-specific) |
+| created_at | Timestamp | When inserted |
+
 ### blog_agent_activity
 Observability and debugging.
 
@@ -241,7 +273,7 @@ Observability and debugging.
 
 | Document | Purpose |
 |----------|---------|
-| `PRD.json` | Implementation task list (45 tasks) |
+| `PRD.json` | Implementation task list (54 tasks) |
 | `progress.txt` | Completed work tracking |
 | `claude.md` | Coding principles and content guidelines |
 | `docs/RALPH_OVERALL_PLAN.md` | Multi-phase roadmap |
