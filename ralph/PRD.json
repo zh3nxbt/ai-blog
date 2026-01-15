@@ -142,6 +142,19 @@
         "description": "5 manufacturing RSS sources seeded",
         "id": "db-007",
         "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "New migration seeds at least 25 additional RSS sources",
+          "At least 10 sources are Canada/Ontario-focused",
+          "All seeded sources have active=true",
+          "All seeded sources have priority between 1-10",
+          "At least 5 sources return valid RSS/XML when fetched",
+          "No duplicate URLs introduced"
+        ],
+        "description": "Seed expanded manufacturing RSS sources (Canada/Ontario focus)",
+        "id": "db-008",
+        "passes": false
       }
     ],
     "documentation": [
