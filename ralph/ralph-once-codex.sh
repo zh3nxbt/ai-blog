@@ -1,6 +1,6 @@
 #!/bin/bash
 
-codex "@AGENTS.md @ralph/PRD.md @ralph/PHASES.md @ralph/progress.txt \
+codex --dangerously-bypass-approvals-and-sandbox "@AGENTS.md @ralph/PRD.md @ralph/PHASES.md @ralph/progress.txt \
 1. Read AGENTS.md for project principles and task prioritization guidance. \
 2. Read PHASES.md to understand the current phase, exit criteria, and what's next. \
 3. Read the PRD and progress file. \
