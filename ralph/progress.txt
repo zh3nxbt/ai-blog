@@ -910,6 +910,7 @@ Keep it simple. Add dated entries chronologically.
 - Files changed: ralph/rss_sources_canada.csv (new)
 - **Next step:** Fill CSV with vetted manufacturing RSS feeds and seed via migration
 ---
+<<<<<<< HEAD
 [2026-01-15 - test-006]
 - Added verification script for API cost targets
 - Files changed: tests/verify_test_006.py (new), ralph/PRD.json
@@ -921,6 +922,7 @@ Keep it simple. Add dated entries chronologically.
 - **Phase 1 progress:**
   - Testing: test-001 ✓, test-002 ✓, test-003 ✓, test-004 ✓, test-005 ✓
   - Next: test-006 (needs cost reduction + tracking alignment)
+---
 [2026-01-15 - test-006-threshold]
 - Updated cost threshold to 50 cents and reran verification
 - Files changed: tests/verify_test_006.py (new), ralph/PRD.json
@@ -935,4 +937,13 @@ Keep it simple. Add dated entries chronologically.
   - Total cost compared against summed draft costs (within 10% tolerance)
   - Phase 1 cost target updated to $0.50/post based on observed totals
 - **Verification status:** PASS (manual sign-off)
+---
+[2026-01-15 - doc-002]
+- Verified .env.example contains required placeholders and defaults
+- Files changed: ralph/PRD.json
+- **Documentation updates:**
+  - Confirmed Supabase, Anthropic, and Ralph runtime defaults are listed
+- **Phase 1 progress:**
+  - Documentation: doc-001 ✓, doc-002 ✓
+  - Next: test-006
 ---

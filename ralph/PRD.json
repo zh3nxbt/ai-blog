@@ -181,7 +181,7 @@
         ],
         "description": ".env.example complete",
         "id": "doc-002",
-        "passes": false
+        "passes": true
       }
     ],
     "functional": [
