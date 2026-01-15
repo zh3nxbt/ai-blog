@@ -873,3 +873,13 @@ Keep it simple. Add dated entries chronologically.
   - Testing: test-001 ✓, test-002 ✓, test-003 ✓
   - Next: test-004 through test-006
 ---
+[2026-01-15 - doc-001]
+- Updated README with Phase 1 manual run and environment details
+- Files changed: README.md, ralph/PRD.json
+- **Documentation updates:**
+  - Added Phase 1 section with database setup, manual run command, and expected output
+  - Expanded environment variable list to include Ralph runtime settings
+- **Phase 1 progress:**
+  - Documentation: doc-001 ✓
+  - Next: doc-002 (.env.example), test-004 through test-006
+---
