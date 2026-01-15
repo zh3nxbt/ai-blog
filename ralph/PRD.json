@@ -252,7 +252,7 @@
         ],
         "description": "RalphLoop CLI entrypoint",
         "id": "func-007",
-        "passes": false
+        "passes": true
       }
     ],
     "ralph_core": [

@@ -801,3 +801,26 @@ Keep it simple. Add dated entries chronologically.
   - func-001 (iterative loop) ✓, func-002 (publish on quality threshold) ✓, func-003 (timeout handling) ✓, func-004 (cost limit handling) ✓, func-005 (explicit failure below floor) ✓, func-006 (activity logging) ✓
   - Next: func-007 (CLI entrypoint)
 ---
+[2026-01-15 - func-007]
+- Implemented RalphLoop CLI entrypoint
+- Files changed: ralph/ralph_loop.py, tests/verify_func_007.py (new), ralph/PRD.json
+- **Implementation details:**
+  - Added main() function to ralph/ralph_loop.py with if __name__ == "__main__" block
+  - CLI loads .env via dotenv, validates required env vars (SUPABASE_URL, SUPABASE_SECRET, ANTHROPIC_API_KEY)
+  - Reads RALPH_QUALITY_THRESHOLD, RALPH_TIMEOUT_MINUTES, RALPH_COST_LIMIT_CENTS from environment
+  - Prints configuration at start, summary at end (status, quality, iterations, cost, blog ID)
+  - Returns exit code 0 for "published" or "draft", exit code 1 for "failed" or exceptions
+- **Verification confirms:**
+  - `python -m ralph.ralph_loop` executes without import errors
+  - Script generates one blog post via RalphLoop.run()
+  - Summary includes all required fields via RalphLoopResult dataclass
+  - Exit code is 0 for success (published/draft), 1 for failure
+- **Learnings for future iterations:**
+  - Python module invocation (`python -m package.module`) requires if __name__ block
+  - Environment variable validation should happen before importing heavy dependencies
+  - RalphLoopResult dataclass provides structured return for CLI output formatting
+  - Exit codes follow Unix convention: 0 = success, non-zero = failure
+- **Phase 1 progress:**
+  - All functional tasks complete: func-001 through func-007 ✓
+  - Next: test-001 through test-006 (validation tests), doc-001/doc-002 (documentation)
+---
