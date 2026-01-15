@@ -292,7 +292,7 @@
         ],
         "description": "Seed evergreen topic bank",
         "id": "mix-002",
-        "passes": false
+        "passes": true
       },
       {
         "acceptance_criteria": [
