@@ -895,3 +895,13 @@ Keep it simple. Add dated entries chronologically.
   - Documentation: doc-001 ✓
   - Next: doc-002 (.env.example), test-004 through test-006
 ---
+[2026-01-15 - test-005]
+- Added verification script for zero AI slop in published content
+- Files changed: tests/verify_test_005.py (new), ralph/PRD.json
+- **Verification coverage:**
+  - Checks published posts for 'delve', 'leverage', and 'unlock'
+  - Ensures detect_ai_slop() returns no findings for published content
+- **Phase 1 progress:**
+  - Testing: test-001 ✓, test-002 ✓, test-003 ✓, test-004 ✓, test-005 ✓
+  - Next: test-006, doc-002
+---

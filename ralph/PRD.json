@@ -646,7 +646,7 @@
         ],
         "description": "Zero AI slop in published content",
         "id": "test-005",
-        "passes": false
+        "passes": true
       },
       {
         "acceptance_criteria": [
