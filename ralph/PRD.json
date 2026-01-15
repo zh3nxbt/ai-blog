@@ -635,7 +635,7 @@
         ],
         "description": "5 successful posts end-to-end",
         "id": "test-004",
-        "passes": false
+        "passes": true
       },
       {
         "acceptance_criteria": [

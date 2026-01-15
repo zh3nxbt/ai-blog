@@ -873,6 +873,18 @@ Keep it simple. Add dated entries chronologically.
   - Testing: test-001 ✓, test-002 ✓, test-003 ✓
   - Next: test-004 through test-006
 ---
+[2026-01-15 - test-004]
+- Added verification script for end-to-end published post checks
+- Files changed: tests/verify_test_004.py (new), ralph/PRD.json
+- **Verification coverage:**
+  - Confirms at least 5 published posts exist
+  - Calculates average final quality score from latest drafts
+  - Checks published content for AI slop keywords
+  - Computes average iterations per post (target 2-4)
+- **Phase 1 progress:**
+  - Testing: test-001 ✓, test-002 ✓, test-003 ✓, test-004 ✓
+  - Next: test-005, test-006, doc-002
+---
 [2026-01-15 - doc-001]
 - Updated README with Phase 1 manual run and environment details
 - Files changed: README.md, ralph/PRD.json
