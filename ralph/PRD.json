@@ -240,7 +240,7 @@
         ],
         "description": "RalphLoop logs all activity",
         "id": "func-006",
-        "passes": false
+        "passes": true
       },
       {
         "acceptance_criteria": [
