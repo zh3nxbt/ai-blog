@@ -1,3 +1,9 @@
 name,url,category,priority,active,notes
 # Example:
 # Ontario Manufacturing News,https://example.com/rss,manufacturing,7,true,Ontario-focused source
+# Existing Supabase RSS sources (db-007) for reference:
+# Assembly Magazine,https://www.assemblymag.com/rss/17,Manufacturing,9,true,Seeded in db-007
+# Manufacturing Dive,https://www.manufacturingdive.com/feeds/news,Manufacturing,10,true,Seeded in db-007
+# Modern Machine Shop,https://www.mmsonline.com/rss,Machining,8,true,Seeded in db-007
+# The Fabricator,https://www.thefabricator.com/rss/the-fabricator,Metal Fabrication,7,true,Seeded in db-007
+# American Machinist,https://www.americanmachinist.com/rss,Machining,8,true,Seeded in db-007
