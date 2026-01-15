@@ -34,12 +34,20 @@ class BaseAgent(ABC):
         if not messages:
             raise ValueError("messages cannot be empty")
 
-        response = self._client.messages.create(
-            model=self.model,
-            max_tokens=max_tokens,
-            system=system,
-            messages=messages,
-        )
+        payload: Dict[str, Any] = {
+            "model": self.model,
+            "max_tokens": max_tokens,
+            "messages": messages,
+        }
+        if system is not None:
+            if isinstance(system, str):
+                payload["system"] = [{"type": "text", "text": system}]
+            elif isinstance(system, list):
+                payload["system"] = system
+            else:
+                raise ValueError("system must be a string, list, or None")
+
+        response = self._client.messages.create(**payload)
 
         self.total_input_tokens += response.usage.input_tokens
         self.total_output_tokens += response.usage.output_tokens
