@@ -841,3 +841,8 @@ Keep it simple. Add dated entries chronologically.
   - Testing: test-001 ✓
   - Next: test-002 (content improves over iterations), test-003 through test-006
 ---
+[2026-01-15 - db-008]
+- Added placeholder CSV for expanded Canada/Ontario RSS sources
+- Files changed: ralph/rss_sources_canada.csv (new)
+- **Next step:** Fill CSV with vetted manufacturing RSS feeds and seed via migration
+---
