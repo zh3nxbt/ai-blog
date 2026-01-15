@@ -193,7 +193,7 @@ def run_tests() -> bool:
             print(f"  FAIL: Missing total_cost_cents for {len(missing_costs)} posts")
         elif accuracy_failures:
             print("  FAIL: Cost tracking outside 10% tolerance")
-            for post_id, total_cost, max_draft_cost in accuracy_failures:
+            for post_id, total_cost, draft_cost_sum in accuracy_failures:
                 print(
                     f"    - Post {post_id}: total={total_cost} cents, "
                     f"draft_sum={draft_cost_sum} cents"
