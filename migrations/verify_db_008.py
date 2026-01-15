@@ -28,7 +28,8 @@ def verify_db_008() -> bool:
     """Verify all acceptance criteria for mix-001."""
     print("🔍 Verifying mix-001: unified topic source tables\n")
 
-    supabase = create_client(settings.supabase_url, settings.supabase_key)
+    supabase_key = settings.supabase_secret or settings.supabase_key
+    supabase = create_client(settings.supabase_url, supabase_key)
 
     results: list[tuple[str, bool]] = []
     test_source_ids: list[str] = []
