@@ -710,3 +710,19 @@ Keep it simple. Add dated entries chronologically.
   - func-001 (iterative loop) ✓
   - Next: func-002 (publish on quality threshold), func-003 (timeout handling)
 ---
+[2026-01-15 - func-002]
+- Verified RalphLoop publishes on quality threshold (already implemented in func-001)
+- Files changed: tests/verify_func_002.py (new), ralph/PRD.json
+- **Verification confirms:**
+  - When quality >= 0.85, blog_posts.status becomes 'published'
+  - published_at timestamp is set using datetime.now(timezone.utc).isoformat()
+  - Final content in blog_posts matches the last iteration's content
+  - RalphLoopResult returned with status='published', quality score, iteration count, cost
+- **Learnings for future iterations:**
+  - func-002 functionality was already implemented as part of func-001's run() method
+  - Task requires only verification test to confirm acceptance criteria
+  - Mock-based testing validates the publish workflow without database calls
+- **Phase 1 progress:**
+  - func-001 (iterative loop) ✓, func-002 (publish on quality threshold) ✓
+  - Next: func-003 (timeout handling), func-004 (cost limit handling)
+---

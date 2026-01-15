@@ -193,7 +193,7 @@
         ],
         "description": "RalphLoop publishes on quality threshold",
         "id": "func-002",
-        "passes": false
+        "passes": true
       },
       {
         "acceptance_criteria": [
