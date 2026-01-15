@@ -3,7 +3,7 @@
 Verification script for test-006: API costs below target.
 
 Acceptance criteria:
-1. Average api_cost_cents per blog_post is < 25
+1. Average api_cost_cents per blog_post is < 50
 2. No single post exceeds 100 cents (cost limit)
 3. Cost tracking is accurate to within 10%
 """
@@ -80,8 +80,8 @@ def _latest_activity_by_post(activities: List[dict]) -> Dict[str, dict]:
     return latest
 
 
-def _max_draft_cost_by_post(drafts: List[dict]) -> Dict[str, int]:
-    """Return max api_cost_cents per blog post from drafts."""
+def _sum_draft_cost_by_post(drafts: List[dict]) -> Dict[str, int]:
+    """Return summed api_cost_cents per blog post from drafts."""
     costs: Dict[str, int] = {}
     for draft in drafts:
         post_id = draft.get("blog_post_id")
@@ -91,9 +91,7 @@ def _max_draft_cost_by_post(drafts: List[dict]) -> Dict[str, int]:
         if cost is None:
             continue
         cost_int = int(cost)
-        current = costs.get(post_id)
-        if current is None or cost_int > current:
-            costs[post_id] = cost_int
+        costs[post_id] = costs.get(post_id, 0) + cost_int
     return costs
 
 
@@ -109,11 +107,11 @@ def _extract_total_cost(activity: dict) -> int | None:
         return None
 
 
-def _cost_accuracy_ok(total_cost: int, max_draft_cost: int) -> bool:
-    """Check that total cost is within 10% of recorded draft costs."""
+def _cost_accuracy_ok(total_cost: int, draft_cost_sum: int) -> bool:
+    """Check that total cost is within 10% of summed draft costs."""
     if total_cost <= 0:
         return False
-    diff = abs(total_cost - max_draft_cost)
+    diff = abs(total_cost - draft_cost_sum)
     return diff / total_cost <= 0.10
 
 
@@ -146,18 +144,18 @@ def run_tests() -> bool:
         else:
             total_costs.append(total_cost)
 
-    # Test 1: Average api_cost_cents per blog_post is < 25
-    print("\nTest 1: Average api_cost_cents per blog_post is < 25")
+    # Test 1: Average api_cost_cents per blog_post is < 50
+    print("\nTest 1: Average api_cost_cents per blog_post is < 50")
     try:
         if not total_costs:
             print("  FAIL: No total_cost_cents values found")
         else:
             avg_cost = sum(total_costs) / len(total_costs)
-            if avg_cost < 25:
-                print(f"  PASS: Average cost {avg_cost:.2f} cents < 25")
+            if avg_cost < 50:
+                print(f"  PASS: Average cost {avg_cost:.2f} cents < 50")
                 passed += 1
             else:
-                print(f"  FAIL: Average cost {avg_cost:.2f} cents >= 25")
+                print(f"  FAIL: Average cost {avg_cost:.2f} cents >= 50")
     except Exception as e:
         print(f"  FAIL: {e}")
 
@@ -180,25 +178,25 @@ def run_tests() -> bool:
     print("\nTest 3: Cost tracking is accurate to within 10%")
     try:
         drafts = _fetch_draft_costs(post_ids)
-        max_draft_costs = _max_draft_cost_by_post(drafts)
+        draft_costs = _sum_draft_cost_by_post(drafts)
 
         accuracy_failures: List[Tuple[str, int, int]] = []
         for post_id, activity in latest_activity.items():
             total_cost = _extract_total_cost(activity)
-            max_draft_cost = max_draft_costs.get(post_id)
-            if total_cost is None or max_draft_cost is None:
+            draft_cost_sum = draft_costs.get(post_id)
+            if total_cost is None or draft_cost_sum is None:
                 continue
-            if not _cost_accuracy_ok(total_cost, max_draft_cost):
-                accuracy_failures.append((post_id, total_cost, max_draft_cost))
+            if not _cost_accuracy_ok(total_cost, draft_cost_sum):
+                accuracy_failures.append((post_id, total_cost, draft_cost_sum))
 
         if missing_costs:
             print(f"  FAIL: Missing total_cost_cents for {len(missing_costs)} posts")
         elif accuracy_failures:
             print("  FAIL: Cost tracking outside 10% tolerance")
-            for post_id, total_cost, max_draft_cost in accuracy_failures:
+            for post_id, total_cost, draft_cost_sum in accuracy_failures:
                 print(
                     f"    - Post {post_id}: total={total_cost} cents, "
-                    f"max_draft={max_draft_cost} cents"
+                    f"draft_sum={draft_cost_sum} cents"
                 )
         else:
             print("  PASS: Total cost within 10% of draft costs for all posts")

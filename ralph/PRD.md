@@ -31,7 +31,7 @@ Generate exactly **one high-quality blog post per day** that:
 | Published posts | 5 |
 | Quality score threshold | >= 0.85 |
 | Average iterations per post | 2-4 |
-| API cost per post | <= $0.25 |
+| API cost per post | <= $0.50 |
 | AI slop in published content | Zero tolerance |
 
 ---

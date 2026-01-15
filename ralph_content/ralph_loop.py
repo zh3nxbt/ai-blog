@@ -170,9 +170,21 @@ class RalphLoop:
         if item_ids:
             self.rss_service.mark_items_as_used(item_ids, str(blog_post_id))
 
-        # Track costs
+        # Track costs per iteration (generation, critique, improvement)
+        last_main_input = 0
+        last_main_output = 0
+        last_crit_input = 0
+        last_crit_output = 0
+        total_cost_cents = 0
+
         input_tokens, output_tokens = self.agent.get_total_tokens()
-        total_cost_cents = calculate_api_cost(input_tokens, output_tokens)
+        generation_cost = calculate_api_cost(
+            input_tokens - last_main_input,
+            output_tokens - last_main_output,
+        )
+        last_main_input = input_tokens
+        last_main_output = output_tokens
+        total_cost_cents += generation_cost
 
         # Evaluate initial quality
         validation_result = self.quality_validator(content, title)
@@ -186,7 +198,7 @@ class RalphLoop:
             quality_score=quality_score,
             critique=validation_result,
             title=title,
-            api_cost_cents=total_cost_cents,
+            api_cost_cents=generation_cost,
         )
 
         iteration_count = 1
@@ -266,8 +278,13 @@ class RalphLoop:
 
             # Update cost tracking
             crit_input, crit_output = self.critique_agent.get_total_tokens()
-            critique_cost = calculate_api_cost(crit_input, crit_output)
-            total_cost_cents = critique_cost  # Critique agent tracks cumulative
+            critique_cost = calculate_api_cost(
+                crit_input - last_crit_input,
+                crit_output - last_crit_output,
+            )
+            last_crit_input = crit_input
+            last_crit_output = crit_output
+            total_cost_cents += critique_cost
 
             # Log critique activity
             self.supabase_service.log_agent_activity(
@@ -308,8 +325,13 @@ class RalphLoop:
 
             # Update cost tracking
             imp_input, imp_output = self.agent.get_total_tokens()
-            improvement_cost = calculate_api_cost(imp_input, imp_output)
-            total_cost_cents = improvement_cost + critique_cost
+            improvement_cost = calculate_api_cost(
+                imp_input - last_main_input,
+                imp_output - last_main_output,
+            )
+            last_main_input = imp_input
+            last_main_output = imp_output
+            total_cost_cents += improvement_cost
 
             # Evaluate improved content
             validation_result = self.quality_validator(improved_content, current_title)
@@ -318,6 +340,7 @@ class RalphLoop:
             iteration_count += 1
 
             # Save improved draft iteration
+            iteration_cost = critique_cost + improvement_cost
             self.supabase_service.save_draft_iteration(
                 blog_post_id=blog_post_id,
                 iteration_number=iteration_count,
@@ -325,7 +348,7 @@ class RalphLoop:
                 quality_score=new_quality_score,
                 critique=validation_result,
                 title=current_title,
-                api_cost_cents=improvement_cost,
+                api_cost_cents=iteration_cost,
             )
 
             # Log improvement activity
