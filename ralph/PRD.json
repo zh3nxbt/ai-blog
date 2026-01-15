@@ -228,7 +228,7 @@
         ],
         "description": "RalphLoop fails explicitly below quality floor",
         "id": "func-005",
-        "passes": false
+        "passes": true
       },
       {
         "acceptance_criteria": [
