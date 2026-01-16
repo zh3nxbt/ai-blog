@@ -1,9 +1,41 @@
 name,url,category,priority,active,notes
-# Example:
-# Ontario Manufacturing News,https://example.com/rss,manufacturing,7,true,Ontario-focused source
-# Existing Supabase RSS sources (db-007) for reference:
-# Assembly Magazine,https://www.assemblymag.com/rss/17,Manufacturing,9,true,Seeded in db-007
-# Manufacturing Dive,https://www.manufacturingdive.com/feeds/news,Manufacturing,10,true,Seeded in db-007
-# Modern Machine Shop,https://www.mmsonline.com/rss,Machining,8,true,Seeded in db-007
-# The Fabricator,https://www.thefabricator.com/rss/the-fabricator,Metal Fabrication,7,true,Seeded in db-007
-# American Machinist,https://www.americanmachinist.com/rss,Machining,8,true,Seeded in db-007
+Aerospace Manufacturing Magazine,https://www.aero-mag.com/feed/,Aerospace,8,TRUE,B2B publication covering design and manufacturing in aerospace.
+Automation World RSS Feed,https://www.automationworld.com/rss.xml,Automation & Controls,8,TRUE,Industrial automation and control systems news
+BroadCaster Magazine (Canada) Headline News,https://broadcastermagazine.com/rssfeeds/BM_dailynews.xml,Canadian Industry News,6,TRUE,Daily Canadian business + manufacturing headlines
+Canadian Manufacturing Daily Brief,https://www.canadianmanufacturing.com/rss,Manufacturing News,9,TRUE,Daily manufacturing news from a Canadian perspective
+Canadian Metalworking,https://canadianmetalworking.com/meter/rss,Metalworking,6,TRUE,Canadian metalworking news & equipment info
+CNC Cookbook Blog,https://www.cnccookbook.com/feed,CNC Machining,8,TRUE,Expert CNC blog with 1000+ how-to articles for machinists
+CNC Masters,https://www.cncmasters.com/feed/,Machining,6,TRUE,CNC milling and lathe technology blog.
+CNC WEST,https://cnc-west.com/feed/,Machining,7,TRUE,Western US focused metalworking and machine shop news.
+Datron Dynamics,https://www.datron.com/feed/,Machining,7,TRUE,High-speed milling and precision machining insights.
+Fabricating & Metalworking,https://fabricatingandmetalworking.com/feed/,Metalworking,8,TRUE,Broad coverage of metal forming welding and machining.
+FMA Blog (Fabricators & Manufacturers Association),https://fmamfg.org/blog/rss.xml,Industry Assoc Blog,7,TRUE,Association blog for fabrication and manufacturing professionals
+In the Loupe (Harvey Performance),https://www.harveyperformance.com/feed/,Machining,8,TRUE,Technical machining tips and tooling insights.
+Industrial Distribution,https://www.inddist.com/rss,Supply Chain,7,TRUE,News for distributors of industrial products and parts.
+Laguna Tools Blog,https://info.lagunatools.com/rss.xml,Machining,7,TRUE,CNC machinery and woodworking/metalworking insights.
+Mantech Machinery,https://www.mantechmachinery.co.uk/feed/,Manufacturing,6,TRUE,UK-based industrial machinery and manufacturing news.
+Manufacturing & Engineering News (EIN),https://manufacturing.einnews.com/all_rss,Manufacturing News,8,TRUE,Aggregated industry news including machining & milling feeds
+Manufacturing.net,https://www.manufacturing.net/rss33.xml,Manufacturing,8,TRUE,Headline news for manufacturing professionals.
+ManufacturingTomorrow CNC,https://www.manufacturingtomorrow.com/tag/cnc/rss,Manufacturing/CNC,6,TRUE,Tagged CNC machining news from ManufacturingTomorrow
+Mastercam Blog,https://www.mastercam.com/news/blog/feed/,CAD/CAM,8,TRUE,Software and programming insights for CNC machining.
+Medical Design & Outsourcing,http://feeds.feedburner.com/MedicalDesignAndOutsourcing,Medical Manufacturing,8,TRUE,Focus on precision parts for medical devices.
+MetalForming Magazine,https://metalformingmagazine.com/articles/rss,Metal Forming,8,TRUE,Metal forming industry news & trends
+Metalworking News,https://metalworkingnews.info/feed,Metalworking,7,TRUE,Independent metalworking industry updates
+Metalworking World Magazine,https://metalworkingworldmagazine.com/feed,Metal Fabrication,7,TRUE,Technical metalworking and machining content including tools & tech
+Methods Machine Tools News,https://www.methodsmachine.com/news/rss,Company & Tech News,5,TRUE,Updates & press from Methods Machine Tools
+NTMA (National Tooling and Machining Association),https://ntma.org/feed/,Machining,9,TRUE,Industry news and resources for tooling and machining.
+OneCNC News,https://www.onecnc.net/en/feed/,CAD/CAM,7,TRUE,Global CAD/CAM software news and updates.
+Plant Services,https://www.plantservices.com/rss,Maintenance,8,TRUE,Magazine on industrial tech and asset management for reliable plant operations
+PMPA (Precision Machined Products Association),https://www.pmpa.org/feed/,Precision Machining,9,TRUE,Official association for precision machined parts industry.
+Practical Machinist,https://www.practicalmachinist.com/feed/,Machining,10,TRUE,Largest manufacturing technology forum and news site.
+Quality Digest,https://www.qualitydigest.com/rss.xml,Quality Assurance,7,TRUE,Digital quality management magazine with expert commentary and industry updates
+Quality Magazine,https://www.qualitymag.com/rss/articles,Quality Assurance,8,TRUE,Official QA/QC magazine covering metrology inspection and process improvement
+Robotics & Automation News (UK),https://roboticsandautomationnews.co.uk/rss,Automation & Robotics,7,TRUE,Industrial automation and robotics news (UK)
+Robotics & Automation News,https://roboticsandautomationnews.com/feed,Industrial Robotics,8,TRUE,Global robotics and automation news focused on industrial sectors
+Shop Metalworking Technology,https://www.shopmetaltech.com/feed,Machining/Metalworking,9,TRUE,Canada's leading metalworking industry magazine
+SME Advanced Manufacturing Now,https://advmn.libsyn.com/rss,Manufacturing,9,TRUE,Podcast and news from the Society of Manufacturing Engineers.
+The Robot Report,https://www.therobotreport.com/feed,Industrial Robotics,9,TRUE,Robotics industry news & analysis covering industrial AI and mobile robots
+Thomas Industry Update Blog,https://blog.thomasnet.com/feed,Manufacturing (General),7,TRUE,Daily manufacturing news trends and best practices for industry professionals
+Today's Machining World,https://todaysmachiningworld.com/feed/,Machining,9,TRUE,Interviews shop owner insights and equipment gurus.
+Tormach Blog,https://www.tormach.com/articles/rss.xml,Machining,7,TRUE,Focus on small-to-mid sized CNC machines and prototyping.
+Welding Tips and Tricks,https://wttpodcast.libsyn.com/rss,Welding,7,TRUE,Practical welding advice and industry interviews.

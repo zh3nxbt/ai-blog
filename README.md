@@ -25,8 +25,11 @@ cp .env.example .env
 # Run API server
 uvicorn api.main:app --reload
 
-# Test worker
-python worker.py --run-once
+# Run blog generation (manual)
+python -m ralph.ralph_loop
+
+# Force run even if post exists today
+python -m ralph.ralph_loop --force
 ```
 
 ### Environment Variables
@@ -86,7 +89,6 @@ ai-blog/
 ├── docs/                  # Project documentation
 │   ├── RALPH_OVERALL_PLAN.md
 │   └── RALPH_INTEGRATION_PLAN_REVISED.md
-├── worker.py              # Daily generation script
 ├── config.py              # Configuration management
 ├── requirements.txt       # Python dependencies
 ├── .env.example          # Environment template

@@ -38,20 +38,22 @@
 **Prerequisites:** Phase 0 complete ✅
 
 **Exit Criteria:**
-- [ ] worker.py implements full generate-critique-refine loop
+- [ ] `python -m ralph.ralph_loop` implements full generate-critique-refine loop
 - [ ] Quality scoring system operational (0.0-1.0 scale)
 - [ ] AI slop detection working (forbidden keywords)
 - [ ] 5 published posts with quality >= 0.85
 - [ ] Average 2-4 iterations per post
 - [ ] Zero AI slop in published content
-- [ ] Cost <= $0.25 per post
-- [ ] Idempotent execution (safe to re-run)
+- [ ] Cost <= $0.50 per post
+- [ ] Idempotent execution (safe to re-run, skips if post exists today)
 
 **Deliverable:** Working production system (manual trigger)
 
 **Duration:** Days 4-14 (estimated)
 
 **Tasks:** Remaining tasks in PRD.json (services, ralph_core, functional, testing, documentation)
+
+**Note:** The legacy `worker.py` stub has been removed. Use `python -m ralph.ralph_loop` which delegates to the full implementation in `ralph_content/ralph_loop.py`.
 
 ---
 
@@ -134,9 +136,12 @@
 
 **In Progress:**
 - ⏳ Phase 1: Core Ralph Loop implementation
+  - ✅ Quality validation system (svc-008 through svc-012)
+  - ✅ Agent framework (ralph-001 through ralph-011)
+  - ✅ Iterative refinement loop (func-001 through func-007)
+  - ✅ Mixed-source selection (mix-001 through mix-005)
+  - ⏳ Validation with 5 published posts (test-001 through test-006)
 
-**Next Up:**
-- Implement quality validation system (svc-008 through svc-012)
-- Build agent framework (ralph-001 through ralph-010)
-- Create iterative refinement loop (func-001 through func-007)
-- Validate with 5 published posts (test-001 through test-006)
+**Remaining to complete Phase 1:**
+- Generate 5th published post (currently have 4)
+- Verify all test criteria pass

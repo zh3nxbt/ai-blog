@@ -103,7 +103,7 @@ pip install -r requirements.txt
 
 # Development
 uvicorn api.main:app --reload          # API server
-python worker.py --run-once            # Test worker
+python -m ralph.ralph_loop             # Run blog generation
 ```
 
 ## Content Strategy
