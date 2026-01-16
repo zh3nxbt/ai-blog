@@ -315,7 +315,7 @@
         ],
         "description": "Mixed-source selection integrated into RalphLoop",
         "id": "mix-004",
-        "passes": false
+        "passes": true
       },
       {
         "acceptance_criteria": [

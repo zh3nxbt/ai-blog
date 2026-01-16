@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 from uuid import UUID
 
 from ralph_content.agents.critique_agent import CritiqueAgent
@@ -32,6 +32,13 @@ class RalphLoop:
     DEFAULT_QUALITY_THRESHOLD = 0.85
     DEFAULT_TIMEOUT_MINUTES = 30
     DEFAULT_COST_LIMIT_CENTS = 100
+    DEFAULT_SOURCE_MIX = {
+        "rss": 2,
+        "evergreen": 1,
+        "standards": 1,
+        "vendor": 1,
+    }
+    SOURCE_TYPE_ORDER = ("rss", "evergreen", "standards", "vendor", "internal")
     MAX_ITERATIONS = 10
 
     def __init__(
@@ -39,6 +46,7 @@ class RalphLoop:
         agent: ProductMarketingAgent | None = None,
         critique_agent: CritiqueAgent | None = None,
         rss_service: Any | None = None,
+        topic_item_service: Any | None = None,
         supabase_service: Any | None = None,
         quality_validator: Any | None = None,
         min_items: int = 3,
@@ -46,6 +54,7 @@ class RalphLoop:
         quality_threshold: float | None = None,
         timeout_minutes: int | None = None,
         cost_limit_cents: int | None = None,
+        source_mix: Dict[str, int] | None = None,
     ) -> None:
         if min_items < 1:
             raise ValueError("min_items must be >= 1")
@@ -57,6 +66,11 @@ class RalphLoop:
 
             rss_service = rss_service_module
 
+        if topic_item_service is None:
+            from services import topic_item_service as topic_item_service_module
+
+            topic_item_service = topic_item_service_module
+
         if supabase_service is None:
             from services import supabase_service as supabase_service_module
 
@@ -65,6 +79,7 @@ class RalphLoop:
         self.agent = agent or ProductMarketingAgent()
         self.critique_agent = critique_agent or CritiqueAgent()
         self.rss_service = rss_service
+        self.topic_item_service = topic_item_service
         self.supabase_service = supabase_service
         self.quality_validator = quality_validator or validate_content
         self.min_items = min_items
@@ -73,6 +88,7 @@ class RalphLoop:
         self.quality_threshold = quality_threshold or self.DEFAULT_QUALITY_THRESHOLD
         self.timeout_minutes = timeout_minutes or self.DEFAULT_TIMEOUT_MINUTES
         self.cost_limit_cents = cost_limit_cents or self.DEFAULT_COST_LIMIT_CENTS
+        self.source_mix = source_mix or self.DEFAULT_SOURCE_MIX
 
     def generate_initial_draft(self) -> UUID:
         """
@@ -81,10 +97,9 @@ class RalphLoop:
         Returns:
             UUID: blog_posts ID of the created draft
         """
-        rss_items = self._get_rss_items()
-        rss_items_for_generation = rss_items[: self.max_items]
+        source_items, _ = self._get_source_items()
 
-        title, content_markdown = self.agent.generate_content(rss_items_for_generation)
+        title, content_markdown = self.agent.generate_content(source_items)
         content_html = markdown_to_html(content_markdown)
         blog_post_id = self.supabase_service.create_blog_post(
             title=title,
@@ -101,41 +116,150 @@ class RalphLoop:
             title=title,
         )
 
-        item_ids = [item["id"] for item in rss_items_for_generation if item.get("id")]
-        if not item_ids:
-            raise ValueError("No RSS item IDs available to mark as used")
-
-        self.rss_service.mark_items_as_used(item_ids, str(blog_post_id))
+        self._mark_source_items_as_used(source_items, blog_post_id)
 
         return blog_post_id
 
-    def _get_rss_items(self) -> List[Dict[str, Any]]:
-        """Fetch enough unused RSS items, replenishing if needed."""
-        unused_items = self.rss_service.fetch_unused_items(limit=self.max_items)
+    def _get_source_items(self) -> Tuple[List[Dict[str, Any]], Dict[str, int]]:
+        """Fetch source items using the configured source mix."""
+        targets = self._build_source_targets()
+        desired_total = min(self.max_items, sum(targets.values()))
+        desired_total = max(self.min_items, desired_total)
 
-        if len(unused_items) < self.min_items:
+        selected_items: List[Dict[str, Any]] = []
+        selected_ids: set[str] = set()
+        source_mix_counts: Dict[str, int] = {key: 0 for key in targets}
+
+        for source_type in self.SOURCE_TYPE_ORDER:
+            target_count = targets.get(source_type, 0)
+            if target_count <= 0:
+                continue
+
+            items = self._fetch_items_for_source_type(
+                source_type=source_type,
+                limit=target_count,
+                exclude_ids=selected_ids,
+            )
+            if items:
+                selected_items.extend(items)
+                selected_ids.update(item["id"] for item in items if item.get("id"))
+                source_mix_counts[source_type] = source_mix_counts.get(source_type, 0) + len(items)
+
+        remaining_slots = desired_total - len(selected_items)
+        if remaining_slots > 0:
+            for source_type in self.SOURCE_TYPE_ORDER:
+                if remaining_slots <= 0:
+                    break
+
+                extra_items = self._fetch_items_for_source_type(
+                    source_type=source_type,
+                    limit=remaining_slots,
+                    exclude_ids=selected_ids,
+                )
+                if not extra_items:
+                    continue
+
+                selected_items.extend(extra_items)
+                selected_ids.update(item["id"] for item in extra_items if item.get("id"))
+                source_mix_counts[source_type] = source_mix_counts.get(source_type, 0) + len(extra_items)
+                remaining_slots = desired_total - len(selected_items)
+
+        if len(selected_items) < self.min_items:
+            raise ValueError(
+                "Insufficient source items: "
+                f"need at least {self.min_items}, found {len(selected_items)}"
+            )
+
+        return selected_items[: self.max_items], source_mix_counts
+
+    def _build_source_targets(self) -> Dict[str, int]:
+        """Compute target counts per source type based on the default mix."""
+        targets: Dict[str, int] = {}
+        remaining = self.max_items
+
+        for source_type in self.SOURCE_TYPE_ORDER:
+            desired = self.source_mix.get(source_type, 0)
+            if desired <= 0 or remaining <= 0:
+                continue
+            take = min(desired, remaining)
+            targets[source_type] = take
+            remaining -= take
+
+        if remaining > 0:
+            targets["rss"] = targets.get("rss", 0) + remaining
+
+        return targets
+
+    def _fetch_items_for_source_type(
+        self,
+        source_type: str,
+        limit: int,
+        exclude_ids: set[str],
+    ) -> List[Dict[str, Any]]:
+        """Fetch items for a source type while avoiding already-selected IDs."""
+        if limit <= 0:
+            return []
+
+        fetch_limit = limit + len(exclude_ids)
+        if source_type == "rss":
+            items = self._get_rss_items_for_mix(fetch_limit)
+        else:
+            items = self.topic_item_service.fetch_unused_items_by_source_type(
+                source_type=source_type,
+                limit=fetch_limit,
+            )
+
+        filtered = [item for item in items if item.get("id") not in exclude_ids]
+        return filtered[:limit]
+
+    def _get_rss_items_for_mix(self, limit: int) -> List[Dict[str, Any]]:
+        """Fetch unused RSS items for mixed-source selection."""
+        unused_items = self.rss_service.fetch_unused_items(limit=limit)
+
+        if len(unused_items) < limit:
             sources = self.rss_service.fetch_active_sources()
-            if not sources:
-                raise ValueError("No active RSS sources found")
-
             for source in sources:
                 try:
                     self.rss_service.fetch_feed_items(source["id"], limit=10)
                 except Exception:
                     continue
 
-                unused_items = self.rss_service.fetch_unused_items(limit=self.max_items)
-                if len(unused_items) >= self.min_items:
+                unused_items = self.rss_service.fetch_unused_items(limit=limit)
+                if len(unused_items) >= limit:
                     break
 
-            unused_items = self.rss_service.fetch_unused_items(limit=self.max_items)
+            unused_items = self.rss_service.fetch_unused_items(limit=limit)
 
-        if len(unused_items) < self.min_items:
-            raise ValueError(
-                f"Insufficient RSS items: need at least {self.min_items}, found {len(unused_items)}"
-            )
+        for item in unused_items:
+            item.setdefault("source_type", "rss")
 
         return unused_items
+
+    def _mark_source_items_as_used(
+        self,
+        source_items: List[Dict[str, Any]],
+        blog_post_id: UUID,
+    ) -> None:
+        """Mark RSS and topic items as used for a blog post."""
+        rss_item_ids = [
+            item["id"]
+            for item in source_items
+            if item.get("id") and item.get("source_type") == "rss"
+        ]
+        topic_item_ids = [
+            item["id"]
+            for item in source_items
+            if item.get("id") and item.get("source_type") != "rss"
+        ]
+
+        if rss_item_ids:
+            self.rss_service.mark_items_as_used(rss_item_ids, str(blog_post_id))
+
+        if topic_item_ids:
+            self.topic_item_service.mark_items_as_used(topic_item_ids, str(blog_post_id))
+
+        if not rss_item_ids and not topic_item_ids:
+            raise ValueError("No source item IDs available to mark as used")
 
     def run(self) -> RalphLoopResult:
         """
@@ -155,10 +279,8 @@ class RalphLoop:
         )
 
         # Generate initial draft
-        rss_items = self._get_rss_items()
-        rss_items_for_generation = rss_items[: self.max_items]
-
-        title, content_markdown = self.agent.generate_content(rss_items_for_generation)
+        source_items, source_mix_counts = self._get_source_items()
+        title, content_markdown = self.agent.generate_content(source_items)
         content_html = markdown_to_html(content_markdown)
 
         # Create blog post record
@@ -168,10 +290,8 @@ class RalphLoop:
             status="draft",
         )
 
-        # Mark RSS items as used
-        item_ids = [item["id"] for item in rss_items_for_generation if item.get("id")]
-        if item_ids:
-            self.rss_service.mark_items_as_used(item_ids, str(blog_post_id))
+        # Mark source items as used
+        self._mark_source_items_as_used(source_items, blog_post_id)
 
         # Track costs per iteration (generation, critique, improvement)
         last_main_input = 0
@@ -216,6 +336,7 @@ class RalphLoop:
                 "iteration": iteration_count,
                 "quality_score": quality_score,
                 "cost_cents": total_cost_cents,
+                "source_mix": source_mix_counts,
             },
         )
 
@@ -382,7 +503,7 @@ class RalphLoop:
 
         # Update blog post with final content and status
         client = self.supabase_service.get_supabase_client()
-            update_data = {"content": markdown_to_html(current_content), "status": status}
+        update_data = {"content": markdown_to_html(current_content), "status": status}
         if status == "published":
             from datetime import datetime, timezone
 
@@ -401,6 +522,7 @@ class RalphLoop:
                 "final_quality_score": quality_score,
                 "iteration_count": iteration_count,
                 "total_cost_cents": total_cost_cents,
+                "source_mix": source_mix_counts,
             },
         )
 

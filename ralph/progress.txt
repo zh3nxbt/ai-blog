@@ -984,3 +984,11 @@ Keep it simple. Add dated entries chronologically.
 - **Learnings for future iterations:**
   - Store feed URLs in source notes to keep configuration explicit
   - Ingestion handles per-source failures while continuing other sources
+[2026-01-16 - mix-004]
+- Integrated mixed-source selection into RalphLoop
+- Files changed: ralph_content/ralph_loop.py, services/topic_item_service.py, tests/verify_mix_004.py, ralph/PRD.json
+- **Implementation details:**
+  - Default source mix targets RSS + evergreen + standards + vendor
+  - Fallback logic fills shortages while keeping 3-5 total items
+  - Both RSS and topic items are marked used_in_blog per post
+  - Activity logs include source mix metadata for observability
