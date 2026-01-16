@@ -472,7 +472,7 @@ class RalphLoop:
                 quality_score=new_quality_score,
                 critique=validation_result,
                 title=current_title,
-                api_cost_cents=iteration_cost,
+                api_cost_cents=total_cost_cents,
             )
 
             # Log improvement activity
