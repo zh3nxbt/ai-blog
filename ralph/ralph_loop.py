@@ -1,12 +1,14 @@
 """RalphLoop entrypoint module with CLI support.
 
 Usage:
-    python -m ralph.ralph_loop
+    python -m ralph.ralph_loop          # Normal run (skips if post exists today)
+    python -m ralph.ralph_loop --force  # Force run even if post exists today
 
 Generates one blog post using the RalphLoop iterative refinement system.
 Prints summary to stdout and exits with code 0 on success, 1 on failure.
 """
 
+import argparse
 import os
 import sys
 
@@ -19,8 +21,18 @@ def main() -> int:
     """Execute RalphLoop and print summary to stdout.
 
     Returns:
-        0 on success (published or draft), 1 on failure
+        0 on success (published, draft, or skipped), 1 on failure
     """
+    parser = argparse.ArgumentParser(
+        description="Generate a blog post using RalphLoop iterative refinement"
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Force generation even if a post already exists today",
+    )
+    args = parser.parse_args()
+
     from dotenv import load_dotenv
 
     load_dotenv()
@@ -36,11 +48,13 @@ def main() -> int:
     quality_threshold = float(os.environ.get("RALPH_QUALITY_THRESHOLD", "0.85"))
     timeout_minutes = int(os.environ.get("RALPH_TIMEOUT_MINUTES", "30"))
     cost_limit_cents = int(os.environ.get("RALPH_COST_LIMIT_CENTS", "100"))
+    skip_if_exists = not args.force
 
     print("Starting RalphLoop blog generation...")
     print(f"  Quality threshold: {quality_threshold}")
     print(f"  Timeout: {timeout_minutes} minutes")
     print(f"  Cost limit: {cost_limit_cents} cents")
+    print(f"  Skip if exists: {skip_if_exists}")
     print()
 
     try:
@@ -48,6 +62,7 @@ def main() -> int:
             quality_threshold=quality_threshold,
             timeout_minutes=timeout_minutes,
             cost_limit_cents=cost_limit_cents,
+            skip_if_exists=skip_if_exists,
         )
         result = loop.run()
 
@@ -63,8 +78,11 @@ def main() -> int:
         print(f"Blog ID:     {result.blog_post_id}")
         print("=" * 50)
 
-        # Exit 0 for published or draft, 1 for failed
-        return 0 if result.status in ("published", "draft") else 1
+        if result.status == "skipped":
+            print("\nPost already exists for today. Use --force to generate anyway.")
+
+        # Exit 0 for published, draft, or skipped; 1 for failed
+        return 0 if result.status in ("published", "draft", "skipped") else 1
 
     except Exception as e:
         print(f"Error: {e}")

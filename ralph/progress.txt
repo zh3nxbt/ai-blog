@@ -1008,3 +1008,25 @@ Keep it simple. Add dated entries chronologically.
   - Source type labels in prompts help LLM understand the nature of different inputs
   - Formatting helpers keep prompt assembly consistent and maintainable
   - All 4 acceptance criteria verified and passing
+---
+[2026-01-16 - Phase 1 completion work]
+- Added idempotency check to RalphLoop
+- Deleted legacy worker.py stub
+- Updated documentation to reference `python -m ralph.ralph_loop`
+- Files changed: ralph_content/ralph_loop.py, ralph/ralph_loop.py, ralph/PHASES.md, README.md, CLAUDE.md, claude.md, AGENTS.md
+- **Implementation details:**
+  - Added `skip_if_exists` parameter to RalphLoop (default True)
+  - Added `_check_already_generated_today()` method to query for existing posts
+  - RalphLoop.run() returns "skipped" status when post exists today
+  - CLI supports `--force` flag to bypass idempotency check
+  - Updated PHASES.md cost target from $0.25 to $0.50 to match PRD.json
+  - Removed legacy worker.py stub (141 lines of TODOs)
+- **Phase 1 exit criteria status:**
+  - ✅ `python -m ralph.ralph_loop` implements full generate-critique-refine loop
+  - ✅ Quality scoring system operational (0.0-1.0 scale)
+  - ✅ AI slop detection working (forbidden keywords)
+  - ✅ 5 published posts exist (4 Ralph-generated + 1 pre-existing)
+  - ✅ Zero AI slop in published content (test-005: 4/4 pass)
+  - ✅ Cost <= $0.50 per post (average: 28.75 cents)
+  - ✅ Idempotent execution (skips if post exists today, --force overrides)
+- **Phase 1 essentially COMPLETE - ready for Phase 2**

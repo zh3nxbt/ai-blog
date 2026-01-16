@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass
-from typing import Any, Dict, List, Tuple
+from datetime import date
+from typing import Any, Dict, List, Optional, Tuple
 from uuid import UUID
 
 from ralph_content.agents.critique_agent import CritiqueAgent
@@ -23,7 +24,7 @@ class RalphLoopResult:
     final_quality_score: float
     iteration_count: int
     total_cost_cents: int
-    status: str  # "published", "draft", "failed"
+    status: str  # "published", "draft", "failed", "skipped"
 
 
 class RalphLoop:
@@ -55,6 +56,7 @@ class RalphLoop:
         timeout_minutes: int | None = None,
         cost_limit_cents: int | None = None,
         source_mix: Dict[str, int] | None = None,
+        skip_if_exists: bool = True,
     ) -> None:
         if min_items < 1:
             raise ValueError("min_items must be >= 1")
@@ -89,6 +91,30 @@ class RalphLoop:
         self.timeout_minutes = timeout_minutes or self.DEFAULT_TIMEOUT_MINUTES
         self.cost_limit_cents = cost_limit_cents or self.DEFAULT_COST_LIMIT_CENTS
         self.source_mix = source_mix or self.DEFAULT_SOURCE_MIX
+        self.skip_if_exists = skip_if_exists
+
+    def _check_already_generated_today(self) -> Optional[UUID]:
+        """
+        Check if a blog post has already been generated today.
+
+        Returns:
+            UUID of existing post if found, None otherwise
+        """
+        client = self.supabase_service.get_supabase_client()
+        today = date.today().isoformat()
+
+        # Query for posts created today (any status)
+        response = (
+            client.table("blog_posts")
+            .select("id, created_at, status")
+            .gte("created_at", f"{today}T00:00:00")
+            .lt("created_at", f"{today}T23:59:59.999999")
+            .execute()
+        )
+
+        if response.data:
+            return UUID(response.data[0]["id"])
+        return None
 
     def generate_initial_draft(self) -> UUID:
         """
@@ -271,8 +297,30 @@ class RalphLoop:
 
         Returns:
             RalphLoopResult with blog_post_id, final_quality_score, iteration_count,
-            total_cost_cents, and status ("published", "draft", or "failed")
+            total_cost_cents, and status ("published", "draft", "failed", or "skipped")
         """
+        # Idempotency check: skip if post already generated today
+        if self.skip_if_exists:
+            existing_post_id = self._check_already_generated_today()
+            if existing_post_id:
+                self.supabase_service.log_agent_activity(
+                    agent_name="ralph-loop",
+                    activity_type="skipped",
+                    success=True,
+                    context_id=existing_post_id,
+                    metadata={
+                        "reason": "post_already_exists_today",
+                        "existing_post_id": str(existing_post_id),
+                    },
+                )
+                return RalphLoopResult(
+                    blog_post_id=existing_post_id,
+                    final_quality_score=0.0,
+                    iteration_count=0,
+                    total_cost_cents=0,
+                    status="skipped",
+                )
+
         timeout_manager = TimeoutManager(
             timeout_minutes=self.timeout_minutes,
             cost_limit_cents=self.cost_limit_cents,
@@ -464,7 +512,6 @@ class RalphLoop:
             iteration_count += 1
 
             # Save improved draft iteration
-            iteration_cost = critique_cost + improvement_cost
             self.supabase_service.save_draft_iteration(
                 blog_post_id=blog_post_id,
                 iteration_number=iteration_count,
