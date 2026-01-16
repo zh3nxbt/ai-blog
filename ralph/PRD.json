@@ -1,15 +1,17 @@
 {
-  "goal": "Automate daily blog generation at 7 AM UTC with monitoring and alerts",
+  "goal": "Automate daily content check at 7 AM UTC - only post when sources have real value",
   "phase": "Phase 2 - Production Deployment",
   "success_criteria": {
     "automated_days": 5,
     "email_alerts_configured": true,
     "monitoring_operational": true,
     "no_manual_intervention": true,
-    "systemd_timer_active": true
+    "systemd_timer_active": true,
+    "source_juice_evaluation": true
   },
   "summary": {
     "breakdown": {
+      "content_logic": 1,
       "systemd": 4,
       "alerts": 3,
       "monitoring": 4,
@@ -18,9 +20,27 @@
     },
     "completed": 0,
     "progress_percentage": 0,
-    "total_tasks": 16
+    "total_tasks": 17
   },
   "tasks": {
+    "content_logic": [
+      {
+        "id": "logic-001",
+        "description": "Implement source juice evaluation before content generation",
+        "acceptance_criteria": [
+          "RalphLoop._evaluate_source_juice(source_items) method exists",
+          "Method uses Claude to analyze if sources are worth writing about",
+          "Returns (should_proceed: bool, reason: str, juice_score: float)",
+          "juice_score is 0.0-1.0 scale indicating source value",
+          "Minimum juice threshold configurable via RALPH_JUICE_THRESHOLD (default 0.6)",
+          "When juice_score < threshold, run() returns status='skipped_no_juice'",
+          "Skip is logged to blog_agent_activity with juice_score and reason",
+          "Cost of juice evaluation is ~$0.02-0.05 (small prompt)",
+          "Sources with no fresh RSS items (>48 hours old) auto-fail juice check"
+        ],
+        "passes": false
+      }
+    ],
     "systemd": [
       {
         "id": "sys-001",
@@ -38,15 +58,16 @@
       },
       {
         "id": "sys-002",
-        "description": "Create systemd timer for daily 7 AM UTC",
+        "description": "Create systemd timer for daily 7 AM UTC content check",
         "acceptance_criteria": [
           "File /etc/systemd/system/ralph.timer exists",
-          "Timer triggers ralph.service",
+          "Timer triggers ralph.service daily at 7 AM UTC",
           "OnCalendar set to *-*-* 07:00:00 UTC",
           "Persistent=true (runs missed timers on boot)",
           "Timer enabled: systemctl enable ralph.timer",
           "Timer active: systemctl is-active ralph.timer shows 'active'",
-          "Next trigger time shown in: systemctl list-timers ralph.timer"
+          "Next trigger time shown in: systemctl list-timers ralph.timer",
+          "Note: Service checks source juice first, only posts if valuable content found"
         ],
         "passes": false
       },
@@ -92,13 +113,15 @@
       },
       {
         "id": "alert-002",
-        "description": "Implement failure notification in ralph_loop",
+        "description": "Implement status notification in ralph_loop",
         "acceptance_criteria": [
           "On exception, email sent with error details",
           "On status='failed', email sent with quality score and reason",
-          "Email includes blog_post_id for debugging",
-          "Email includes last iteration content preview",
-          "Notification logged to blog_agent_activity"
+          "On status='skipped_no_juice', email sent with juice_score and source summary",
+          "Email includes blog_post_id for debugging (if applicable)",
+          "Email includes source items evaluated (for skipped_no_juice)",
+          "Notification logged to blog_agent_activity",
+          "Email subject clearly indicates: [FAILED], [SKIPPED], or [ERROR]"
         ],
         "passes": false
       },
@@ -168,25 +191,26 @@
     "validation": [
       {
         "id": "val-001",
-        "description": "Day 1 automated generation",
+        "description": "Day 1 automated content check",
         "acceptance_criteria": [
           "Timer triggers at 7 AM UTC without manual intervention",
-          "Blog post generated with status='published' or 'draft'",
+          "Run completes with status: 'published', 'draft', or 'skipped_no_juice'",
           "No errors in journalctl -u ralph",
-          "Cost within budget (<$0.50)",
-          "Activity logged to blog_agent_activity"
+          "Cost within budget (<$0.50 if posted, ~$0.05 if skipped)",
+          "Activity logged to blog_agent_activity with juice evaluation"
         ],
         "passes": false
       },
       {
         "id": "val-002",
-        "description": "Days 2-4 automated generation",
+        "description": "Days 2-4 automated content checks",
         "acceptance_criteria": [
-          "3 consecutive days of successful generation",
-          "All posts have quality >= 0.70 (at minimum draft status)",
+          "3 consecutive days of successful runs (post or skip)",
+          "Posts have quality >= 0.70 (at minimum draft status)",
+          "Skips have juice_score logged with reason",
           "No manual intervention required",
           "No duplicate posts on same day",
-          "Total cost for 3 days < $1.50"
+          "Email alert sent on each skip (skipped_no_juice)"
         ],
         "passes": false
       },
@@ -194,11 +218,11 @@
         "id": "val-003",
         "description": "Day 5 validation and Phase 2 complete",
         "acceptance_criteria": [
-          "5 consecutive successful automated days",
-          "At least 4 of 5 posts have status='published'",
+          "5 consecutive successful automated runs",
+          "System correctly posts when juice is high, skips when low",
           "Zero manual interventions required",
-          "Email alerts working (test by checking alert logs)",
-          "Monitoring queries return valid data",
+          "Email alerts working for skips and failures",
+          "Monitoring queries return valid data including skip stats",
           "Phase 2 exit criteria fully met"
         ],
         "passes": false
