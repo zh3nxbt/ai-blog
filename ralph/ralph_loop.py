@@ -12,9 +12,9 @@ import argparse
 import os
 import sys
 
-from ralph_content.ralph_loop import RalphLoop, RalphLoopResult
+from ralph_content.ralph_loop import JuiceEvaluationResult, RalphLoop, RalphLoopResult
 
-__all__ = ["RalphLoop", "RalphLoopResult"]
+__all__ = ["JuiceEvaluationResult", "RalphLoop", "RalphLoopResult"]
 
 
 def main() -> int:
@@ -48,10 +48,12 @@ def main() -> int:
     quality_threshold = float(os.environ.get("RALPH_QUALITY_THRESHOLD", "0.85"))
     timeout_minutes = int(os.environ.get("RALPH_TIMEOUT_MINUTES", "30"))
     cost_limit_cents = int(os.environ.get("RALPH_COST_LIMIT_CENTS", "100"))
+    juice_threshold = float(os.environ.get("RALPH_JUICE_THRESHOLD", "0.6"))
     skip_if_exists = not args.force
 
     print("Starting RalphLoop blog generation...")
     print(f"  Quality threshold: {quality_threshold}")
+    print(f"  Juice threshold: {juice_threshold}")
     print(f"  Timeout: {timeout_minutes} minutes")
     print(f"  Cost limit: {cost_limit_cents} cents")
     print(f"  Skip if exists: {skip_if_exists}")
@@ -62,6 +64,7 @@ def main() -> int:
             quality_threshold=quality_threshold,
             timeout_minutes=timeout_minutes,
             cost_limit_cents=cost_limit_cents,
+            juice_threshold=juice_threshold,
             skip_if_exists=skip_if_exists,
         )
         result = loop.run()
@@ -80,9 +83,11 @@ def main() -> int:
 
         if result.status == "skipped":
             print("\nPost already exists for today. Use --force to generate anyway.")
+        elif result.status == "skipped_no_juice":
+            print("\nSources lacked sufficient value to generate content.")
 
-        # Exit 0 for published, draft, or skipped; 1 for failed
-        return 0 if result.status in ("published", "draft", "skipped") else 1
+        # Exit 0 for published, draft, skipped, or skipped_no_juice; 1 for failed
+        return 0 if result.status in ("published", "draft", "skipped", "skipped_no_juice") else 1
 
     except Exception as e:
         print(f"Error: {e}")

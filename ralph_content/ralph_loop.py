@@ -2,18 +2,35 @@
 
 from __future__ import annotations
 
+import json
 import time
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Tuple
 from uuid import UUID
 
+from anthropic import Anthropic
+
+from config import settings
 from ralph_content.agents.critique_agent import CritiqueAgent
 from ralph_content.agents.product_marketing import ProductMarketingAgent
 from ralph_content.core.api_cost import calculate_api_cost
 from ralph_content.core.markdown_renderer import markdown_to_html
 from ralph_content.core.timeout_manager import TimeoutManager
+from ralph_content.prompts.source_juice import SOURCE_JUICE_PROMPT_TEMPLATE
 from services.quality_validator import validate_content
+
+
+@dataclass
+class JuiceEvaluationResult:
+    """Result of source juice evaluation."""
+
+    should_proceed: bool
+    reason: str
+    juice_score: float
+    best_source: Optional[str] = None
+    potential_angle: Optional[str] = None
+    cost_cents: int = 0
 
 
 @dataclass
@@ -24,7 +41,7 @@ class RalphLoopResult:
     final_quality_score: float
     iteration_count: int
     total_cost_cents: int
-    status: str  # "published", "draft", "failed", "skipped"
+    status: str  # "published", "draft", "failed", "skipped", "skipped_no_juice"
 
 
 class RalphLoop:
@@ -33,6 +50,7 @@ class RalphLoop:
     DEFAULT_QUALITY_THRESHOLD = 0.85
     DEFAULT_TIMEOUT_MINUTES = 30
     DEFAULT_COST_LIMIT_CENTS = 100
+    DEFAULT_JUICE_THRESHOLD = 0.6
     DEFAULT_SOURCE_MIX = {
         "rss": 2,
         "evergreen": 1,
@@ -41,6 +59,7 @@ class RalphLoop:
     }
     SOURCE_TYPE_ORDER = ("rss", "evergreen", "standards", "vendor", "internal")
     MAX_ITERATIONS = 10
+    FRESHNESS_HOURS = 48  # Sources older than this auto-fail juice check
 
     def __init__(
         self,
@@ -50,11 +69,13 @@ class RalphLoop:
         topic_item_service: Any | None = None,
         supabase_service: Any | None = None,
         quality_validator: Any | None = None,
+        anthropic_client: Anthropic | None = None,
         min_items: int = 3,
         max_items: int = 5,
         quality_threshold: float | None = None,
         timeout_minutes: int | None = None,
         cost_limit_cents: int | None = None,
+        juice_threshold: float | None = None,
         source_mix: Dict[str, int] | None = None,
         skip_if_exists: bool = True,
     ) -> None:
@@ -84,12 +105,16 @@ class RalphLoop:
         self.topic_item_service = topic_item_service
         self.supabase_service = supabase_service
         self.quality_validator = quality_validator or validate_content
+        self._anthropic_client = anthropic_client or Anthropic(
+            api_key=settings.anthropic_api_key
+        )
         self.min_items = min_items
         self.max_items = max_items
 
         self.quality_threshold = quality_threshold or self.DEFAULT_QUALITY_THRESHOLD
         self.timeout_minutes = timeout_minutes or self.DEFAULT_TIMEOUT_MINUTES
         self.cost_limit_cents = cost_limit_cents or self.DEFAULT_COST_LIMIT_CENTS
+        self.juice_threshold = juice_threshold or self.DEFAULT_JUICE_THRESHOLD
         self.source_mix = source_mix or self.DEFAULT_SOURCE_MIX
         self.skip_if_exists = skip_if_exists
 
@@ -115,6 +140,175 @@ class RalphLoop:
         if response.data:
             return UUID(response.data[0]["id"])
         return None
+
+    def _check_sources_freshness(
+        self, source_items: List[Dict[str, Any]]
+    ) -> Tuple[bool, str]:
+        """
+        Check if source items have fresh content (within FRESHNESS_HOURS).
+
+        Args:
+            source_items: List of source items with optional published_at timestamps
+
+        Returns:
+            Tuple of (has_fresh_content, reason)
+        """
+        if not source_items:
+            return False, "No source items available"
+
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=self.FRESHNESS_HOURS)
+        fresh_count = 0
+        total_with_dates = 0
+
+        for item in source_items:
+            published_at = item.get("published_at")
+            if not published_at:
+                continue
+
+            total_with_dates += 1
+
+            # Parse the timestamp if it's a string
+            if isinstance(published_at, str):
+                try:
+                    # Handle ISO format timestamps
+                    if "T" in published_at:
+                        if published_at.endswith("Z"):
+                            published_at = published_at[:-1] + "+00:00"
+                        parsed_dt = datetime.fromisoformat(published_at)
+                    else:
+                        parsed_dt = datetime.fromisoformat(published_at)
+
+                    # Ensure timezone-aware
+                    if parsed_dt.tzinfo is None:
+                        parsed_dt = parsed_dt.replace(tzinfo=timezone.utc)
+
+                    if parsed_dt >= cutoff:
+                        fresh_count += 1
+                except (ValueError, TypeError):
+                    continue
+            elif isinstance(published_at, datetime):
+                if published_at.tzinfo is None:
+                    published_at = published_at.replace(tzinfo=timezone.utc)
+                if published_at >= cutoff:
+                    fresh_count += 1
+
+        # If no items have dates, assume they're fresh (benefit of the doubt)
+        if total_with_dates == 0:
+            return True, "No published dates available, proceeding with evaluation"
+
+        # Require at least one fresh source
+        if fresh_count > 0:
+            return True, f"{fresh_count}/{total_with_dates} sources are fresh"
+        else:
+            return False, f"All {total_with_dates} sources are older than {self.FRESHNESS_HOURS} hours"
+
+    def _evaluate_source_juice(
+        self, source_items: List[Dict[str, Any]]
+    ) -> JuiceEvaluationResult:
+        """
+        Evaluate whether source items have enough "juice" to warrant a blog post.
+
+        Uses Claude to analyze the newsworthiness and value of the sources.
+        Automatically fails if all sources are older than FRESHNESS_HOURS.
+
+        Args:
+            source_items: List of source items to evaluate
+
+        Returns:
+            JuiceEvaluationResult with should_proceed, reason, juice_score, etc.
+        """
+        # First check freshness
+        is_fresh, freshness_reason = self._check_sources_freshness(source_items)
+        if not is_fresh:
+            return JuiceEvaluationResult(
+                should_proceed=False,
+                reason=f"Auto-skip: {freshness_reason}",
+                juice_score=0.0,
+                best_source=None,
+                potential_angle=None,
+                cost_cents=0,
+            )
+
+        # Format source items for the prompt
+        source_text_parts = []
+        for i, item in enumerate(source_items, 1):
+            title = item.get("title", "Untitled")
+            summary = item.get("summary", item.get("content", "No summary"))
+            source_type = item.get("source_type", "unknown")
+            published = item.get("published_at", "Unknown date")
+            url = item.get("url", "No URL")
+
+            # Truncate summary if too long
+            if len(summary) > 500:
+                summary = summary[:500] + "..."
+
+            source_text_parts.append(
+                f"{i}. [{source_type.upper()}] {title}\n"
+                f"   Published: {published}\n"
+                f"   URL: {url}\n"
+                f"   Summary: {summary}"
+            )
+
+        source_text = "\n\n".join(source_text_parts)
+        prompt = SOURCE_JUICE_PROMPT_TEMPLATE.format(source_items=source_text)
+
+        # Call Claude for evaluation (using smaller max_tokens for cost efficiency)
+        response = self._anthropic_client.messages.create(
+            model=settings.anthropic_model,
+            max_tokens=500,
+            messages=[{"role": "user", "content": prompt}],
+        )
+
+        # Calculate cost
+        cost_cents = calculate_api_cost(
+            response.usage.input_tokens,
+            response.usage.output_tokens,
+        )
+
+        # Parse response
+        response_text = response.content[0].text.strip()
+
+        # Handle optional code fences
+        if response_text.startswith("```"):
+            lines = response_text.split("\n")
+            lines = lines[1:]
+            if lines and lines[-1].strip() == "```":
+                lines = lines[:-1]
+            response_text = "\n".join(lines).strip()
+
+        try:
+            result = json.loads(response_text)
+        except json.JSONDecodeError as exc:
+            # If parsing fails, default to proceeding (fail open)
+            return JuiceEvaluationResult(
+                should_proceed=True,
+                reason=f"Failed to parse juice evaluation response: {exc}",
+                juice_score=0.7,  # Benefit of the doubt
+                best_source=None,
+                potential_angle=None,
+                cost_cents=cost_cents,
+            )
+
+        juice_score = float(result.get("juice_score", 0.5))
+        should_proceed = result.get("should_proceed", juice_score >= self.juice_threshold)
+        reason = result.get("reason", "No reason provided")
+        best_source = result.get("best_source")
+        potential_angle = result.get("potential_angle")
+
+        # Override should_proceed based on juice_threshold
+        if juice_score < self.juice_threshold:
+            should_proceed = False
+            if "below threshold" not in reason.lower():
+                reason = f"{reason} (juice_score {juice_score:.2f} < threshold {self.juice_threshold})"
+
+        return JuiceEvaluationResult(
+            should_proceed=should_proceed,
+            reason=reason,
+            juice_score=juice_score,
+            best_source=best_source,
+            potential_angle=potential_angle,
+            cost_cents=cost_cents,
+        )
 
     def generate_initial_draft(self) -> UUID:
         """
@@ -326,8 +520,59 @@ class RalphLoop:
             cost_limit_cents=self.cost_limit_cents,
         )
 
-        # Generate initial draft
+        # Get source items first
         source_items, source_mix_counts = self._get_source_items()
+
+        # Evaluate source juice before content generation
+        juice_result = self._evaluate_source_juice(source_items)
+
+        # Log juice evaluation activity
+        self.supabase_service.log_agent_activity(
+            agent_name="ralph-loop",
+            activity_type="juice_evaluation",
+            success=True,
+            metadata={
+                "juice_score": juice_result.juice_score,
+                "should_proceed": juice_result.should_proceed,
+                "reason": juice_result.reason,
+                "best_source": juice_result.best_source,
+                "potential_angle": juice_result.potential_angle,
+                "cost_cents": juice_result.cost_cents,
+                "source_mix": source_mix_counts,
+                "source_count": len(source_items),
+            },
+        )
+
+        # Skip if juice is too low
+        if not juice_result.should_proceed:
+            # Create a placeholder UUID for the result (no post created)
+            from uuid import uuid4
+
+            placeholder_id = uuid4()
+
+            self.supabase_service.log_agent_activity(
+                agent_name="ralph-loop",
+                activity_type="skipped_no_juice",
+                success=True,
+                metadata={
+                    "juice_score": juice_result.juice_score,
+                    "juice_threshold": self.juice_threshold,
+                    "reason": juice_result.reason,
+                    "source_titles": [
+                        item.get("title", "Untitled") for item in source_items[:5]
+                    ],
+                },
+            )
+
+            return RalphLoopResult(
+                blog_post_id=placeholder_id,
+                final_quality_score=0.0,
+                iteration_count=0,
+                total_cost_cents=juice_result.cost_cents,
+                status="skipped_no_juice",
+            )
+
+        # Proceed with content generation
         title, content_markdown = self.agent.generate_content(source_items)
         content_html = markdown_to_html(content_markdown)
 
