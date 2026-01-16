@@ -326,7 +326,7 @@
         ],
         "description": "Prompt + validation for mixed sources",
         "id": "mix-005",
-        "passes": false
+        "passes": true
       }
     ],
     "ralph_core": [

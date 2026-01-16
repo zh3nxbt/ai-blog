@@ -992,3 +992,19 @@ Keep it simple. Add dated entries chronologically.
   - Fallback logic fills shortages while keeping 3-5 total items
   - Both RSS and topic items are marked used_in_blog per post
   - Activity logs include source mix metadata for observability
+---
+[2026-01-16 - mix-005]
+- Implemented prompt and validation updates for mixed sources
+- Files changed: ralph_content/prompts/content_generation.py, ralph_content/agents/product_marketing.py, tests/verify_mix_005.py, ralph/PRD.json
+- **Implementation details:**
+  - Updated INITIAL_DRAFT_PROMPT to explain mixed source types (RSS, evergreen, standards, vendor)
+  - Added explicit warnings in both prompts: "NEVER fabricate or invent URLs"
+  - Updated IMPROVEMENT_PROMPT_TEMPLATE with URL handling instructions
+  - Added _format_source_item() helper to format sources with source_type labels
+  - Source formatting shows "No URL available (do not fabricate)" for items without URLs
+  - Source type labels (RSS Feed, Evergreen Topic, Standards/Gov, Vendor Update) improve clarity
+- **Learnings for future iterations:**
+  - Prompts should explicitly state what NOT to do (fabricate URLs) alongside what to do
+  - Source type labels in prompts help LLM understand the nature of different inputs
+  - Formatting helpers keep prompt assembly consistent and maintainable
+  - All 4 acceptance criteria verified and passing

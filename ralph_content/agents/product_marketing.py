@@ -20,17 +20,12 @@ class ProductMarketingAgent(BaseAgent):
         return "product-marketing"
 
     def generate_content(self, rss_items: List[Dict[str, Any]]) -> Tuple[str, str]:
-        """Generate a blog post title and content from RSS items."""
+        """Generate a blog post title and content from source items (RSS, evergreen, etc.)."""
         if not rss_items:
             raise ValueError("rss_items cannot be empty")
 
         sources_text = "\n\n".join(
-            [
-                f"**Source {i + 1}:** {item.get('title', 'No title')}\n"
-                f"URL: {item.get('url', 'No URL')}\n"
-                f"Summary: {item.get('summary', 'No summary')}"
-                for i, item in enumerate(rss_items)
-            ]
+            [_format_source_item(i + 1, item) for i, item in enumerate(rss_items)]
         )
 
         prompt = INITIAL_DRAFT_PROMPT.format(sources_text=sources_text)
@@ -110,3 +105,33 @@ def _format_critique(critique: str | Dict[str, Any]) -> str:
             raise ValueError("critique cannot be empty")
         return json.dumps(critique, indent=2, sort_keys=True)
     raise ValueError("critique must be a string or dict")
+
+
+def _format_source_item(index: int, item: Dict[str, Any]) -> str:
+    """Format a source item for prompt injection, handling mixed source types."""
+    source_type = item.get("source_type", "rss")
+    title = item.get("title", "No title")
+    summary = item.get("summary", "No summary")
+    url = item.get("url")
+
+    # Format source type label for clarity
+    type_labels = {
+        "rss": "RSS Feed",
+        "evergreen": "Evergreen Topic",
+        "standards": "Standards/Gov",
+        "vendor": "Vendor Update",
+        "internal": "Internal",
+    }
+    type_label = type_labels.get(source_type, source_type.capitalize())
+
+    lines = [f"**Source {index} ({type_label}):** {title}"]
+
+    # Only include URL line if URL exists and is not empty
+    if url and url.strip() and url.lower() != "no url":
+        lines.append(f"URL: {url}")
+    else:
+        lines.append("URL: No URL available (do not fabricate)")
+
+    lines.append(f"Summary: {summary}")
+
+    return "\n".join(lines)
