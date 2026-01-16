@@ -31,7 +31,7 @@ Project: Autonomous blog content generation with iterative self-improvement
 
 ## CURRENT TASKS
 
-[ ] logic-001: Implement source juice evaluation (LLM-based, pre-generation gate)
+[x] logic-001: Implement source juice evaluation (LLM-based, pre-generation gate) - COMPLETE
 [ ] sys-001: Configure systemd service for ralph_loop
 [ ] sys-002: Configure systemd timer for daily 7 AM UTC content check
 [ ] alert-001: Set up email alerts on failure/skip
@@ -59,6 +59,17 @@ Project: Autonomous blog content generation with iterative self-improvement
 ---
 
 ## LEARNINGS & INSIGHTS
+
+[2026-01-16 - logic-001 Complete]
+- Implemented source juice evaluation with LLM-based pre-generation gate
+- Added _evaluate_source_juice() method to RalphLoop
+- Added freshness check: sources >48 hours old auto-fail (no API call needed)
+- JuiceEvaluationResult dataclass captures: should_proceed, reason, juice_score, best_source, potential_angle, cost_cents
+- RALPH_JUICE_THRESHOLD configurable (default 0.6)
+- run() returns status='skipped_no_juice' when juice is too low
+- All juice evaluations logged to blog_agent_activity
+- 11 unit tests added covering freshness checks and juice evaluation
+- Estimated cost per juice evaluation: ~$0.02-0.05 (500 max tokens)
 
 [2026-01-16 - Phase 2 Start]
 - Phase 1 completed successfully with all exit criteria met

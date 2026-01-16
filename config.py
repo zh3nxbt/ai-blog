@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     ralph_quality_threshold: float = 0.85
     ralph_quality_floor: float = 0.70
     ralph_cost_limit_cents: int = 100
+    ralph_juice_threshold: float = 0.6
 
     # Environment
     environment: str = "development"

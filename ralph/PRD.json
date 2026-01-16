@@ -18,8 +18,8 @@
       "validation": 3,
       "documentation": 2
     },
-    "completed": 0,
-    "progress_percentage": 0,
+    "completed": 1,
+    "progress_percentage": 6,
     "total_tasks": 17
   },
   "tasks": {
@@ -38,7 +38,7 @@
           "Cost of juice evaluation is ~$0.02-0.05 (small prompt)",
           "Sources with no fresh RSS items (>48 hours old) auto-fail juice check"
         ],
-        "passes": false
+        "passes": true
       }
     ],
     "systemd": [
