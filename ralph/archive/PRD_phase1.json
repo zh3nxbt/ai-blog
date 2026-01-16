@@ -1,0 +1,737 @@
+{
+  "goal": "Single-agent iterative content generation with quality validation",
+  "phase": "Phase 1 - Core Ralph Loop",
+  "success_criteria": {
+    "api_cost_per_post": "$0.50",
+    "avg_iterations_per_post": "2-4",
+    "published_posts": 5,
+    "quality_threshold": 0.85,
+    "zero_ai_slop": true
+  },
+  "summary": {
+    "breakdown": {
+      "database": 7,
+      "documentation": 2,
+      "functional": 7,
+      "ralph_core": 11,
+      "services": 12,
+      "sourcing_mix": 5,
+      "spike": 4,
+      "testing": 6
+    },
+    "completed": 0,
+    "progress_percentage": 0,
+    "total_tasks": 54
+  },
+  "tasks": {
+    "database": [
+      {
+        "acceptance_criteria": [
+          "Table blog_posts exists in Supabase",
+          "Column id is UUID primary key",
+          "Column title is non-null text",
+          "Column slug is non-null text with UNIQUE constraint",
+          "Column excerpt is text (nullable)",
+          "Column content is text (markdown format)",
+          "Column status has CHECK constraint for (draft, published, failed)",
+          "Column published_at is nullable timestamp",
+          "Column created_at defaults to NOW()",
+          "INSERT with status='draft' succeeds",
+          "INSERT with status='invalid' fails with constraint error",
+          "Note: Table pre-existed with additional columns (featured_image, author, meta_description, meta_keywords, tags, updated_at)",
+          "Note: Re-verified after schema changes; see migrations/verify_db_001.py"
+        ],
+        "description": "blog_posts table with proper schema (pre-existing table)",
+        "id": "db-001",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "Table blog_content_drafts exists in Supabase",
+          "Column id is UUID primary key",
+          "Column blog_post_id is UUID foreign key to blog_posts",
+          "Column iteration_number is integer",
+          "Column content is text",
+          "Column title is text",
+          "Column quality_score is numeric(3,2)",
+          "Column critique is JSONB",
+          "Column api_cost_cents is integer",
+          "Column created_at defaults to NOW()",
+          "UNIQUE constraint exists on (blog_post_id, iteration_number)",
+          "INSERT with iteration_number=1 for valid blog_post_id succeeds",
+          "INSERT with duplicate (blog_post_id, iteration_number) fails"
+        ],
+        "description": "blog_content_drafts table with foreign keys",
+        "id": "db-002",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "Table blog_agent_activity exists in Supabase",
+          "Column id is UUID primary key",
+          "Column agent_name is non-null text",
+          "Column activity_type is non-null text",
+          "Column context_id is nullable UUID",
+          "Column duration_ms is integer",
+          "Column success is boolean",
+          "Column error_message is nullable text",
+          "Column metadata is JSONB",
+          "Column created_at defaults to NOW()",
+          "INSERT with activity_type='content_draft' succeeds",
+          "INSERT with activity_type='critique' succeeds",
+          "INSERT with activity_type='publish' succeeds"
+        ],
+        "description": "blog_agent_activity table for logging",
+        "id": "db-003",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "Table blog_rss_sources exists in Supabase",
+          "Column id is UUID primary key",
+          "Column name is non-null text",
+          "Column url is non-null text with UNIQUE constraint",
+          "Column category is text",
+          "Column active is boolean defaulting to true",
+          "Column priority is integer (1-10)",
+          "Column last_fetched_at is nullable timestamp",
+          "Column created_at defaults to NOW()",
+          "INSERT with valid URL succeeds",
+          "INSERT with duplicate URL fails with constraint error"
+        ],
+        "description": "blog_rss_sources table for feed management",
+        "id": "db-004",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "Table blog_rss_items exists in Supabase",
+          "Column id is UUID primary key",
+          "Column source_id is UUID foreign key to blog_rss_sources",
+          "Column title is non-null text",
+          "Column url is non-null text with UNIQUE constraint",
+          "Column summary is text",
+          "Column published_at is timestamp",
+          "Column used_in_blog is nullable UUID foreign key to blog_posts",
+          "Column created_at defaults to NOW()",
+          "INSERT with valid source_id succeeds",
+          "INSERT with invalid source_id fails with foreign key error"
+        ],
+        "description": "blog_rss_items table with foreign keys",
+        "id": "db-005",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "Index exists on blog_content_drafts(blog_post_id, iteration_number DESC)",
+          "Index exists on blog_agent_activity(agent_name, created_at DESC)",
+          "Index exists on blog_agent_activity(activity_type, created_at DESC)",
+          "Partial index exists on blog_rss_items WHERE used_in_blog IS NULL",
+          "Query `SELECT * FROM blog_rss_items WHERE used_in_blog IS NULL` uses index"
+        ],
+        "description": "Database indexes for query performance",
+        "id": "db-006",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "At least 5 rows exist in blog_rss_sources",
+          "All seeded sources have active=true",
+          "All seeded sources have priority between 1-10",
+          "At least one source URL returns valid RSS/XML when fetched",
+          "Sources include manufacturing industry publications"
+        ],
+        "description": "5 manufacturing RSS sources seeded",
+        "id": "db-007",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "New migration seeds at least 25 additional RSS sources",
+          "At least 10 sources are Canada/Ontario-focused",
+          "All seeded sources have active=true",
+          "All seeded sources have priority between 1-10",
+          "At least 5 sources return valid RSS/XML when fetched",
+          "No duplicate URLs introduced"
+        ],
+        "description": "Seed expanded manufacturing RSS sources (Canada/Ontario focus)",
+        "id": "db-008",
+        "passes": true
+      }
+    ],
+    "documentation": [
+      {
+        "acceptance_criteria": [
+          "README.md has section titled 'Phase 1 - Core Ralph Loop'",
+          "Database setup steps are documented",
+          "Environment variables are listed with descriptions",
+          "Manual run command documented: `python -m ralph.ralph_loop`",
+          "Expected output format is described"
+        ],
+        "description": "README Phase 1 documentation",
+        "id": "doc-001",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          ".env.example contains SUPABASE_URL with placeholder",
+          ".env.example contains SUPABASE_KEY with placeholder",
+          ".env.example contains ANTHROPIC_API_KEY with placeholder",
+          ".env.example contains RALPH_TIMEOUT_MINUTES with default 30",
+          ".env.example contains RALPH_QUALITY_THRESHOLD with default 0.85",
+          ".env.example contains RALPH_COST_LIMIT_CENTS with default 100"
+        ],
+        "description": ".env.example complete",
+        "id": "doc-002",
+        "passes": true
+      }
+    ],
+    "functional": [
+      {
+        "acceptance_criteria": [
+          "loop.run() executes multiple iterations when initial quality < 0.85",
+          "Each iteration creates new blog_content_drafts record",
+          "quality_score generally increases across iterations",
+          "Loop stops when quality_score >= 0.85",
+          "Final iteration count is logged"
+        ],
+        "description": "RalphLoop iterates until quality threshold",
+        "id": "func-001",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "When quality >= 0.85, blog_posts.status becomes 'published'",
+          "published_at timestamp is set to current time",
+          "Final content_markdown matches best iteration content",
+          "loop.run() returns success status"
+        ],
+        "description": "RalphLoop publishes on quality threshold",
+        "id": "func-002",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "With RALPH_TIMEOUT_MINUTES=1, loop times out before quality 0.85",
+          "blog_posts.status is 'draft' if quality >= 0.70",
+          "blog_posts.status is 'failed' if quality < 0.70",
+          "Timeout is logged with warning message",
+          "All iterations are preserved in blog_content_drafts"
+        ],
+        "description": "RalphLoop saves draft on timeout",
+        "id": "func-003",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "With RALPH_COST_LIMIT_CENTS=10, loop stops when cost exceeded",
+          "blog_posts.status is 'draft' if quality >= 0.70",
+          "blog_posts.status is 'failed' if quality < 0.70",
+          "Cost limit exceeded is logged with warning",
+          "Total cost is recorded in final log"
+        ],
+        "description": "RalphLoop saves draft on cost limit",
+        "id": "func-004",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "blog_posts.status is 'failed' when quality < 0.70 at limit",
+          "Error log entry is created in blog_agent_activity",
+          "All iterations are still saved in blog_content_drafts",
+          "loop.run() returns failure status"
+        ],
+        "description": "RalphLoop fails explicitly below quality floor",
+        "id": "func-005",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "blog_agent_activity has entry with activity_type='content_draft' for each iteration",
+          "blog_agent_activity has entry with activity_type='critique' for each critique",
+          "blog_agent_activity has entry with activity_type='publish' on publish",
+          "Each entry has duration_ms recorded",
+          "Each entry has success boolean set"
+        ],
+        "description": "RalphLoop logs all activity",
+        "id": "func-006",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "`python -m ralph.ralph_loop` executes without import errors",
+          "Script generates one blog post",
+          "Summary printed to stdout includes: status, quality, iterations, cost",
+          "Exit code is 0 on success",
+          "Exit code is 1 on failure"
+        ],
+        "description": "RalphLoop CLI entrypoint",
+        "id": "func-007",
+        "passes": true
+      }
+    ],
+    "sourcing_mix": [
+      {
+        "acceptance_criteria": [
+          "Table blog_topic_sources exists in Supabase",
+          "Table blog_topic_items exists in Supabase",
+          "blog_topic_sources.source_type supports rss, evergreen, standards, vendor, internal",
+          "blog_topic_items.url is nullable",
+          "blog_topic_items.used_in_blog references blog_posts",
+          "UNIQUE constraint prevents duplicate topic items by url when url is present"
+        ],
+        "description": "Unified topic source tables for mixed sourcing",
+        "id": "mix-001",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "At least 25 evergreen topics seeded in blog_topic_items",
+          "Evergreen topics have source_type='evergreen'",
+          "Evergreen topics include title and summary",
+          "Evergreen topics may omit url without validation errors"
+        ],
+        "description": "Seed evergreen topic bank",
+        "id": "mix-002",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "At least 3 non-RSS stable sources registered (standards/gov/vendor)",
+          "Sources use RSS or official APIs only (no scraping)",
+          "Ingestion stores items in blog_topic_items",
+          "Ingestion handles per-source failures without stopping other sources"
+        ],
+        "description": "Register and ingest non-RSS stable sources",
+        "id": "mix-003",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "RalphLoop selects 3-5 items using a source mix (default ratio documented)",
+          "Selection falls back gracefully when a source type is short",
+          "All selected items are marked used_in_blog",
+          "Agent activity logs include source mix metadata"
+        ],
+        "description": "Mixed-source selection integrated into RalphLoop",
+        "id": "mix-004",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "Content generation prompt mentions mixed sources",
+          "Prompt forbids fabricated URLs",
+          "source_urls output includes only items with url",
+          "Tests cover mixed-source prompt behavior"
+        ],
+        "description": "Prompt + validation for mixed sources",
+        "id": "mix-005",
+        "passes": true
+      }
+    ],
+    "ralph_core": [
+      {
+        "acceptance_criteria": [
+          "`python -c 'import ralph'` exits with code 0",
+          "`python -c 'import ralph_content.core'` exits with code 0",
+          "`python -c 'import ralph_content.agents'` exits with code 0",
+          "`python -c 'import ralph_content.prompts'` exits with code 0",
+          "ralph/__init__.py exists",
+          "ralph_content/__init__.py exists",
+          "ralph_content/core/__init__.py exists",
+          "ralph_content/agents/__init__.py exists",
+          "ralph_content/prompts/__init__.py exists"
+        ],
+        "description": "ralph package structure",
+        "id": "ralph-001",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "`python -c 'from ralph_content.core.timeout_manager import TimeoutManager'` exits with code 0",
+          "TimeoutManager(timeout_minutes=30, cost_limit_cents=100) instantiates",
+          "is_timeout_exceeded() returns False immediately after creation",
+          "is_cost_limit_exceeded(50) returns False when limit is 100",
+          "is_cost_limit_exceeded(110) returns True when limit is 100"
+        ],
+        "description": "TimeoutManager class",
+        "id": "ralph-002",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "Function calculate_api_cost(input_tokens, output_tokens, model) exists",
+          "Returns cost in cents as integer",
+          "Cost for claude-sonnet-4-5 matches Anthropic pricing",
+          "1000 input + 2000 output tokens costs approximately 1-5 cents",
+          "Costs scale linearly with token count"
+        ],
+        "description": "API cost calculation",
+        "id": "ralph-003",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "`python -c 'from ralph_content.prompts.critique import AI_SLOP_KEYWORDS; print(len(AI_SLOP_KEYWORDS))'` prints >= 15",
+          "AI_SLOP_KEYWORDS contains 'delve'",
+          "AI_SLOP_KEYWORDS contains 'leverage'",
+          "AI_SLOP_KEYWORDS contains 'unlock'",
+          "AI_SLOP_KEYWORDS contains 'landscape'"
+        ],
+        "description": "AI slop keywords constant",
+        "id": "ralph-004",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "`python -c 'from ralph_content.prompts.critique import CRITIQUE_PROMPT_TEMPLATE'` exits with code 0",
+          "Template contains 'quality_score' field specification",
+          "Template contains 'ai_slop_detected' field specification",
+          "Template contains 'improvements' field specification",
+          "Template includes example JSON response format"
+        ],
+        "description": "CRITIQUE_PROMPT_TEMPLATE",
+        "id": "ralph-005",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "`python -c 'from ralph_content.prompts.content_generation import INITIAL_DRAFT_PROMPT'` exits with code 0",
+          "`python -c 'from ralph_content.prompts.content_generation import IMPROVEMENT_PROMPT_TEMPLATE'` exits with code 0",
+          "INITIAL_DRAFT_PROMPT mentions manufacturing industry",
+          "INITIAL_DRAFT_PROMPT mentions MAS Precision Parts",
+          "IMPROVEMENT_PROMPT_TEMPLATE has placeholder for critique"
+        ],
+        "description": "Content generation prompts",
+        "id": "ralph-006",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "`python -c 'from ralph_content.agents.base_agent import BaseAgent'` exits with code 0",
+          "BaseAgent is abstract (cannot instantiate directly)",
+          "BaseAgent has _call_claude() method",
+          "BaseAgent has total_input_tokens attribute",
+          "BaseAgent has total_output_tokens attribute",
+          "BaseAgent has get_total_tokens() method"
+        ],
+        "description": "BaseAgent abstract class",
+        "id": "ralph-007",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "Concrete BaseAgent subclass can make Claude API call",
+          "After call, total_input_tokens > 0",
+          "After call, total_output_tokens > 0",
+          "get_total_tokens() returns (input_tokens, output_tokens) tuple",
+          "Multiple calls accumulate token counts"
+        ],
+        "description": "BaseAgent token tracking",
+        "id": "ralph-008",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "`python -c 'from ralph_content.agents.product_marketing import ProductMarketingAgent'` exits with code 0",
+          "agent.generate_content(rss_items) returns (title, content) tuple",
+          "Returned title is non-empty string",
+          "Returned content is >= 1000 words",
+          "Content mentions manufacturing or machining concepts"
+        ],
+        "description": "ProductMarketingAgent.generate_content()",
+        "id": "ralph-009",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "agent.improve_content(content, critique) returns improved content string",
+          "Improved content differs from input content",
+          "Improved content addresses at least one critique point",
+          "Improved content length is within 20% of original"
+        ],
+        "description": "ProductMarketingAgent.improve_content()",
+        "id": "ralph-010",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "`python -c 'from ralph.ralph_loop import RalphLoop'` exits with code 0",
+          "loop.generate_initial_draft() creates blog_posts record with status='draft'",
+          "blog_content_drafts has iteration_number=1 for created post",
+          "RSS items used are marked with used_in_blog = blog_post_id",
+          "Returns blog_post_id UUID"
+        ],
+        "description": "RalphLoop.generate_initial_draft()",
+        "id": "ralph-011",
+        "passes": true
+      }
+    ],
+    "services": [
+      {
+        "acceptance_criteria": [
+          "`python -c 'import services'` exits with code 0",
+          "`python -c 'from services.supabase_service import get_supabase_client'` exits with code 0",
+          "get_supabase_client() returns a Supabase client object",
+          "Client reads SUPABASE_URL from environment",
+          "Client reads SUPABASE_KEY from environment"
+        ],
+        "description": "services package with Supabase client",
+        "id": "svc-001",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "Function create_blog_post(title, content, status) exists",
+          "Function returns UUID of created blog post",
+          "Created record has matching title, content, status",
+          "created_at timestamp is set automatically",
+          "slug is generated from title"
+        ],
+        "description": "create_blog_post() function",
+        "id": "svc-002",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "Function save_draft_iteration(blog_id, iteration, content, score, critique) exists",
+          "Function inserts row into blog_content_drafts",
+          "iteration_number matches input parameter",
+          "quality_score matches input parameter",
+          "Duplicate iteration_number for same blog_id raises error"
+        ],
+        "description": "save_draft_iteration() function",
+        "id": "svc-003",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "Function log_agent_activity(agent, activity_type, success, metadata) exists",
+          "Function inserts row into blog_agent_activity",
+          "agent_name matches input parameter",
+          "activity_type matches input parameter",
+          "metadata stored as JSONB"
+        ],
+        "description": "log_agent_activity() function",
+        "id": "svc-004",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "`python -c 'from services.rss_service import fetch_active_feeds'` exits with code 0",
+          "Function returns list of RSS source records",
+          "All returned sources have active=true",
+          "Sources ordered by priority DESC",
+          "Returns at least 5 sources when database is seeded"
+        ],
+        "description": "fetch_active_feeds() function",
+        "id": "svc-005",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "Function fetch_feed_items(source_id, limit) exists",
+          "Function fetches RSS/XML from source URL",
+          "Function parses feed and extracts items",
+          "Function stores new items in blog_rss_items",
+          "Duplicate URLs are skipped (not inserted)",
+          "Function returns list of fetched items"
+        ],
+        "description": "fetch_feed_items() function",
+        "id": "svc-006",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "Function mark_items_as_used(item_ids, blog_id) exists",
+          "Function updates used_in_blog column for specified items",
+          "After call, SELECT shows used_in_blog = blog_id for those items",
+          "Items not in list remain unchanged"
+        ],
+        "description": "mark_items_as_used() function",
+        "id": "svc-007",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "`python -c 'from services.quality_validator import detect_ai_slop'` exits with code 0",
+          "detect_ai_slop('Let us delve into') returns (True, ['delve'])",
+          "detect_ai_slop('We leverage this') returns (True, ['leverage'])",
+          "detect_ai_slop('Simple plain text') returns (False, [])",
+          "Function checks at least 15 forbidden keywords"
+        ],
+        "description": "detect_ai_slop() function",
+        "id": "svc-008",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "Function validate_length(content) exists",
+          "Content with 500 words returns (False, 500, score < 0.5)",
+          "Content with 1500 words returns (True, 1500, score > 0.8)",
+          "Content with 3000 words returns (False, 3000, score < 0.7)",
+          "Target range is 1000-2500 words"
+        ],
+        "description": "validate_length() function",
+        "id": "svc-009",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "Function validate_structure(content) exists",
+          "Content without headings returns (False, issues, score < 0.5)",
+          "Content with ## and ### headings returns (True, [], score > 0.8)",
+          "Issues list includes 'missing headings' when applicable",
+          "Checks for paragraph breaks"
+        ],
+        "description": "validate_structure() function",
+        "id": "svc-010",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "Function validate_brand_voice(content) exists",
+          "Content with 5+ exclamation marks returns (False, issues, low_score)",
+          "Content with 'revolutionary' or 'game-changer' returns (False, issues, low_score)",
+          "Professional manufacturing content returns (True, [], high_score)"
+        ],
+        "description": "validate_brand_voice() function",
+        "id": "svc-011",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "Function validate_content(content, title) exists",
+          "High-quality content (1500 words, headings, no slop) returns score >= 0.85",
+          "Content with 'delve' keyword returns score < 0.50",
+          "Content with missing headings returns score < 0.70",
+          "Returns dict with all sub-validator results"
+        ],
+        "description": "validate_content() aggregator function",
+        "id": "svc-012",
+        "passes": true
+      }
+    ],
+    "spike": [
+      {
+        "acceptance_criteria": [
+          "services/rss_service.py exists",
+          "Function fetch_active_sources() returns list of RSS source records from blog_rss_sources",
+          "Function fetch_feed(url) uses feedparser to fetch RSS content",
+          "Function store_rss_items() saves items to blog_rss_items (skips duplicates by URL)",
+          "Function returns 3-5 RSS items successfully"
+        ],
+        "description": "RSS feed fetching for spike.py (minimal version)",
+        "id": "spike-001",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "services/llm_service.py exists",
+          "Function generate_blog_post(rss_items) accepts list of RSS items",
+          "Function calls Claude API using Anthropic SDK",
+          "Function returns dict with keys: title, excerpt, content",
+          "Token usage tracked (input_tokens + output_tokens)",
+          "Cost calculated based on token pricing"
+        ],
+        "description": "Claude API integration for spike.py (single-pass generation)",
+        "id": "spike-002",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "spike.py exists in project root",
+          "Script fetches RSS items using rss_service",
+          "Script generates blog post using llm_service",
+          "Script saves post to blog_posts using supabase_service.create_blog_post()",
+          "Script logs activity to blog_agent_activity",
+          "Script prints summary (token usage, cost, content preview)"
+        ],
+        "description": "spike.py orchestrator script",
+        "id": "spike-003",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "spike.py executes 3 times without fatal errors",
+          "3 blog drafts exist in blog_posts table with status='draft'",
+          "Content is readable and relevant to manufacturing (manual review)",
+          "Average token usage documented in progress.txt",
+          "Average cost per run documented in progress.txt",
+          "RSS feeds demonstrated as reliable",
+          "Phase 0 exit criteria met"
+        ],
+        "description": "Execute spike.py 3 times and verify Phase 0 complete",
+        "id": "spike-004",
+        "passes": true
+      }
+    ],
+    "testing": [
+      {
+        "acceptance_criteria": [
+          "When iteration 1 quality >= 0.85, only 1 iteration exists",
+          "blog_posts.status is 'published' after 1 iteration",
+          "No improvement iterations are attempted",
+          "Total cost is minimal (single generation)"
+        ],
+        "description": "High-quality first draft publishes immediately",
+        "id": "test-001",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "Iteration 2 quality_score > Iteration 1 quality_score (typical case)",
+          "Iteration 3 quality_score > Iteration 2 quality_score (typical case)",
+          "Final published post has quality >= 0.85",
+          "Average iterations to publish is 2-4"
+        ],
+        "description": "Content improves over iterations",
+        "id": "test-002",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "Content with 'delve' scores < 0.50",
+          "Content with 'leverage' scores < 0.50",
+          "Critique output includes ai_slop_detected=true",
+          "Critique output lists found forbidden keywords"
+        ],
+        "description": "AI slop detection penalizes heavily",
+        "id": "test-003",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "5 blog_posts records exist with status='published'",
+          "Average quality score across 5 posts >= 0.85",
+          "No published post contains AI slop keywords",
+          "Average iterations per post is 2-4"
+        ],
+        "description": "5 successful posts end-to-end",
+        "id": "test-004",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "No published post contains 'delve'",
+          "No published post contains 'leverage'",
+          "No published post contains 'unlock'",
+          "detect_ai_slop() returns (False, []) for all published content"
+        ],
+        "description": "Zero AI slop in published content",
+        "id": "test-005",
+        "passes": true
+      },
+      {
+        "acceptance_criteria": [
+          "Average api_cost_cents per blog_post is < 50",
+          "No single post exceeds 100 cents (cost limit)",
+          "Cost tracking is accurate to within 10%"
+        ],
+        "description": "API costs below target",
+        "id": "test-006",
+        "passes": true
+      }
+    ]
+  }
+}
