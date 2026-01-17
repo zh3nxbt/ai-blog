@@ -4,8 +4,25 @@ This directory contains systemd unit files for deploying Ralph on Ubuntu/Debian 
 
 ## Files
 
-- `ralph.service` - Oneshot service that runs the blog generation loop
-- `ralph.timer` - Timer that triggers daily generation (sys-002)
+- `ralph.service` - Oneshot service that runs the blog generation loop (template)
+- `ralph.timer` - Timer that triggers daily generation (sys-002, coming soon)
+- `install.sh` - Automated installation script
+
+## Quick Install
+
+```bash
+# From the project root directory, run as root:
+sudo ./systemd/install.sh
+
+# Or specify a custom project path:
+sudo ./systemd/install.sh /path/to/ai-blog
+```
+
+The install script will:
+1. Create the `ralph` system user
+2. Set up `/etc/ralph/env` with secure permissions
+3. Install the systemd service with correct paths
+4. Set proper ownership on the project directory
 
 ## Prerequisites
 
