@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import random
 import time
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
@@ -64,6 +65,7 @@ class RalphLoop:
     SOURCE_TYPE_ORDER = ("rss", "evergreen", "standards", "vendor", "internal")
     MAX_ITERATIONS = 10
     FRESHNESS_HOURS = 48  # Sources older than this auto-fail juice check
+    SELECTION_POOL_SIZE = 15  # Fetch this many items, then randomly select from pool
 
     def __init__(
         self,
@@ -420,21 +422,33 @@ class RalphLoop:
         limit: int,
         exclude_ids: set[str],
     ) -> List[Dict[str, Any]]:
-        """Fetch items for a source type while avoiding already-selected IDs."""
+        """Fetch items for a source type, randomly selecting from a larger pool.
+
+        Instead of always picking the most recent items, this fetches a larger
+        pool (SELECTION_POOL_SIZE) and randomly selects from it. This gives
+        older but potentially interesting content a chance to be evaluated.
+        """
         if limit <= 0:
             return []
 
-        fetch_limit = limit + len(exclude_ids)
+        # Fetch a larger pool to select from randomly
+        pool_size = max(self.SELECTION_POOL_SIZE, limit + len(exclude_ids))
         if source_type == "rss":
-            items = self._get_rss_items_for_mix(fetch_limit)
+            items = self._get_rss_items_for_mix(pool_size)
         else:
             items = self.topic_item_service.fetch_unused_items_by_source_type(
                 source_type=source_type,
-                limit=fetch_limit,
+                limit=pool_size,
             )
 
+        # Filter out already-selected items
         filtered = [item for item in items if item.get("id") not in exclude_ids]
-        return filtered[:limit]
+
+        # Randomly select from the pool instead of taking top N
+        if len(filtered) <= limit:
+            return filtered
+
+        return random.sample(filtered, limit)
 
     def _get_rss_items_for_mix(self, limit: int) -> List[Dict[str, Any]]:
         """Fetch unused RSS items for mixed-source selection."""
