@@ -31,8 +31,6 @@ class JuiceEvaluationResult:
     best_source: Optional[str] = None
     potential_angle: Optional[str] = None
     cost_cents: int = 0
-    input_tokens: int = 0
-    output_tokens: int = 0
 
 
 @dataclass
@@ -229,8 +227,6 @@ class RalphLoop:
                 best_source=None,
                 potential_angle=None,
                 cost_cents=0,
-                input_tokens=0,
-                output_tokens=0,
             )
 
         # Format source items for the prompt
@@ -291,8 +287,6 @@ class RalphLoop:
                 best_source=None,
                 potential_angle=None,
                 cost_cents=cost_cents,
-                input_tokens=response.usage.input_tokens,
-                output_tokens=response.usage.output_tokens,
             )
 
         juice_score = float(result.get("juice_score", 0.5))
@@ -314,8 +308,6 @@ class RalphLoop:
             best_source=best_source,
             potential_angle=potential_angle,
             cost_cents=cost_cents,
-            input_tokens=response.usage.input_tokens,
-            output_tokens=response.usage.output_tokens,
         )
 
     def generate_initial_draft(self) -> UUID:
@@ -559,8 +551,6 @@ class RalphLoop:
                 "best_source": juice_result.best_source,
                 "potential_angle": juice_result.potential_angle,
                 "cost_cents": juice_result.cost_cents,
-                "input_tokens": juice_result.input_tokens,
-                "output_tokens": juice_result.output_tokens,
                 "source_mix": source_mix_counts,
                 "source_count": len(source_items),
             },

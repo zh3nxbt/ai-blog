@@ -165,7 +165,9 @@ def log_agent_activity(
     context_id: UUID = None,
     duration_ms: int = None,
     error_message: str = None,
-    metadata: dict = None
+    metadata: dict = None,
+    input_data: dict = None,
+    output_data: dict = None,
 ) -> UUID:
     """
     Log agent activity to the database.
@@ -178,6 +180,8 @@ def log_agent_activity(
         duration_ms: Optional duration in milliseconds
         error_message: Optional error message if success=False
         metadata: Optional additional metadata as dict
+        input_data: Optional input data provided to the agent (e.g., source items)
+        output_data: Optional output data produced by the agent
 
     Returns:
         UUID: The ID of the created activity log entry
@@ -211,6 +215,12 @@ def log_agent_activity(
 
     if metadata is not None:
         log_data["metadata"] = metadata
+
+    if input_data is not None:
+        log_data["input_data"] = input_data
+
+    if output_data is not None:
+        log_data["output_data"] = output_data
 
     response = client.table("blog_agent_activity").insert(log_data).execute()
 
