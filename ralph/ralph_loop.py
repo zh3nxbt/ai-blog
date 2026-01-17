@@ -11,10 +11,54 @@ Prints summary to stdout and exits with code 0 on success, 1 on failure.
 import argparse
 import os
 import sys
+import traceback
 
 from ralph_content.ralph_loop import JuiceEvaluationResult, RalphLoop, RalphLoopResult
 
 __all__ = ["JuiceEvaluationResult", "RalphLoop", "RalphLoopResult"]
+
+
+def _send_notification(
+    alert_type: str,
+    title: str,
+    details: str,
+    blog_post_id: str | None = None,
+) -> None:
+    """Send email notification if configured. Logs to activity table."""
+    from services.email_service import is_configured, send_alert, EmailServiceError
+
+    if not is_configured():
+        print(f"[{alert_type}] Email not configured, skipping notification")
+        return
+
+    try:
+        email_id = send_alert(
+            alert_type=alert_type,
+            title=title,
+            details=details,
+            blog_post_id=blog_post_id,
+        )
+        print(f"[{alert_type}] Notification sent (email_id: {email_id})")
+
+        # Log notification to activity table
+        try:
+            from services import supabase_service
+            supabase_service.log_agent_activity(
+                agent_name="ralph-loop",
+                activity_type="notification_sent",
+                success=True,
+                metadata={
+                    "alert_type": alert_type,
+                    "title": title,
+                    "email_id": email_id,
+                    "blog_post_id": blog_post_id,
+                },
+            )
+        except Exception as log_err:
+            print(f"Warning: Failed to log notification activity: {log_err}")
+
+    except EmailServiceError as e:
+        print(f"[{alert_type}] Failed to send notification: {e}")
 
 
 def main() -> int:
@@ -81,15 +125,54 @@ def main() -> int:
         print(f"Blog ID:     {result.blog_post_id}")
         print("=" * 50)
 
+        # Send notifications based on status
         if result.status == "skipped":
             print("\nPost already exists for today. Use --force to generate anyway.")
+
         elif result.status == "skipped_no_juice":
             print("\nSources lacked sufficient value to generate content.")
+            # Build details for notification
+            source_list = "\n".join(result.source_summaries or ["No sources available"])
+            details = f"""Juice Score: {result.juice_score:.2f} (threshold: {juice_threshold})
+Reason: {result.failure_reason or 'Unknown'}
+
+Sources Evaluated:
+{source_list}
+
+Cost: {result.total_cost_cents} cents"""
+            _send_notification(
+                alert_type="SKIPPED",
+                title="Sources lacked value - no post generated",
+                details=details,
+            )
+
+        elif result.status == "failed":
+            details = f"""Quality Score: {result.final_quality_score:.2f}
+Iterations: {result.iteration_count}
+Reason: {result.failure_reason or 'Quality below minimum threshold'}
+
+Cost: {result.total_cost_cents} cents"""
+            _send_notification(
+                alert_type="FAILED",
+                title="Content generation failed quality check",
+                details=details,
+                blog_post_id=str(result.blog_post_id),
+            )
 
         # Exit 0 for published, draft, skipped, or skipped_no_juice; 1 for failed
         return 0 if result.status in ("published", "draft", "skipped", "skipped_no_juice") else 1
 
     except Exception as e:
+        # Send error notification
+        error_details = f"""Error: {e}
+
+Traceback:
+{traceback.format_exc()}"""
+        _send_notification(
+            alert_type="ERROR",
+            title=f"Exception during generation: {type(e).__name__}",
+            details=error_details,
+        )
         print(f"Error: {e}")
         return 1
 

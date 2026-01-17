@@ -42,6 +42,10 @@ class RalphLoopResult:
     iteration_count: int
     total_cost_cents: int
     status: str  # "published", "draft", "failed", "skipped", "skipped_no_juice"
+    # Additional fields for notifications
+    failure_reason: Optional[str] = None
+    juice_score: Optional[float] = None
+    source_summaries: Optional[List[str]] = None
 
 
 class RalphLoop:
@@ -581,12 +585,21 @@ class RalphLoop:
                 },
             )
 
+            # Build source summaries for notification
+            source_summaries = [
+                f"[{item.get('source_type', 'unknown').upper()}] {item.get('title', 'Untitled')}"
+                for item in source_items[:5]
+            ]
+
             return RalphLoopResult(
                 blog_post_id=placeholder_id,
                 final_quality_score=0.0,
                 iteration_count=0,
                 total_cost_cents=juice_result.cost_cents,
                 status="skipped_no_juice",
+                juice_score=juice_result.juice_score,
+                failure_reason=juice_result.reason,
+                source_summaries=source_summaries,
             )
 
         # Proceed with content generation
@@ -805,10 +818,13 @@ class RalphLoop:
         # Determine final status based on quality
         if quality_score >= self.quality_threshold:
             status = "published"
+            failure_reason = None
         elif quality_score >= 0.70:
             status = "draft"
+            failure_reason = None
         else:
             status = "failed"
+            failure_reason = f"Quality score {quality_score:.2f} below minimum threshold 0.70 after {iteration_count} iterations"
 
         # Update blog post with final content and status
         client = self.supabase_service.get_supabase_client()
@@ -841,4 +857,5 @@ class RalphLoop:
             iteration_count=iteration_count,
             total_cost_cents=total_cost_cents,
             status=status,
+            failure_reason=failure_reason,
         )
