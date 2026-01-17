@@ -35,7 +35,7 @@ Project: Autonomous blog content generation with iterative self-improvement
 [x] sys-001: Configure systemd service for ralph_loop - COMPLETE
 [x] sys-002: Configure systemd timer for daily 2 PM UTC content check - COMPLETE
 [x] sys-003: Configure environment file for production - COMPLETE
-[ ] sys-004: Verify systemd setup with manual trigger
+[x] sys-004: Verify systemd setup with manual trigger - COMPLETE
 [ ] alert-001: Set up email alerts on failure/skip
 [ ] mon-001: Create monitoring dashboard
 [ ] val-001: Validate 5 consecutive automated runs
@@ -97,6 +97,13 @@ Project: Autonomous blog content generation with iterative self-improvement
 - Contains all required secrets (SUPABASE_URL, SUPABASE_SECRET, ANTHROPIC_API_KEY)
 - RALPH_* config values have sensible defaults in config.py
 - .env properly excluded from git repository
+
+[2026-01-17 - sys-004 Complete]
+- Manual trigger via systemctl start ralph.service successful
+- Logs visible in journalctl -u ralph
+- Blog post created in database
+- Service shows inactive (dead) after completion (oneshot behavior)
+- All systemd tasks (sys-001 through sys-004) now complete
 
 [2026-01-16 - Phase 2 Start]
 - Phase 1 completed successfully with all exit criteria met

@@ -18,8 +18,8 @@
       "validation": 3,
       "documentation": 2
     },
-    "completed": 4,
-    "progress_percentage": 24,
+    "completed": 5,
+    "progress_percentage": 29,
     "total_tasks": 17
   },
   "tasks": {
@@ -95,7 +95,7 @@
           "Exit code 0 logged on successful generation",
           "Service status shows 'inactive (dead)' after completion (oneshot behavior)"
         ],
-        "passes": false
+        "passes": true
       }
     ],
     "alerts": [
