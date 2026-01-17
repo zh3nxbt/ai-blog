@@ -34,7 +34,7 @@ Project: Autonomous blog content generation with iterative self-improvement
 [x] logic-001: Implement source juice evaluation (LLM-based, pre-generation gate) - COMPLETE
 [x] sys-001: Configure systemd service for ralph_loop - COMPLETE
 [x] sys-002: Configure systemd timer for daily 2 PM UTC content check - COMPLETE
-[ ] sys-003: Configure environment file for production
+[x] sys-003: Configure environment file for production - COMPLETE
 [ ] sys-004: Verify systemd setup with manual trigger
 [ ] alert-001: Set up email alerts on failure/skip
 [ ] mon-001: Create monitoring dashboard
@@ -90,6 +90,13 @@ Project: Autonomous blog content generation with iterative self-improvement
 - Updated install.sh to install both service and timer
 - Updated README with timer documentation and commands
 - Timer checks source juice first - only posts when content is valuable
+
+[2026-01-17 - sys-003 Complete]
+- Environment file /etc/ralph/env created by install.sh
+- Permissions set to 600 (owner read/write only)
+- Contains all required secrets (SUPABASE_URL, SUPABASE_SECRET, ANTHROPIC_API_KEY)
+- RALPH_* config values have sensible defaults in config.py
+- .env properly excluded from git repository
 
 [2026-01-16 - Phase 2 Start]
 - Phase 1 completed successfully with all exit criteria met

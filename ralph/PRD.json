@@ -18,8 +18,8 @@
       "validation": 3,
       "documentation": 2
     },
-    "completed": 3,
-    "progress_percentage": 18,
+    "completed": 4,
+    "progress_percentage": 24,
     "total_tasks": 17
   },
   "tasks": {
@@ -83,7 +83,7 @@
           "Contains RALPH_COST_LIMIT_CENTS=100",
           "File is NOT in git repository"
         ],
-        "passes": false
+        "passes": true
       },
       {
         "id": "sys-004",
