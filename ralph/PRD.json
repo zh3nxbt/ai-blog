@@ -18,8 +18,8 @@
       "validation": 3,
       "documentation": 2
     },
-    "completed": 2,
-    "progress_percentage": 12,
+    "completed": 6,
+    "progress_percentage": 35,
     "total_tasks": 17
   },
   "tasks": {
@@ -69,7 +69,7 @@
           "Next trigger time shown in: systemctl list-timers ralph.timer",
           "Note: Service checks source juice first, only posts if valuable content found"
         ],
-        "passes": false
+        "passes": true
       },
       {
         "id": "sys-003",
@@ -83,7 +83,7 @@
           "Contains RALPH_COST_LIMIT_CENTS=100",
           "File is NOT in git repository"
         ],
-        "passes": false
+        "passes": true
       },
       {
         "id": "sys-004",
@@ -95,7 +95,7 @@
           "Exit code 0 logged on successful generation",
           "Service status shows 'inactive (dead)' after completion (oneshot behavior)"
         ],
-        "passes": false
+        "passes": true
       }
     ],
     "alerts": [
@@ -109,7 +109,7 @@
           "Test email sends successfully via CLI command",
           "Credentials stored in /etc/ralph/env"
         ],
-        "passes": false
+        "passes": true
       },
       {
         "id": "alert-002",

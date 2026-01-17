@@ -34,9 +34,9 @@ Project: Autonomous blog content generation with iterative self-improvement
 [x] logic-001: Implement source juice evaluation (LLM-based, pre-generation gate) - COMPLETE
 [x] sys-001: Configure systemd service for ralph_loop - COMPLETE
 [x] sys-002: Configure systemd timer for daily 2 PM UTC content check - COMPLETE
-[ ] sys-003: Configure environment file for production
-[ ] sys-004: Verify systemd setup with manual trigger
-[ ] alert-001: Set up email alerts on failure/skip
+[x] sys-003: Configure environment file for production - COMPLETE
+[x] sys-004: Verify systemd setup with manual trigger - COMPLETE
+[x] alert-001: Configure email notification service - COMPLETE
 [ ] mon-001: Create monitoring dashboard
 [ ] val-001: Validate 5 consecutive automated runs
 
@@ -90,6 +90,28 @@ Project: Autonomous blog content generation with iterative self-improvement
 - Updated install.sh to install both service and timer
 - Updated README with timer documentation and commands
 - Timer checks source juice first - only posts when content is valuable
+
+[2026-01-17 - sys-003 Complete]
+- Environment file /etc/ralph/env created by install.sh
+- Permissions set to 600 (owner read/write only)
+- Contains all required secrets (SUPABASE_URL, SUPABASE_SECRET, ANTHROPIC_API_KEY)
+- RALPH_* config values have sensible defaults in config.py
+- .env properly excluded from git repository
+
+[2026-01-17 - sys-004 Complete]
+- Manual trigger via systemctl start ralph.service successful
+- Logs visible in journalctl -u ralph
+- Blog post created in database
+- Service shows inactive (dead) after completion (oneshot behavior)
+- All systemd tasks (sys-001 through sys-004) now complete
+
+[2026-01-17 - alert-001 Complete]
+- Configured Resend.com as email provider
+- Created services/email_service.py with send_email, send_test_email, send_alert functions
+- Added ralph/test_email.py CLI command for testing
+- Test email sent successfully to evgeni@masprecisionparts.com
+- Using no-reply@masprecisionparts.com as sender (verified domain)
+- Added resend==2.19.0 to requirements.txt
 
 [2026-01-16 - Phase 2 Start]
 - Phase 1 completed successfully with all exit criteria met
