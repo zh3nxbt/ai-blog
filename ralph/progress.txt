@@ -16,7 +16,7 @@ Project: Autonomous blog content generation with iterative self-improvement
     Completed: 2026-01-16
 
 [ ] Phase 2: Production Deployment (Days 15-21)
-    Goal: Automate daily 7 AM UTC content check - only post when sources have real value
+    Goal: Automate daily 2 PM UTC content check - only post when sources have real value
     Success: 5 consecutive automated runs (post or skip based on source juice)
 
 [ ] Phase 3: Multi-Agent System (Days 22-35)
@@ -33,7 +33,7 @@ Project: Autonomous blog content generation with iterative self-improvement
 
 [x] logic-001: Implement source juice evaluation (LLM-based, pre-generation gate) - COMPLETE
 [x] sys-001: Configure systemd service for ralph_loop - COMPLETE
-[ ] sys-002: Configure systemd timer for daily 7 AM UTC content check
+[ ] sys-002: Configure systemd timer for daily 2 PM UTC content check
 [ ] alert-001: Set up email alerts on failure/skip
 [ ] mon-001: Create monitoring dashboard
 [ ] val-001: Validate 5 consecutive automated runs
@@ -89,7 +89,7 @@ Project: Autonomous blog content generation with iterative self-improvement
 [2026-01-16 - Content Philosophy Shift]
 - Changed from "forced daily posting" to "post only when sources have real value"
 - Added logic-001: Source juice evaluation using LLM before content generation
-- System now checks sources at 7 AM UTC, only generates if "juice" is high enough
+- System now checks sources at 2 PM UTC, only generates if "juice" is high enough
 - Skips are logged and trigger email alerts so we know the system ran
 - Rationale: Truly important content shouldn't be forced - quality over quantity
 - Email alerts on skip ensure visibility without forcing low-value posts
@@ -106,7 +106,7 @@ Project: Autonomous blog content generation with iterative self-improvement
 
 ## NEXT STEPS
 
-1. Create systemd timer for 7 AM UTC daily content check (sys-002)
+1. Create systemd timer for 2 PM UTC daily content check (sys-002)
 2. Configure environment file for production (sys-003)
 3. Verify systemd setup with manual trigger (sys-004)
 4. Configure email alerts for failures AND skips (alert-001, alert-002, alert-003)

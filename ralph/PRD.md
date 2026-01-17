@@ -38,7 +38,7 @@ Generate exactly **one high-quality blog post per day** that:
 
 | Metric | Target |
 |--------|--------|
-| systemd timer active | Daily 7 AM UTC |
+| systemd timer active | Daily 2 PM UTC |
 | Email alerts configured | On failure |
 | Monitoring dashboard | Operational |
 | Consecutive automated days | 5 |
@@ -123,7 +123,7 @@ Generate exactly **one high-quality blog post per day** that:
 | Database | Supabase (PostgreSQL) - integrates with existing website |
 | Deployment | DigitalOcean Ubuntu with systemd (no containers) |
 | LLM | External Claude API only (no local models) |
-| Scheduling | systemd timer, daily at 7 AM UTC |
+| Scheduling | systemd timer, daily at 2 PM UTC |
 | API Framework | FastAPI (stateless, minimal surface) |
 
 ---

@@ -1,5 +1,5 @@
 {
-  "goal": "Automate daily content check at 7 AM UTC - only post when sources have real value",
+  "goal": "Automate daily content check at 2 PM UTC - only post when sources have real value",
   "phase": "Phase 2 - Production Deployment",
   "success_criteria": {
     "automated_days": 5,
@@ -58,11 +58,11 @@
       },
       {
         "id": "sys-002",
-        "description": "Create systemd timer for daily 7 AM UTC content check",
+        "description": "Create systemd timer for daily 2 PM UTC content check",
         "acceptance_criteria": [
           "File /etc/systemd/system/ralph.timer exists",
-          "Timer triggers ralph.service daily at 7 AM UTC",
-          "OnCalendar set to *-*-* 07:00:00 UTC",
+          "Timer triggers ralph.service daily at 2 PM UTC",
+          "OnCalendar set to *-*-* 14:00:00 UTC",
           "Persistent=true (runs missed timers on boot)",
           "Timer enabled: systemctl enable ralph.timer",
           "Timer active: systemctl is-active ralph.timer shows 'active'",
@@ -193,7 +193,7 @@
         "id": "val-001",
         "description": "Day 1 automated content check",
         "acceptance_criteria": [
-          "Timer triggers at 7 AM UTC without manual intervention",
+          "Timer triggers at 2 PM UTC without manual intervention",
           "Run completes with status: 'published', 'draft', or 'skipped_no_juice'",
           "No errors in journalctl -u ralph",
           "Cost within budget (<$0.50 if posted, ~$0.05 if skipped)",
