@@ -526,7 +526,20 @@ class RalphLoop:
         # Evaluate source juice before content generation
         juice_result = self._evaluate_source_juice(source_items)
 
-        # Log juice evaluation activity
+        # Prepare detailed source item data for logging
+        source_items_detail = []
+        for item in source_items:
+            source_items_detail.append({
+                "id": item.get("id"),
+                "title": item.get("title"),
+                "summary": item.get("summary", item.get("content", ""))[:500],  # Truncate for storage
+                "url": item.get("url"),
+                "published_at": item.get("published_at"),
+                "source_type": item.get("source_type"),
+                "source_name": item.get("source_name"),  # RSS feed name if available
+            })
+
+        # Log juice evaluation activity with full source details
         self.supabase_service.log_agent_activity(
             agent_name="ralph-loop",
             activity_type="juice_evaluation",
@@ -540,6 +553,10 @@ class RalphLoop:
                 "cost_cents": juice_result.cost_cents,
                 "source_mix": source_mix_counts,
                 "source_count": len(source_items),
+            },
+            input_data={
+                "source_items": source_items_detail,
+                "juice_threshold": self.juice_threshold,
             },
         )
 
