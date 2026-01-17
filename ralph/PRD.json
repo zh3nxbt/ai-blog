@@ -18,8 +18,8 @@
       "validation": 3,
       "documentation": 2
     },
-    "completed": 1,
-    "progress_percentage": 6,
+    "completed": 2,
+    "progress_percentage": 12,
     "total_tasks": 17
   },
   "tasks": {
@@ -54,7 +54,7 @@
           "Service type is 'oneshot' (runs once per trigger)",
           "Service can be started manually: systemctl start ralph"
         ],
-        "passes": false
+        "passes": true
       },
       {
         "id": "sys-002",

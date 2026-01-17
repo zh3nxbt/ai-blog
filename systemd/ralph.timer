@@ -1,0 +1,22 @@
+[Unit]
+Description=Daily Ralph Blog Content Generation Timer
+Documentation=https://github.com/your-org/ai-blog
+
+[Timer]
+# Run daily at 2 PM UTC (14:00)
+# Format: DayOfWeek Year-Month-Day Hour:Minute:Second
+OnCalendar=*-*-* 14:00:00 UTC
+
+# If the system was off when the timer should have triggered,
+# run it immediately on next boot
+Persistent=true
+
+# Add some randomized delay to avoid thundering herd
+# (useful if multiple services are scheduled at the same time)
+RandomizedDelaySec=60
+
+# Accuracy: how much the timer can be coalesced with other timers
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target
