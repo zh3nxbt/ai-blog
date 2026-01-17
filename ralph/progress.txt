@@ -32,7 +32,7 @@ Project: Autonomous blog content generation with iterative self-improvement
 ## CURRENT TASKS
 
 [x] logic-001: Implement source juice evaluation (LLM-based, pre-generation gate) - COMPLETE
-[ ] sys-001: Configure systemd service for ralph_loop
+[x] sys-001: Configure systemd service for ralph_loop - COMPLETE
 [ ] sys-002: Configure systemd timer for daily 7 AM UTC content check
 [ ] alert-001: Set up email alerts on failure/skip
 [ ] mon-001: Create monitoring dashboard
@@ -71,6 +71,15 @@ Project: Autonomous blog content generation with iterative self-improvement
 - 11 unit tests added covering freshness checks and juice evaluation
 - Estimated cost per juice evaluation: ~$0.02-0.05 (500 max tokens)
 
+[2026-01-17 - sys-001 Complete]
+- Created systemd/ralph.service - oneshot service for blog generation
+- Service runs as non-root 'ralph' user for security
+- Environment loaded from /etc/ralph/env (600 permissions)
+- Type=oneshot means service runs once per trigger, not continuously
+- TimeoutStartSec=1800 matches RALPH_TIMEOUT_MINUTES default (30 min)
+- Comprehensive README with installation steps and troubleshooting
+- Exit codes: 0 for success/skip, 1 for failure
+
 [2026-01-16 - Phase 2 Start]
 - Phase 1 completed successfully with all exit criteria met
 - System generates quality content with 2-3 iterations average
@@ -97,12 +106,12 @@ Project: Autonomous blog content generation with iterative self-improvement
 
 ## NEXT STEPS
 
-1. Implement source juice evaluation (logic-001) - LLM-based pre-generation gate
-2. Create systemd service file for ralph_loop
-3. Create systemd timer for 7 AM UTC daily content check
-4. Configure email alerts for failures AND skips
-5. Set up basic monitoring dashboard
-6. Run 5 consecutive automated runs to validate (mix of posts and skips expected)
+1. Create systemd timer for 7 AM UTC daily content check (sys-002)
+2. Configure environment file for production (sys-003)
+3. Verify systemd setup with manual trigger (sys-004)
+4. Configure email alerts for failures AND skips (alert-001, alert-002, alert-003)
+5. Set up monitoring dashboard (mon-001, mon-002, mon-003, mon-004)
+6. Run 5 consecutive automated runs to validate (val-001, val-002, val-003)
 
 ---
 
