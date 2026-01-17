@@ -1,0 +1,33 @@
+[Unit]
+Description=Ralph Blog Content Generator
+Documentation=https://github.com/your-org/ai-blog
+After=network.target
+
+[Service]
+Type=oneshot
+
+# Run as non-root user (create with: useradd -r -s /bin/false ralph)
+User=ralph
+Group=ralph
+
+# Project location - adjust to your deployment path
+WorkingDirectory=/opt/ralph
+
+# Load environment from secure location
+EnvironmentFile=/etc/ralph/env
+
+# Execute using virtual environment Python
+ExecStart=/opt/ralph/.venv/bin/python -m ralph.ralph_loop
+
+# Logging to stdout/stderr (captured by journald)
+StandardOutput=journal
+StandardError=journal
+
+# Timeout for the entire operation (30 minutes default, matches RALPH_TIMEOUT_MINUTES)
+TimeoutStartSec=1800
+
+# Restart policy for oneshot is ignored, but set for documentation
+Restart=no
+
+[Install]
+WantedBy=multi-user.target

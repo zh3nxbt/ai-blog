@@ -70,7 +70,7 @@
 
 ## Phase 2: Production Deployment (FUTURE)
 
-**Goal:** Automate daily blog generation at 7 AM UTC
+**Goal:** Automate daily blog generation at 2 PM UTC
 
 **Prerequisites:** Phase 1 complete
 
@@ -155,7 +155,7 @@
   - Idempotency check implementation
 
 **Next Steps for Phase 2:**
-- Configure systemd timer for daily 7 AM UTC execution
+- Configure systemd timer for daily 2 PM UTC execution
 - Set up email alerts for failures
 - Create monitoring dashboard
 - Run 5 consecutive automated days
