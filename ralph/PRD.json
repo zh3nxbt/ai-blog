@@ -18,8 +18,8 @@
       "validation": 3,
       "documentation": 2
     },
-    "completed": 5,
-    "progress_percentage": 29,
+    "completed": 6,
+    "progress_percentage": 35,
     "total_tasks": 17
   },
   "tasks": {
@@ -109,7 +109,7 @@
           "Test email sends successfully via CLI command",
           "Credentials stored in /etc/ralph/env"
         ],
-        "passes": false
+        "passes": true
       },
       {
         "id": "alert-002",

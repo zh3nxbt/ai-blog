@@ -23,6 +23,12 @@ class Settings(BaseSettings):
     ralph_cost_limit_cents: int = 100
     ralph_juice_threshold: float = 0.6
 
+    # Email Alerts
+    email_provider: str | None = None  # "resend" or "smtp"
+    resend_api_key: str | None = None
+    email_from: str | None = None
+    email_to: str | None = None
+
     # Environment
     environment: str = "development"
 
