@@ -5,7 +5,7 @@ This directory contains systemd unit files for deploying Ralph on Ubuntu/Debian 
 ## Files
 
 - `ralph.service` - Oneshot service that runs the blog generation loop (template)
-- `ralph.timer` - Timer that triggers daily generation (sys-002, coming soon)
+- `ralph.timer` - Timer that triggers daily generation at 2 PM UTC
 - `install.sh` - Automated installation script
 
 ## Quick Install
@@ -109,6 +109,57 @@ sudo journalctl -u ralph.service -f
 # Verify exit status
 sudo systemctl status ralph.service
 ```
+
+### 6. Enable the timer for daily automation
+
+```bash
+# Enable timer to start on boot
+sudo systemctl enable ralph.timer
+
+# Start the timer now
+sudo systemctl start ralph.timer
+
+# Verify timer is active
+sudo systemctl list-timers ralph.timer
+```
+
+The timer runs daily at **2 PM UTC (14:00)**. The service checks source "juice" first and only generates content if sources have real value.
+
+## Timer Details
+
+The `ralph.timer` unit triggers `ralph.service` daily:
+
+- **Schedule:** `*-*-* 14:00:00 UTC` (every day at 2 PM UTC)
+- **Persistent:** If the system was off at 2 PM UTC, the timer runs on next boot
+- **Randomized Delay:** Up to 60 seconds to avoid thundering herd
+
+### Timer Commands
+
+```bash
+# Check timer status
+sudo systemctl status ralph.timer
+
+# List when timer will next trigger
+sudo systemctl list-timers ralph.timer
+
+# View timer logs
+sudo journalctl -u ralph.timer
+
+# Disable daily automation
+sudo systemctl stop ralph.timer
+sudo systemctl disable ralph.timer
+```
+
+### Behavior
+
+When the timer triggers:
+1. `ralph.service` starts
+2. Service evaluates source "juice" (are sources worth writing about?)
+3. If juice score >= 0.6: generates content
+4. If juice score < 0.6: skips with status `skipped_no_juice`
+5. Service exits (oneshot behavior)
+
+This prevents forced daily posts when there's no valuable content.
 
 ## Customization
 

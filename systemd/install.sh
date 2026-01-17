@@ -114,11 +114,38 @@ EOF
 
 log_info "Service file installed to /etc/systemd/system/ralph.service"
 
-# Step 5: Reload systemd
+# Step 5: Install systemd timer file
+log_info "Installing systemd timer..."
+cat > /etc/systemd/system/ralph.timer << EOF
+[Unit]
+Description=Daily Ralph Blog Content Generation Timer
+Documentation=https://github.com/your-org/ai-blog
+
+[Timer]
+# Run daily at 2 PM UTC (14:00)
+OnCalendar=*-*-* 14:00:00 UTC
+
+# If the system was off when the timer should have triggered,
+# run it immediately on next boot
+Persistent=true
+
+# Add some randomized delay to avoid thundering herd
+RandomizedDelaySec=60
+
+# Accuracy: how much the timer can be coalesced with other timers
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target
+EOF
+
+log_info "Timer file installed to /etc/systemd/system/ralph.timer"
+
+# Step 6: Reload systemd
 log_info "Reloading systemd daemon..."
 systemctl daemon-reload
 
-# Step 6: Verify installation
+# Step 7: Verify installation
 log_info "Verifying installation..."
 echo ""
 echo "=========================================="
@@ -128,6 +155,7 @@ echo ""
 echo "Project path:    $PROJECT_PATH"
 echo "Environment:     /etc/ralph/env"
 echo "Service file:    /etc/systemd/system/ralph.service"
+echo "Timer file:      /etc/systemd/system/ralph.timer"
 echo "Service user:    ralph"
 echo ""
 echo "Next steps:"
@@ -141,7 +169,11 @@ echo ""
 echo "  3. View logs:"
 echo "     journalctl -u ralph.service -f"
 echo ""
-echo "  4. Install timer (sys-002) for daily automation:"
-echo "     # Coming soon - systemd/ralph.timer"
+echo "  4. Enable and start the timer for daily 2 PM UTC automation:"
+echo "     systemctl enable ralph.timer"
+echo "     systemctl start ralph.timer"
+echo ""
+echo "  5. Verify timer is active:"
+echo "     systemctl list-timers ralph.timer"
 echo ""
 echo "=========================================="
