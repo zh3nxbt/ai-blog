@@ -20,6 +20,11 @@ from ralph_content.core.markdown_renderer import markdown_to_html
 from ralph_content.core.timeout_manager import TimeoutManager
 from ralph_content.prompts.major_news_screening import MAJOR_NEWS_SCREENING_PROMPT_TEMPLATE
 from ralph_content.prompts.source_juice import SOURCE_JUICE_PROMPT_TEMPLATE
+from ralph_content.prompts.content_strategy import (
+    ContentStrategy,
+    StrategyScreeningResult,
+    STRATEGY_SCREENING_PROMPT_TEMPLATE,
+)
 from services.quality_validator import validate_content
 
 
@@ -57,6 +62,8 @@ class RalphLoopResult:
     failure_reason: Optional[str] = None
     juice_score: Optional[float] = None
     source_summaries: Optional[List[str]] = None
+    strategy_name: Optional[str] = None
+    strategy_reason: Optional[str] = None
 
 
 class RalphLoop:
@@ -67,7 +74,7 @@ class RalphLoop:
     DEFAULT_COST_LIMIT_CENTS = 100
     DEFAULT_JUICE_THRESHOLD = 0.6
     DEFAULT_SOURCE_MIX = {
-        "rss": 4,
+        "rss": 8,  # Increased for better strategy selection
         "evergreen": 1,
         "standards": 1,
         "vendor": 1,
@@ -78,7 +85,10 @@ class RalphLoop:
     SELECTION_POOL_SIZE = 15  # Fetch this many items, then randomly select from pool
     MAJOR_NEWS_THRESHOLD = 0.7  # Score threshold for reserving a slot for major news
     MAJOR_NEWS_RESERVED_SLOTS = 1  # Number of slots reserved for major news
-    PRE_SCREEN_MODEL = "claude-haiku-3-5"  # Cheap model for pre-screening
+    PRE_SCREEN_MODEL = "claude-3-5-haiku-20241022"  # Cheap model for pre-screening
+    # Posting schedule: 0=Monday, 1=Tuesday, ... 6=Sunday
+    # Default: Monday, Wednesday, Friday (2-3 posts per week)
+    DEFAULT_POSTING_DAYS = (0, 2, 4)  # Mon, Wed, Fri
 
     def __init__(
         self,
@@ -90,13 +100,15 @@ class RalphLoop:
         quality_validator: Any | None = None,
         anthropic_client: Anthropic | None = None,
         min_items: int = 3,
-        max_items: int = 5,
+        max_items: int = 10,  # Increased for better strategy selection
         quality_threshold: float | None = None,
         timeout_minutes: int | None = None,
         cost_limit_cents: int | None = None,
         juice_threshold: float | None = None,
         source_mix: Dict[str, int] | None = None,
         skip_if_exists: bool = True,
+        posting_days: Tuple[int, ...] | None = None,
+        check_posting_day: bool = True,
     ) -> None:
         if min_items < 1:
             raise ValueError("min_items must be >= 1")
@@ -136,6 +148,8 @@ class RalphLoop:
         self.juice_threshold = juice_threshold or self.DEFAULT_JUICE_THRESHOLD
         self.source_mix = source_mix or self.DEFAULT_SOURCE_MIX
         self.skip_if_exists = skip_if_exists
+        self.posting_days = posting_days or self.DEFAULT_POSTING_DAYS
+        self.check_posting_day = check_posting_day
 
     def _check_already_generated_today(self) -> Optional[UUID]:
         """
@@ -166,6 +180,8 @@ class RalphLoop:
         """
         Check if source items have fresh content (within FRESHNESS_HOURS).
 
+        Evergreen sources are always considered fresh since they're timeless content.
+
         Args:
             source_items: List of source items with optional published_at timestamps
 
@@ -177,9 +193,18 @@ class RalphLoop:
 
         cutoff = datetime.now(timezone.utc) - timedelta(hours=self.FRESHNESS_HOURS)
         fresh_count = 0
+        evergreen_count = 0
         total_with_dates = 0
 
         for item in source_items:
+            source_type = item.get("source_type", "").lower()
+
+            # Evergreen sources are always considered fresh (timeless content)
+            if source_type == "evergreen":
+                evergreen_count += 1
+                fresh_count += 1
+                continue
+
             published_at = item.get("published_at")
             if not published_at:
                 continue
@@ -211,12 +236,16 @@ class RalphLoop:
                 if published_at >= cutoff:
                     fresh_count += 1
 
-        # If no items have dates, assume they're fresh (benefit of the doubt)
-        if total_with_dates == 0:
+        # If no items have dates and no evergreen, assume they're fresh (benefit of the doubt)
+        if total_with_dates == 0 and evergreen_count == 0:
             return True, "No published dates available, proceeding with evaluation"
 
-        # Require at least one fresh source
+        # Require at least one fresh source (including evergreen)
         if fresh_count > 0:
+            if evergreen_count > 0 and fresh_count == evergreen_count:
+                return True, f"{evergreen_count} evergreen source(s) included"
+            elif evergreen_count > 0:
+                return True, f"{fresh_count} fresh sources ({evergreen_count} evergreen + {fresh_count - evergreen_count} recent)"
             return True, f"{fresh_count}/{total_with_dates} sources are fresh"
         else:
             return False, f"All {total_with_dates} sources are older than {self.FRESHNESS_HOURS} hours"
@@ -338,12 +367,31 @@ class RalphLoop:
         """
         source_items, _ = self._get_source_items()
 
-        title, content_markdown = self.agent.generate_content(source_items)
+        # Screen for content strategy
+        strategy_result = self._screen_for_content_strategy(source_items)
+        filtered_items = self._filter_items_by_strategy(source_items, strategy_result)
+
+        strategy_context = {
+            "anchor_index": 0 if strategy_result.strategy == ContentStrategy.ANCHOR_CONTEXT else None,
+            "theme_name": next(iter(strategy_result.theme_clusters.keys()), "Manufacturing"),
+            "unifying_angle": strategy_result.strategy_reason,
+        }
+
+        post_data = self.agent.generate_content(
+            filtered_items,
+            strategy=strategy_result.strategy,
+            strategy_context=strategy_context,
+        )
+        title = post_data["title"]
+        content_markdown = post_data["content_markdown"]
         content_html = markdown_to_html(content_markdown)
         blog_post_id = self.supabase_service.create_blog_post(
             title=title,
             content=content_html,
             status="draft",
+            meta_description=post_data.get("meta_description"),
+            meta_keywords=post_data.get("meta_keywords"),
+            tags=post_data.get("tags"),
         )
 
         self.supabase_service.save_draft_iteration(
@@ -351,11 +399,11 @@ class RalphLoop:
             iteration_number=1,
             content=content_markdown,
             quality_score=0.0,
-            critique={"note": "initial draft"},
+            critique={"note": "initial draft", "strategy": strategy_result.strategy.value},
             title=title,
         )
 
-        self._mark_source_items_as_used(source_items, blog_post_id)
+        self._mark_source_items_as_used(filtered_items, blog_post_id)
 
         return blog_post_id
 
@@ -664,6 +712,177 @@ class RalphLoop:
 
         return selected
 
+    def _screen_for_content_strategy(
+        self,
+        items: List[Dict[str, Any]],
+    ) -> StrategyScreeningResult:
+        """
+        Analyze source items and recommend the best content strategy.
+
+        Uses a cheap model (Haiku) to evaluate the pool and determine whether
+        to use anchor+context, thematic, analysis, or deep-dive approach.
+
+        Args:
+            items: List of source items to analyze
+
+        Returns:
+            StrategyScreeningResult with recommended strategy and context
+        """
+        if len(items) <= 1:
+            # Only one item - default to deep dive
+            return StrategyScreeningResult(
+                strategy=ContentStrategy.DEEP_DIVE,
+                strategy_reason="Single source available - using deep dive",
+                anchor_item_index=None,
+                theme_clusters={},
+                recommended_indices=[0] if items else [],
+                items_with_scores=[
+                    {**item, "urgency_score": 0.7, "themes": [], "summary": item.get("title", "")}
+                    for item in items
+                ],
+                cost_cents=0,
+            )
+
+        # Format items for the prompt
+        items_for_prompt = []
+        for i, item in enumerate(items):
+            items_for_prompt.append({
+                "index": i,
+                "title": item.get("title", "Untitled"),
+                "summary": (item.get("summary") or item.get("content", ""))[:400],
+                "source_type": item.get("source_type", "unknown"),
+                "published_at": item.get("published_at"),
+            })
+
+        prompt = STRATEGY_SCREENING_PROMPT_TEMPLATE.format(
+            items_json=json.dumps(items_for_prompt, indent=2)
+        )
+
+        # Call Haiku for cheap screening
+        response = self._anthropic_client.messages.create(
+            model=self.PRE_SCREEN_MODEL,
+            max_tokens=800,
+            messages=[{"role": "user", "content": prompt}],
+        )
+
+        cost_cents = calculate_api_cost(
+            response.usage.input_tokens,
+            response.usage.output_tokens,
+            model=self.PRE_SCREEN_MODEL,
+        )
+
+        # Parse response
+        response_text = response.content[0].text.strip()
+
+        # Handle optional code fences
+        if response_text.startswith("```"):
+            lines = response_text.split("\n")
+            lines = lines[1:]
+            if lines and lines[-1].strip() == "```":
+                lines = lines[:-1]
+            response_text = "\n".join(lines).strip()
+
+        try:
+            result = json.loads(response_text)
+        except json.JSONDecodeError:
+            # Fallback to analysis strategy if parsing fails
+            return StrategyScreeningResult(
+                strategy=ContentStrategy.ANALYSIS,
+                strategy_reason="Parsing failed - defaulting to analysis approach",
+                anchor_item_index=None,
+                theme_clusters={},
+                recommended_indices=list(range(len(items))),
+                items_with_scores=[
+                    {**item, "urgency_score": 0.5, "themes": [], "summary": item.get("title", "")}
+                    for item in items
+                ],
+                cost_cents=cost_cents,
+            )
+
+        # Map strategy string to enum
+        strategy_str = result.get("strategy", "analysis").lower()
+        strategy_map = {
+            "anchor_context": ContentStrategy.ANCHOR_CONTEXT,
+            "thematic": ContentStrategy.THEMATIC,
+            "analysis": ContentStrategy.ANALYSIS,
+            "deep_dive": ContentStrategy.DEEP_DIVE,
+        }
+        strategy = strategy_map.get(strategy_str, ContentStrategy.ANALYSIS)
+
+        # Build items_with_scores from response
+        item_scores = result.get("item_scores", [])
+        items_with_scores = []
+        for item in items:
+            item_copy = dict(item)
+            # Find matching score
+            for i, orig_item in enumerate(items):
+                if orig_item is item:
+                    for score_data in item_scores:
+                        if score_data.get("item_index") == i:
+                            item_copy["urgency_score"] = score_data.get("urgency_score", 0.5)
+                            item_copy["themes"] = score_data.get("themes", [])
+                            item_copy["summary"] = score_data.get("summary", "")
+                            break
+                    break
+            items_with_scores.append(item_copy)
+
+        return StrategyScreeningResult(
+            strategy=strategy,
+            strategy_reason=result.get("strategy_reason", ""),
+            anchor_item_index=result.get("anchor_index"),
+            theme_clusters=result.get("theme_clusters", {}),
+            recommended_indices=result.get("recommended_indices", list(range(len(items)))),
+            items_with_scores=items_with_scores,
+            cost_cents=cost_cents,
+        )
+
+    def _filter_items_by_strategy(
+        self,
+        items: List[Dict[str, Any]],
+        strategy_result: StrategyScreeningResult,
+    ) -> List[Dict[str, Any]]:
+        """
+        Filter and reorder items based on strategy recommendation.
+
+        Args:
+            items: Original source items
+            strategy_result: Strategy screening result
+
+        Returns:
+            Filtered/reordered list of items to use for content generation
+        """
+        recommended = strategy_result.recommended_indices
+
+        # Get items in recommended order
+        filtered = []
+        for idx in recommended:
+            if 0 <= idx < len(items):
+                filtered.append(items[idx])
+
+        # If no recommendations, use all items
+        if not filtered:
+            return items
+
+        # For anchor strategy, ensure anchor is first
+        if strategy_result.strategy == ContentStrategy.ANCHOR_CONTEXT:
+            anchor_idx = strategy_result.anchor_item_index
+            if anchor_idx is not None and 0 <= anchor_idx < len(items):
+                anchor_item = items[anchor_idx]
+                # Remove anchor from filtered if present, then prepend
+                filtered = [item for item in filtered if item is not anchor_item]
+                filtered.insert(0, anchor_item)
+
+        # Limit to reasonable number based on strategy
+        max_items = {
+            ContentStrategy.ANCHOR_CONTEXT: 4,  # 1 anchor + 3 context
+            ContentStrategy.THEMATIC: 4,
+            ContentStrategy.ANALYSIS: 5,
+            ContentStrategy.DEEP_DIVE: 2,
+        }
+        limit = max_items.get(strategy_result.strategy, 5)
+
+        return filtered[:limit]
+
     def _mark_source_items_as_used(
         self,
         source_items: List[Dict[str, Any]],
@@ -722,6 +941,33 @@ class RalphLoop:
                     iteration_count=0,
                     total_cost_cents=0,
                     status="skipped",
+                )
+
+        # Check if today is a posting day (2-3 posts per week)
+        if self.check_posting_day:
+            today_weekday = date.today().weekday()  # 0=Monday, 6=Sunday
+            if today_weekday not in self.posting_days:
+                from uuid import uuid4
+                day_names = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+                posting_day_names = [day_names[d] for d in sorted(self.posting_days)]
+
+                self.supabase_service.log_agent_activity(
+                    agent_name="ralph-loop",
+                    activity_type="skipped_not_posting_day",
+                    success=True,
+                    metadata={
+                        "reason": "not_a_posting_day",
+                        "today": day_names[today_weekday],
+                        "posting_days": posting_day_names,
+                    },
+                )
+                return RalphLoopResult(
+                    blog_post_id=uuid4(),
+                    final_quality_score=0.0,
+                    iteration_count=0,
+                    total_cost_cents=0,
+                    status="skipped_not_posting_day",
+                    failure_reason=f"Not a posting day. Posts scheduled for: {', '.join(posting_day_names)}",
                 )
 
         timeout_manager = TimeoutManager(
@@ -807,8 +1053,43 @@ class RalphLoop:
                 source_summaries=source_summaries,
             )
 
-        # Proceed with content generation
-        title, content_markdown = self.agent.generate_content(source_items)
+        # Screen for content strategy
+        strategy_result = self._screen_for_content_strategy(source_items)
+
+        # Filter items based on strategy
+        filtered_items = self._filter_items_by_strategy(source_items, strategy_result)
+
+        # Build strategy context for content generation
+        strategy_context = {
+            "anchor_index": 0 if strategy_result.strategy == ContentStrategy.ANCHOR_CONTEXT else None,
+            "theme_name": next(iter(strategy_result.theme_clusters.keys()), "Manufacturing"),
+            "unifying_angle": strategy_result.strategy_reason,
+        }
+
+        # Log strategy selection
+        self.supabase_service.log_agent_activity(
+            agent_name="ralph-loop",
+            activity_type="strategy_selection",
+            success=True,
+            metadata={
+                "strategy": strategy_result.strategy.value,
+                "strategy_reason": strategy_result.strategy_reason,
+                "theme_clusters": strategy_result.theme_clusters,
+                "recommended_indices": strategy_result.recommended_indices,
+                "original_item_count": len(source_items),
+                "filtered_item_count": len(filtered_items),
+                "cost_cents": strategy_result.cost_cents,
+            },
+        )
+
+        # Proceed with content generation using strategy
+        post_data = self.agent.generate_content(
+            filtered_items,
+            strategy=strategy_result.strategy,
+            strategy_context=strategy_context,
+        )
+        title = post_data["title"]
+        content_markdown = post_data["content_markdown"]
         content_html = markdown_to_html(content_markdown)
 
         # Create blog post record
@@ -816,17 +1097,21 @@ class RalphLoop:
             title=title,
             content=content_html,
             status="draft",
+            meta_description=post_data.get("meta_description"),
+            meta_keywords=post_data.get("meta_keywords"),
+            tags=post_data.get("tags"),
         )
 
-        # Mark source items as used
-        self._mark_source_items_as_used(source_items, blog_post_id)
+        # Mark source items as used (use filtered items, not original)
+        self._mark_source_items_as_used(filtered_items, blog_post_id)
 
         # Track costs per iteration (generation, critique, improvement)
         last_main_input = 0
         last_main_output = 0
         last_crit_input = 0
         last_crit_output = 0
-        total_cost_cents = 0
+        # Include juice evaluation and strategy screening costs
+        total_cost_cents = juice_result.cost_cents + strategy_result.cost_cents
 
         input_tokens, output_tokens = self.agent.get_total_tokens()
         generation_cost = calculate_api_cost(
@@ -1056,6 +1341,12 @@ class RalphLoop:
             },
         )
 
+        # Build source summaries for notification
+        source_summaries = [
+            f"[{item.get('source_type', 'unknown').upper()}] {item.get('title', 'Untitled')}"
+            for item in filtered_items
+        ]
+
         return RalphLoopResult(
             blog_post_id=blog_post_id,
             final_quality_score=quality_score,
@@ -1063,4 +1354,7 @@ class RalphLoop:
             total_cost_cents=total_cost_cents,
             status=status,
             failure_reason=failure_reason,
+            source_summaries=source_summaries,
+            strategy_name=strategy_result.strategy.value,
+            strategy_reason=strategy_result.strategy_reason,
         )

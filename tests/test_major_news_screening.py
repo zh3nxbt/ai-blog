@@ -102,7 +102,7 @@ class TestPreScreenRssPool:
 
         # Check that Haiku model was specified
         call_args = ralph_loop_with_mocked_api._anthropic_client.messages.create.call_args
-        assert call_args.kwargs["model"] == "claude-haiku-3-5"
+        assert call_args.kwargs["model"] == "claude-3-5-haiku-20241022"
 
     def test_major_news_identified(self, ralph_loop_with_mocked_api):
         """Major news items should be identified and scored correctly."""
@@ -273,4 +273,4 @@ class TestRssSourceMixUpdate:
 
                     assert RalphLoop.MAJOR_NEWS_THRESHOLD == 0.7
                     assert RalphLoop.MAJOR_NEWS_RESERVED_SLOTS == 1
-                    assert RalphLoop.PRE_SCREEN_MODEL == "claude-haiku-3-5"
+                    assert RalphLoop.PRE_SCREEN_MODEL == "claude-3-5-haiku-20241022"

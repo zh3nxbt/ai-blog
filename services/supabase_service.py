@@ -49,7 +49,14 @@ def _generate_slug(title: str) -> str:
     return slug
 
 
-def create_blog_post(title: str, content: str, status: str = "draft") -> UUID:
+def create_blog_post(
+    title: str,
+    content: str,
+    status: str = "draft",
+    meta_description: str | None = None,
+    meta_keywords: str | None = None,
+    tags: list | None = None,
+) -> UUID:
     """
     Create a new blog post in the database.
 
@@ -57,6 +64,9 @@ def create_blog_post(title: str, content: str, status: str = "draft") -> UUID:
         title: The title of the blog post
         content: The content of the blog post (HTML)
         status: The status of the post (draft, published, failed)
+        meta_description: SEO meta description (optional)
+        meta_keywords: SEO meta keywords, comma-separated (optional)
+        tags: List of category tags (optional)
 
     Returns:
         UUID: The ID of the created blog post
@@ -77,12 +87,28 @@ def create_blog_post(title: str, content: str, status: str = "draft") -> UUID:
     client = get_supabase_client()
     slug = _generate_slug(title)
 
-    response = client.table("blog_posts").insert({
+    from datetime import datetime, timezone
+
+    post_data = {
         "title": title,
         "content": content,
         "slug": slug,
-        "status": status
-    }).execute()
+        "status": status,
+    }
+
+    # Set published_at if status is published
+    if status == "published":
+        post_data["published_at"] = datetime.now(timezone.utc).isoformat()
+
+    # Add optional meta fields if provided
+    if meta_description:
+        post_data["meta_description"] = meta_description
+    if meta_keywords:
+        post_data["meta_keywords"] = meta_keywords
+    if tags:
+        post_data["tags"] = tags
+
+    response = client.table("blog_posts").insert(post_data).execute()
 
     if not response.data or len(response.data) == 0:
         raise Exception("Failed to create blog post: no data returned")

@@ -75,6 +75,11 @@ def main() -> int:
         action="store_true",
         help="Force generation even if a post already exists today",
     )
+    parser.add_argument(
+        "--force-day",
+        action="store_true",
+        help="Force generation even if today is not a scheduled posting day",
+    )
     args = parser.parse_args()
 
     from dotenv import load_dotenv
@@ -94,6 +99,7 @@ def main() -> int:
     cost_limit_cents = int(os.environ.get("RALPH_COST_LIMIT_CENTS", "100"))
     juice_threshold = float(os.environ.get("RALPH_JUICE_THRESHOLD", "0.6"))
     skip_if_exists = not args.force
+    check_posting_day = not args.force_day
 
     print("Starting RalphLoop blog generation...")
     print(f"  Quality threshold: {quality_threshold}")
@@ -101,6 +107,7 @@ def main() -> int:
     print(f"  Timeout: {timeout_minutes} minutes")
     print(f"  Cost limit: {cost_limit_cents} cents")
     print(f"  Skip if exists: {skip_if_exists}")
+    print(f"  Check posting day: {check_posting_day}")
     print()
 
     try:
@@ -110,6 +117,7 @@ def main() -> int:
             cost_limit_cents=cost_limit_cents,
             juice_threshold=juice_threshold,
             skip_if_exists=skip_if_exists,
+            check_posting_day=check_posting_day,
         )
         result = loop.run()
 
@@ -126,8 +134,32 @@ def main() -> int:
         print("=" * 50)
 
         # Send notifications based on status
-        if result.status == "skipped":
+        if result.status == "published":
+            source_list = "\n".join(result.source_summaries or ["No sources listed"])
+            strategy_name = result.strategy_name or "default"
+            strategy_reason = result.strategy_reason or "No strategy context"
+            details = f"""Quality Score: {result.final_quality_score:.2f}
+Iterations: {result.iteration_count}
+Cost: {result.total_cost_cents} cents
+
+Strategy: {strategy_name}
+Approach: {strategy_reason}
+
+Sources Used:
+{source_list}"""
+            _send_notification(
+                alert_type="SUCCESS",
+                title="Blog post published",
+                details=details,
+                blog_post_id=str(result.blog_post_id),
+            )
+
+        elif result.status == "skipped":
             print("\nPost already exists for today. Use --force to generate anyway.")
+
+        elif result.status == "skipped_not_posting_day":
+            print(f"\n{result.failure_reason}")
+            print("Use --force-day to generate anyway.")
 
         elif result.status == "skipped_no_juice":
             print("\nSources lacked sufficient value to generate content.")
@@ -159,8 +191,8 @@ Cost: {result.total_cost_cents} cents"""
                 blog_post_id=str(result.blog_post_id),
             )
 
-        # Exit 0 for published, draft, skipped, or skipped_no_juice; 1 for failed
-        return 0 if result.status in ("published", "draft", "skipped", "skipped_no_juice") else 1
+        # Exit 0 for published, draft, skipped, skipped_not_posting_day, or skipped_no_juice; 1 for failed
+        return 0 if result.status in ("published", "draft", "skipped", "skipped_not_posting_day", "skipped_no_juice") else 1
 
     except Exception as e:
         # Send error notification
