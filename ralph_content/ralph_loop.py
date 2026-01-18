@@ -18,6 +18,7 @@ from ralph_content.agents.product_marketing import ProductMarketingAgent
 from ralph_content.core.api_cost import calculate_api_cost
 from ralph_content.core.markdown_renderer import markdown_to_html
 from ralph_content.core.timeout_manager import TimeoutManager
+from ralph_content.prompts.major_news_screening import MAJOR_NEWS_SCREENING_PROMPT_TEMPLATE
 from ralph_content.prompts.source_juice import SOURCE_JUICE_PROMPT_TEMPLATE
 from services.quality_validator import validate_content
 
@@ -32,6 +33,15 @@ class JuiceEvaluationResult:
     best_source: Optional[str] = None
     potential_angle: Optional[str] = None
     cost_cents: int = 0
+
+
+@dataclass
+class MajorNewsScreeningResult:
+    """Result of major news pre-screening."""
+
+    items_with_scores: List[Dict[str, Any]]
+    highest_scoring_major: Optional[Dict[str, Any]]
+    cost_cents: int
 
 
 @dataclass
@@ -57,7 +67,7 @@ class RalphLoop:
     DEFAULT_COST_LIMIT_CENTS = 100
     DEFAULT_JUICE_THRESHOLD = 0.6
     DEFAULT_SOURCE_MIX = {
-        "rss": 2,
+        "rss": 4,
         "evergreen": 1,
         "standards": 1,
         "vendor": 1,
@@ -66,6 +76,9 @@ class RalphLoop:
     MAX_ITERATIONS = 10
     FRESHNESS_HOURS = 48  # Sources older than this auto-fail juice check
     SELECTION_POOL_SIZE = 15  # Fetch this many items, then randomly select from pool
+    MAJOR_NEWS_THRESHOLD = 0.7  # Score threshold for reserving a slot for major news
+    MAJOR_NEWS_RESERVED_SLOTS = 1  # Number of slots reserved for major news
+    PRE_SCREEN_MODEL = "claude-haiku-3-5"  # Cheap model for pre-screening
 
     def __init__(
         self,
@@ -422,33 +435,38 @@ class RalphLoop:
         limit: int,
         exclude_ids: set[str],
     ) -> List[Dict[str, Any]]:
-        """Fetch items for a source type, randomly selecting from a larger pool.
+        """Fetch items for a source type, with special handling for RSS.
 
-        Instead of always picking the most recent items, this fetches a larger
-        pool (SELECTION_POOL_SIZE) and randomly selects from it. This gives
-        older but potentially interesting content a chance to be evaluated.
+        For RSS items: Uses major news pre-screening to prioritize breaking news
+        and reserves a slot for the highest-scoring major news item.
+
+        For other types: Randomly selects from a larger pool to give older but
+        potentially interesting content a chance to be evaluated.
         """
         if limit <= 0:
             return []
 
-        # Fetch a larger pool to select from randomly
+        # Fetch a larger pool to select from
         pool_size = max(self.SELECTION_POOL_SIZE, limit + len(exclude_ids))
+
         if source_type == "rss":
+            # Use major news screening for RSS to prioritize important stories
             items = self._get_rss_items_for_mix(pool_size)
+            return self._select_rss_with_major_news_slot(items, limit, exclude_ids)
         else:
             items = self.topic_item_service.fetch_unused_items_by_source_type(
                 source_type=source_type,
                 limit=pool_size,
             )
 
-        # Filter out already-selected items
-        filtered = [item for item in items if item.get("id") not in exclude_ids]
+            # Filter out already-selected items
+            filtered = [item for item in items if item.get("id") not in exclude_ids]
 
-        # Randomly select from the pool instead of taking top N
-        if len(filtered) <= limit:
-            return filtered
+            # Randomly select from the pool instead of taking top N
+            if len(filtered) <= limit:
+                return filtered
 
-        return random.sample(filtered, limit)
+            return random.sample(filtered, limit)
 
     def _get_rss_items_for_mix(self, limit: int) -> List[Dict[str, Any]]:
         """Fetch unused RSS items for mixed-source selection."""
@@ -472,6 +490,179 @@ class RalphLoop:
             item.setdefault("source_type", "rss")
 
         return unused_items
+
+    def _pre_screen_rss_pool(
+        self,
+        items: List[Dict[str, Any]],
+    ) -> MajorNewsScreeningResult:
+        """
+        Pre-screen RSS items to identify major news worthy of a reserved slot.
+
+        Uses a cheap model (Haiku) to evaluate the pool and identify any items
+        that represent breaking news or significant developments.
+
+        Args:
+            items: List of RSS items to screen
+
+        Returns:
+            MajorNewsScreeningResult with scored items and highest-scoring major news
+        """
+        # Skip screening if pool is small (no benefit from prioritization)
+        if len(items) <= 4:
+            return MajorNewsScreeningResult(
+                items_with_scores=[
+                    {**item, "urgency_score": 0.5, "is_major_news": False}
+                    for item in items
+                ],
+                highest_scoring_major=None,
+                cost_cents=0,
+            )
+
+        # Format items for the prompt
+        items_for_prompt = []
+        for i, item in enumerate(items):
+            items_for_prompt.append({
+                "index": i,
+                "title": item.get("title", "Untitled"),
+                "summary": (item.get("summary") or item.get("content", ""))[:300],
+                "published_at": item.get("published_at"),
+            })
+
+        prompt = MAJOR_NEWS_SCREENING_PROMPT_TEMPLATE.format(
+            items_json=json.dumps(items_for_prompt, indent=2)
+        )
+
+        # Call Haiku for cheap screening
+        response = self._anthropic_client.messages.create(
+            model=self.PRE_SCREEN_MODEL,
+            max_tokens=500,
+            messages=[{"role": "user", "content": prompt}],
+        )
+
+        cost_cents = calculate_api_cost(
+            response.usage.input_tokens,
+            response.usage.output_tokens,
+            model=self.PRE_SCREEN_MODEL,
+        )
+
+        # Parse response
+        response_text = response.content[0].text.strip()
+
+        # Handle optional code fences
+        if response_text.startswith("```"):
+            lines = response_text.split("\n")
+            lines = lines[1:]
+            if lines and lines[-1].strip() == "```":
+                lines = lines[:-1]
+            response_text = "\n".join(lines).strip()
+
+        try:
+            result = json.loads(response_text)
+            screening_results = result.get("screening_results", [])
+        except json.JSONDecodeError:
+            # If parsing fails, return items without scoring
+            return MajorNewsScreeningResult(
+                items_with_scores=[
+                    {**item, "urgency_score": 0.5, "is_major_news": False}
+                    for item in items
+                ],
+                highest_scoring_major=None,
+                cost_cents=cost_cents,
+            )
+
+        # Attach scores to items
+        items_with_scores = []
+        for item in items:
+            # Find matching result by index
+            item_copy = dict(item)
+            matching_result = None
+            for i, orig_item in enumerate(items):
+                if orig_item is item:
+                    for sr in screening_results:
+                        if sr.get("item_index") == i:
+                            matching_result = sr
+                            break
+                    break
+
+            if matching_result:
+                item_copy["urgency_score"] = matching_result.get("urgency_score", 0.5)
+                item_copy["is_major_news"] = matching_result.get("is_major_news", False)
+                item_copy["major_news_reason"] = matching_result.get("reason", "")
+            else:
+                item_copy["urgency_score"] = 0.5
+                item_copy["is_major_news"] = False
+
+            items_with_scores.append(item_copy)
+
+        # Find highest-scoring major news
+        major_news_items = [
+            item for item in items_with_scores
+            if item.get("is_major_news") and item.get("urgency_score", 0) >= self.MAJOR_NEWS_THRESHOLD
+        ]
+
+        highest_scoring_major = None
+        if major_news_items:
+            highest_scoring_major = max(major_news_items, key=lambda x: x.get("urgency_score", 0))
+
+        return MajorNewsScreeningResult(
+            items_with_scores=items_with_scores,
+            highest_scoring_major=highest_scoring_major,
+            cost_cents=cost_cents,
+        )
+
+    def _select_rss_with_major_news_slot(
+        self,
+        pool: List[Dict[str, Any]],
+        count: int,
+        exclude_ids: set[str],
+    ) -> List[Dict[str, Any]]:
+        """
+        Select RSS items with a reserved slot for major news.
+
+        Calls pre-screening to identify major news, reserves one slot for the
+        highest-scoring major news item if found, then fills remaining slots
+        with random selection from the rest of the pool.
+
+        Args:
+            pool: Full pool of RSS items to select from
+            count: Number of items to select
+            exclude_ids: IDs to exclude from selection
+
+        Returns:
+            List of selected RSS items
+        """
+        # Filter out excluded items
+        filtered_pool = [item for item in pool if item.get("id") not in exclude_ids]
+
+        if len(filtered_pool) <= count:
+            return filtered_pool
+
+        # Pre-screen the pool
+        screening_result = self._pre_screen_rss_pool(filtered_pool)
+        selected: List[Dict[str, Any]] = []
+
+        # Reserve slot for major news if found
+        if screening_result.highest_scoring_major and self.MAJOR_NEWS_RESERVED_SLOTS > 0:
+            major_item = screening_result.highest_scoring_major
+            selected.append(major_item)
+            remaining_count = count - 1
+            remaining_pool = [
+                item for item in screening_result.items_with_scores
+                if item.get("id") != major_item.get("id")
+            ]
+        else:
+            remaining_count = count
+            remaining_pool = screening_result.items_with_scores
+
+        # Fill remaining slots with random selection
+        if remaining_count > 0 and remaining_pool:
+            additional = random.sample(
+                remaining_pool,
+                min(remaining_count, len(remaining_pool))
+            )
+            selected.extend(additional)
+
+        return selected
 
     def _mark_source_items_as_used(
         self,
