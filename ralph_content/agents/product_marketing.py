@@ -3,13 +3,18 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from ralph_content.agents.base_agent import BaseAgent
 from ralph_content.prompts.content_generation import (
+    ANCHOR_CONTEXT_PROMPT,
+    ANALYSIS_PROMPT,
+    DEEP_DIVE_PROMPT,
     IMPROVEMENT_PROMPT_TEMPLATE,
     INITIAL_DRAFT_PROMPT,
+    THEMATIC_PROMPT,
 )
+from ralph_content.prompts.content_strategy import ContentStrategy
 
 
 class ProductMarketingAgent(BaseAgent):
@@ -19,16 +24,31 @@ class ProductMarketingAgent(BaseAgent):
     def agent_name(self) -> str:
         return "product-marketing"
 
-    def generate_content(self, rss_items: List[Dict[str, Any]]) -> Tuple[str, str]:
-        """Generate a blog post title and content from source items (RSS, evergreen, etc.)."""
+    def generate_content(
+        self,
+        rss_items: List[Dict[str, Any]],
+        strategy: Optional[ContentStrategy] = None,
+        strategy_context: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """Generate a blog post from source items.
+
+        Args:
+            rss_items: Source items (RSS, evergreen, etc.)
+            strategy: Content strategy to use (if None, uses default prompt)
+            strategy_context: Additional context for strategy-specific prompts:
+                - anchor_index: int (for ANCHOR_CONTEXT)
+                - theme_name: str (for THEMATIC)
+                - unifying_angle: str (for ANALYSIS)
+
+        Returns:
+            Dict with keys: title, content_markdown, meta_description, meta_keywords, tags
+        """
         if not rss_items:
             raise ValueError("rss_items cannot be empty")
 
-        sources_text = "\n\n".join(
-            [_format_source_item(i + 1, item) for i, item in enumerate(rss_items)]
-        )
+        strategy_context = strategy_context or {}
+        prompt = self._build_strategy_prompt(rss_items, strategy, strategy_context)
 
-        prompt = INITIAL_DRAFT_PROMPT.format(sources_text=sources_text)
         response_text = self._call_claude(messages=[{"role": "user", "content": prompt}])
         post_data = _parse_json_response(response_text)
 
@@ -40,7 +60,78 @@ class ProductMarketingAgent(BaseAgent):
         if not isinstance(content, str) or not content.strip():
             raise ValueError("content_markdown must be a non-empty string")
 
-        return title, content
+        return {
+            "title": title,
+            "content_markdown": content,
+            "meta_description": post_data.get("meta_description", ""),
+            "meta_keywords": post_data.get("meta_keywords", ""),
+            "tags": post_data.get("tags", []),
+        }
+
+    def _build_strategy_prompt(
+        self,
+        items: List[Dict[str, Any]],
+        strategy: Optional[ContentStrategy],
+        context: Dict[str, Any],
+    ) -> str:
+        """Build the appropriate prompt based on content strategy."""
+        if strategy is None:
+            # Default behavior - use original prompt
+            sources_text = "\n\n".join(
+                [_format_source_item(i + 1, item) for i, item in enumerate(items)]
+            )
+            return INITIAL_DRAFT_PROMPT.format(sources_text=sources_text)
+
+        if strategy == ContentStrategy.ANCHOR_CONTEXT:
+            anchor_index = context.get("anchor_index", 0)
+            anchor_item = items[anchor_index] if anchor_index < len(items) else items[0]
+            context_items = [item for i, item in enumerate(items) if i != anchor_index]
+
+            anchor_source = _format_source_item(1, anchor_item)
+            context_sources = "\n\n".join(
+                [_format_source_item(i + 2, item) for i, item in enumerate(context_items)]
+            ) or "No additional context sources."
+
+            return ANCHOR_CONTEXT_PROMPT.format(
+                anchor_source=anchor_source,
+                context_sources=context_sources,
+            )
+
+        elif strategy == ContentStrategy.THEMATIC:
+            theme_name = context.get("theme_name", "Manufacturing")
+            sources_text = "\n\n".join(
+                [_format_source_item(i + 1, item) for i, item in enumerate(items)]
+            )
+            return THEMATIC_PROMPT.format(
+                theme_name=theme_name,
+                sources_text=sources_text,
+            )
+
+        elif strategy == ContentStrategy.ANALYSIS:
+            unifying_angle = context.get(
+                "unifying_angle",
+                "What these developments mean for machine shop operations"
+            )
+            sources_text = "\n\n".join(
+                [_format_source_item(i + 1, item) for i, item in enumerate(items)]
+            )
+            return ANALYSIS_PROMPT.format(
+                unifying_angle=unifying_angle,
+                sources_text=sources_text,
+            )
+
+        elif strategy == ContentStrategy.DEEP_DIVE:
+            sources_text = "\n\n".join(
+                [_format_source_item(i + 1, item) for i, item in enumerate(items)]
+            )
+            return DEEP_DIVE_PROMPT.format(sources_text=sources_text)
+
+        else:
+            # Fallback to default
+            sources_text = "\n\n".join(
+                [_format_source_item(i + 1, item) for i, item in enumerate(items)]
+            )
+            return INITIAL_DRAFT_PROMPT.format(sources_text=sources_text)
 
     def improve_content(self, content: str, critique: str | Dict[str, Any]) -> str:
         """Improve a draft blog post using critique feedback."""

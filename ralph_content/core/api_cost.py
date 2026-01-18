@@ -33,9 +33,9 @@ def calculate_api_cost(input_tokens: int, output_tokens: int, model: str = None)
             "input_per_mtok": 3.00,
             "output_per_mtok": 15.00
         },
-        "claude-haiku-3-5": {
-            "input_per_mtok": 0.25,
-            "output_per_mtok": 1.25
+        "claude-3-5-haiku-20241022": {
+            "input_per_mtok": 0.80,
+            "output_per_mtok": 4.00
         }
     }
 
