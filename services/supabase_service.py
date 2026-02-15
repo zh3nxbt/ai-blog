@@ -11,7 +11,6 @@ def get_supabase_client() -> Client:
     Create and return a Supabase client for backend operations.
 
     Uses SUPABASE_SECRET (service role key) which bypasses RLS policies.
-    Falls back to SUPABASE_KEY if SUPABASE_SECRET is not set.
 
     Returns:
         Client: Configured Supabase client instance
@@ -20,13 +19,13 @@ def get_supabase_client() -> Client:
         ValueError: If required environment variables are missing
     """
     supabase_url = os.getenv("SUPABASE_URL")
-    supabase_key = os.getenv("SUPABASE_SECRET") or os.getenv("SUPABASE_KEY")
+    supabase_key = os.getenv("SUPABASE_SECRET")
 
     if not supabase_url:
         raise ValueError("SUPABASE_URL environment variable is required")
 
     if not supabase_key:
-        raise ValueError("SUPABASE_SECRET or SUPABASE_KEY environment variable is required")
+        raise ValueError("SUPABASE_SECRET environment variable is required for backend operations")
 
     return create_client(supabase_url, supabase_key)
 
@@ -46,6 +45,8 @@ def _generate_slug(title: str) -> str:
     slug = re.sub(r'\s+', '-', slug)
     slug = re.sub(r'-+', '-', slug)
     slug = slug.strip('-')
+    if not slug:
+        slug = "post"
     return slug
 
 
@@ -85,14 +86,13 @@ def create_blog_post(
         raise ValueError(f"status must be one of: draft, published, failed. Got: {status}")
 
     client = get_supabase_client()
-    slug = _generate_slug(title)
+    base_slug = _generate_slug(title)
 
     from datetime import datetime, timezone
 
     post_data = {
         "title": title,
         "content": content,
-        "slug": slug,
         "status": status,
     }
 
@@ -108,12 +108,30 @@ def create_blog_post(
     if tags:
         post_data["tags"] = tags
 
-    response = client.table("blog_posts").insert(post_data).execute()
+    # Handle slug collisions deterministically by appending numeric suffixes.
+    # This avoids hard failures when titles repeat.
+    max_slug_attempts = 100
+    for attempt in range(max_slug_attempts):
+        slug_candidate = base_slug if attempt == 0 else f"{base_slug}-{attempt + 1}"
+        post_data["slug"] = slug_candidate
 
-    if not response.data or len(response.data) == 0:
-        raise Exception("Failed to create blog post: no data returned")
+        try:
+            response = client.table("blog_posts").insert(post_data).execute()
+            if not response.data or len(response.data) == 0:
+                raise Exception("Failed to create blog post: no data returned")
+            return UUID(response.data[0]["id"])
+        except Exception as exc:
+            error_msg = str(exc).lower()
+            is_slug_collision = (
+                "slug" in error_msg and ("duplicate" in error_msg or "unique" in error_msg)
+            )
+            if is_slug_collision:
+                continue
+            raise
 
-    return UUID(response.data[0]["id"])
+    raise Exception(
+        f"Failed to create blog post: could not generate unique slug after {max_slug_attempts} attempts"
+    )
 
 
 def save_draft_iteration(

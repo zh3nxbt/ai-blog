@@ -1,7 +1,8 @@
 [Unit]
 Description=Ralph Blog Content Generator
 Documentation=https://github.com/your-org/ai-blog
-After=network.target
+Wants=network-online.target
+After=network-online.target
 
 [Service]
 Type=oneshot
@@ -18,6 +19,9 @@ EnvironmentFile=/etc/ralph/env
 
 # Execute using virtual environment Python
 ExecStart=/opt/ralph/.venv/bin/python -m ralph.ralph_loop
+
+# Flush logs in real time
+Environment=PYTHONUNBUFFERED=1
 
 # Logging to stdout/stderr (captured by journald)
 StandardOutput=journal

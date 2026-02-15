@@ -80,7 +80,8 @@ cat > /etc/systemd/system/ralph.service << EOF
 [Unit]
 Description=Ralph Blog Content Generator
 Documentation=https://github.com/your-org/ai-blog
-After=network.target
+Wants=network-online.target
+After=network-online.target
 
 [Service]
 Type=oneshot
@@ -97,6 +98,7 @@ EnvironmentFile=/etc/ralph/env
 
 # Execute using virtual environment Python
 ExecStart=$PROJECT_PATH/.venv/bin/python -m ralph.ralph_loop
+Environment=PYTHONUNBUFFERED=1
 
 # Logging to stdout/stderr (captured by journald)
 StandardOutput=journal
@@ -114,16 +116,17 @@ EOF
 
 log_info "Service file installed to /etc/systemd/system/ralph.service"
 
-# Step 5: Install systemd timer file
-log_info "Installing systemd timer..."
+# Step 5: Install generation timer file
+log_info "Installing generation timer..."
 cat > /etc/systemd/system/ralph.timer << EOF
 [Unit]
 Description=Daily Ralph Blog Content Generation Timer
 Documentation=https://github.com/your-org/ai-blog
 
 [Timer]
-# Run daily at 2 PM UTC (14:00)
-OnCalendar=*-*-* 14:00:00 UTC
+# Run daily at 2:12 PM UTC (14:12), shortly after hourly feed refresh.
+OnCalendar=*-*-* 14:12:00 UTC
+Unit=ralph.service
 
 # If the system was off when the timer should have triggered,
 # run it immediately on next boot
@@ -139,13 +142,60 @@ AccuracySec=1min
 WantedBy=timers.target
 EOF
 
-log_info "Timer file installed to /etc/systemd/system/ralph.timer"
+log_info "Generation timer file installed to /etc/systemd/system/ralph.timer"
 
-# Step 6: Reload systemd
+# Step 6: Install RSS refresh service
+log_info "Installing RSS refresh service..."
+cat > /etc/systemd/system/ralph-refresh.service << EOF
+[Unit]
+Description=Ralph RSS Source Refresh
+Documentation=https://github.com/your-org/ai-blog
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=ralph
+Group=ralph
+WorkingDirectory=$PROJECT_PATH
+EnvironmentFile=/etc/ralph/env
+ExecStart=$PROJECT_PATH/.venv/bin/python -m ralph.refresh_sources
+Environment=PYTHONUNBUFFERED=1
+StandardOutput=journal
+StandardError=journal
+TimeoutStartSec=900
+Restart=no
+
+[Install]
+WantedBy=multi-user.target
+EOF
+log_info "RSS refresh service installed to /etc/systemd/system/ralph-refresh.service"
+
+# Step 7: Install RSS refresh timer
+log_info "Installing RSS refresh timer..."
+cat > /etc/systemd/system/ralph-refresh.timer << EOF
+[Unit]
+Description=Hourly Ralph RSS Source Refresh Timer
+Documentation=https://github.com/your-org/ai-blog
+
+[Timer]
+OnCalendar=*-*-* *:05:00 UTC
+Unit=ralph-refresh.service
+OnBootSec=5min
+Persistent=true
+RandomizedDelaySec=60
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target
+EOF
+log_info "RSS refresh timer installed to /etc/systemd/system/ralph-refresh.timer"
+
+# Step 8: Reload systemd
 log_info "Reloading systemd daemon..."
 systemctl daemon-reload
 
-# Step 7: Verify installation
+# Step 9: Verify installation
 log_info "Verifying installation..."
 echo ""
 echo "=========================================="
@@ -156,6 +206,8 @@ echo "Project path:    $PROJECT_PATH"
 echo "Environment:     /etc/ralph/env"
 echo "Service file:    /etc/systemd/system/ralph.service"
 echo "Timer file:      /etc/systemd/system/ralph.timer"
+echo "Refresh svc:     /etc/systemd/system/ralph-refresh.service"
+echo "Refresh timer:   /etc/systemd/system/ralph-refresh.timer"
 echo "Service user:    ralph"
 echo ""
 echo "Next steps:"
@@ -173,7 +225,12 @@ echo "  4. Enable and start the timer for daily 2 PM UTC automation:"
 echo "     systemctl enable ralph.timer"
 echo "     systemctl start ralph.timer"
 echo ""
-echo "  5. Verify timer is active:"
+echo "  5. Enable and start hourly RSS refresh:"
+echo "     systemctl enable ralph-refresh.timer"
+echo "     systemctl start ralph-refresh.timer"
+echo ""
+echo "  6. Verify timers are active:"
 echo "     systemctl list-timers ralph.timer"
+echo "     systemctl list-timers ralph-refresh.timer"
 echo ""
 echo "=========================================="

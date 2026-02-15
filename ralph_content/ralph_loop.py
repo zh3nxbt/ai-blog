@@ -3,10 +3,9 @@
 from __future__ import annotations
 
 import json
-import random
 import time
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Tuple
 from uuid import UUID
 
@@ -70,11 +69,13 @@ class RalphLoop:
     """Generate and refine blog posts with Ralph."""
 
     DEFAULT_QUALITY_THRESHOLD = 0.85
+    DEFAULT_QUALITY_FLOOR = 0.70
     DEFAULT_TIMEOUT_MINUTES = 30
     DEFAULT_COST_LIMIT_CENTS = 100
     DEFAULT_JUICE_THRESHOLD = 0.6
+    JUICE_EVAL_MODEL = "claude-3-5-haiku-20241022"
     DEFAULT_SOURCE_MIX = {
-        "rss": 8,  # Increased for better strategy selection
+        "rss": 4,
         "evergreen": 1,
         "standards": 1,
         "vendor": 1,
@@ -82,7 +83,10 @@ class RalphLoop:
     SOURCE_TYPE_ORDER = ("rss", "evergreen", "standards", "vendor", "internal")
     MAX_ITERATIONS = 10
     FRESHNESS_HOURS = 48  # Sources older than this auto-fail juice check
-    SELECTION_POOL_SIZE = 15  # Fetch this many items, then randomly select from pool
+    REJECTION_COOLDOWN_HOURS = 72  # Skip recently rejected sources for this long
+    GENERATION_REFRESH_SOURCE_LIMIT = 8  # Refresh top feeds before generation
+    GENERATION_REFRESH_ITEMS_PER_SOURCE = 10
+    SELECTION_POOL_SIZE = 15  # Fetch this many items, then rank by urgency/recency
     MAJOR_NEWS_THRESHOLD = 0.7  # Score threshold for reserving a slot for major news
     MAJOR_NEWS_RESERVED_SLOTS = 1  # Number of slots reserved for major news
     PRE_SCREEN_MODEL = "claude-3-5-haiku-20241022"  # Cheap model for pre-screening
@@ -102,6 +106,7 @@ class RalphLoop:
         min_items: int = 3,
         max_items: int = 10,  # Increased for better strategy selection
         quality_threshold: float | None = None,
+        quality_floor: float | None = None,
         timeout_minutes: int | None = None,
         cost_limit_cents: int | None = None,
         juice_threshold: float | None = None,
@@ -143,6 +148,7 @@ class RalphLoop:
         self.max_items = max_items
 
         self.quality_threshold = quality_threshold or self.DEFAULT_QUALITY_THRESHOLD
+        self.quality_floor = quality_floor or self.DEFAULT_QUALITY_FLOOR
         self.timeout_minutes = timeout_minutes or self.DEFAULT_TIMEOUT_MINUTES
         self.cost_limit_cents = cost_limit_cents or self.DEFAULT_COST_LIMIT_CENTS
         self.juice_threshold = juice_threshold or self.DEFAULT_JUICE_THRESHOLD
@@ -150,6 +156,7 @@ class RalphLoop:
         self.skip_if_exists = skip_if_exists
         self.posting_days = posting_days or self.DEFAULT_POSTING_DAYS
         self.check_posting_day = check_posting_day
+        self._selection_screening_cost_cents = 0
 
     def _check_already_generated_today(self) -> Optional[UUID]:
         """
@@ -159,14 +166,16 @@ class RalphLoop:
             UUID of existing post if found, None otherwise
         """
         client = self.supabase_service.get_supabase_client()
-        today = date.today().isoformat()
+        utc_today = datetime.now(timezone.utc).date()
+        start_of_day = f"{utc_today.isoformat()}T00:00:00+00:00"
+        start_of_next_day = f"{(utc_today + timedelta(days=1)).isoformat()}T00:00:00+00:00"
 
         # Query for posts created today (any status)
         response = (
             client.table("blog_posts")
             .select("id, created_at, status")
-            .gte("created_at", f"{today}T00:00:00")
-            .lt("created_at", f"{today}T23:59:59.999999")
+            .gte("created_at", start_of_day)
+            .lt("created_at", start_of_next_day)
             .execute()
         )
 
@@ -300,38 +309,58 @@ class RalphLoop:
         source_text = "\n\n".join(source_text_parts)
         prompt = SOURCE_JUICE_PROMPT_TEMPLATE.format(source_items=source_text)
 
-        # Call Claude for evaluation (using smaller max_tokens for cost efficiency)
-        response = self._anthropic_client.messages.create(
-            model=settings.anthropic_model,
-            max_tokens=500,
-            messages=[{"role": "user", "content": prompt}],
-        )
+        def _clean_json_candidate(text: str) -> str:
+            """Normalize optional code-fenced model output before JSON parsing."""
+            candidate = text.strip()
+            if candidate.startswith("```"):
+                lines = candidate.split("\n")
+                lines = lines[1:]
+                if lines and lines[-1].strip() == "```":
+                    lines = lines[:-1]
+                candidate = "\n".join(lines).strip()
+            return candidate
 
-        # Calculate cost
-        cost_cents = calculate_api_cost(
-            response.usage.input_tokens,
-            response.usage.output_tokens,
-        )
+        # Parse with one retry. Fail closed if structure cannot be trusted.
+        cost_cents = 0
+        result: Optional[Dict[str, Any]] = None
+        parse_error: Optional[str] = None
 
-        # Parse response
-        response_text = response.content[0].text.strip()
+        for attempt in range(2):
+            retry_hint = ""
+            if attempt > 0:
+                retry_hint = (
+                    "\n\nIMPORTANT: Return valid JSON only. "
+                    "No markdown, no code fences, no prose."
+                )
 
-        # Handle optional code fences
-        if response_text.startswith("```"):
-            lines = response_text.split("\n")
-            lines = lines[1:]
-            if lines and lines[-1].strip() == "```":
-                lines = lines[:-1]
-            response_text = "\n".join(lines).strip()
+            response = self._anthropic_client.messages.create(
+                model=self.JUICE_EVAL_MODEL,
+                max_tokens=500,
+                messages=[{"role": "user", "content": prompt + retry_hint}],
+            )
 
-        try:
-            result = json.loads(response_text)
-        except json.JSONDecodeError as exc:
-            # If parsing fails, default to proceeding (fail open)
+            cost_cents += calculate_api_cost(
+                response.usage.input_tokens,
+                response.usage.output_tokens,
+                model=self.JUICE_EVAL_MODEL,
+            )
+
+            response_text = _clean_json_candidate(response.content[0].text)
+            try:
+                result = json.loads(response_text)
+                break
+            except json.JSONDecodeError as exc:
+                parse_error = str(exc)
+                continue
+
+        if result is None:
             return JuiceEvaluationResult(
-                should_proceed=True,
-                reason=f"Failed to parse juice evaluation response: {exc}",
-                juice_score=0.7,  # Benefit of the doubt
+                should_proceed=False,
+                reason=(
+                    "Failed to parse juice evaluation response; "
+                    f"skipping generation for safety ({parse_error or 'unknown parse error'})"
+                ),
+                juice_score=0.0,
                 best_source=None,
                 potential_angle=None,
                 cost_cents=cost_cents,
@@ -413,43 +442,55 @@ class RalphLoop:
         desired_total = min(self.max_items, sum(targets.values()))
         desired_total = max(self.min_items, desired_total)
 
-        selected_items: List[Dict[str, Any]] = []
-        selected_ids: set[str] = set()
-        source_mix_counts: Dict[str, int] = {key: 0 for key in targets}
+        def collect_items(initial_exclude_ids: set[str]) -> Tuple[List[Dict[str, Any]], Dict[str, int]]:
+            selected_items: List[Dict[str, Any]] = []
+            selected_ids: set[str] = set(initial_exclude_ids)
+            source_mix_counts: Dict[str, int] = {key: 0 for key in targets}
 
-        for source_type in self.SOURCE_TYPE_ORDER:
-            target_count = targets.get(source_type, 0)
-            if target_count <= 0:
-                continue
-
-            items = self._fetch_items_for_source_type(
-                source_type=source_type,
-                limit=target_count,
-                exclude_ids=selected_ids,
-            )
-            if items:
-                selected_items.extend(items)
-                selected_ids.update(item["id"] for item in items if item.get("id"))
-                source_mix_counts[source_type] = source_mix_counts.get(source_type, 0) + len(items)
-
-        remaining_slots = desired_total - len(selected_items)
-        if remaining_slots > 0:
             for source_type in self.SOURCE_TYPE_ORDER:
-                if remaining_slots <= 0:
-                    break
-
-                extra_items = self._fetch_items_for_source_type(
-                    source_type=source_type,
-                    limit=remaining_slots,
-                    exclude_ids=selected_ids,
-                )
-                if not extra_items:
+                target_count = targets.get(source_type, 0)
+                if target_count <= 0:
                     continue
 
-                selected_items.extend(extra_items)
-                selected_ids.update(item["id"] for item in extra_items if item.get("id"))
-                source_mix_counts[source_type] = source_mix_counts.get(source_type, 0) + len(extra_items)
-                remaining_slots = desired_total - len(selected_items)
+                items = self._fetch_items_for_source_type(
+                    source_type=source_type,
+                    limit=target_count,
+                    exclude_ids=selected_ids,
+                )
+                if items:
+                    selected_items.extend(items)
+                    selected_ids.update(item["id"] for item in items if item.get("id"))
+                    source_mix_counts[source_type] = source_mix_counts.get(source_type, 0) + len(items)
+
+            remaining_slots = desired_total - len(selected_items)
+            if remaining_slots > 0:
+                for source_type in self.SOURCE_TYPE_ORDER:
+                    if remaining_slots <= 0:
+                        break
+
+                    extra_items = self._fetch_items_for_source_type(
+                        source_type=source_type,
+                        limit=remaining_slots,
+                        exclude_ids=selected_ids,
+                    )
+                    if not extra_items:
+                        continue
+
+                    selected_items.extend(extra_items)
+                    selected_ids.update(item["id"] for item in extra_items if item.get("id"))
+                    source_mix_counts[source_type] = (
+                        source_mix_counts.get(source_type, 0) + len(extra_items)
+                    )
+                    remaining_slots = desired_total - len(selected_items)
+
+            return selected_items, source_mix_counts
+
+        recently_rejected_ids = self._get_recently_rejected_source_ids()
+        selected_items, source_mix_counts = collect_items(recently_rejected_ids)
+
+        # If strict exclusion is too aggressive, fall back to full pool.
+        if len(selected_items) < self.min_items and recently_rejected_ids:
+            selected_items, source_mix_counts = collect_items(set())
 
         if len(selected_items) < self.min_items:
             raise ValueError(
@@ -472,10 +513,73 @@ class RalphLoop:
             targets[source_type] = take
             remaining -= take
 
-        if remaining > 0:
-            targets["rss"] = targets.get("rss", 0) + remaining
-
         return targets
+
+    @staticmethod
+    def _parse_datetime(value: Any) -> Optional[datetime]:
+        """Parse common datetime formats into timezone-aware UTC datetimes."""
+        if isinstance(value, datetime):
+            if value.tzinfo is None:
+                return value.replace(tzinfo=timezone.utc)
+            return value
+
+        if not isinstance(value, str) or not value:
+            return None
+
+        try:
+            normalized = value[:-1] + "+00:00" if value.endswith("Z") else value
+            parsed = datetime.fromisoformat(normalized)
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=timezone.utc)
+            return parsed
+        except ValueError:
+            return None
+
+    def _item_sort_key(self, item: Dict[str, Any]) -> Tuple[float, int, float]:
+        """
+        Rank items by urgency, source priority, then recency.
+
+        Higher tuple values are better.
+        """
+        urgency = float(item.get("urgency_score") or 0.0)
+        source_priority = int(item.get("source_priority") or 0)
+
+        published_at = self._parse_datetime(item.get("published_at"))
+        created_at = self._parse_datetime(item.get("created_at"))
+        recency_dt = published_at or created_at
+        recency_ts = recency_dt.timestamp() if recency_dt else 0.0
+
+        return (urgency, source_priority, recency_ts)
+
+    def _get_recently_rejected_source_ids(self) -> set[str]:
+        """
+        Return source item IDs from recent skipped_no_juice runs.
+
+        This prevents repeatedly evaluating the same weak pool.
+        """
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=self.REJECTION_COOLDOWN_HOURS)
+
+        try:
+            client = self.supabase_service.get_supabase_client()
+            response = (
+                client.table("blog_agent_activity")
+                .select("metadata")
+                .eq("activity_type", "skipped_no_juice")
+                .gte("created_at", cutoff.isoformat())
+                .execute()
+            )
+        except Exception:
+            return set()
+
+        rejected_ids: set[str] = set()
+        for row in response.data or []:
+            metadata = row.get("metadata") or {}
+            source_item_ids = metadata.get("source_item_ids") or []
+            for item_id in source_item_ids:
+                if isinstance(item_id, str) and item_id:
+                    rejected_ids.add(item_id)
+
+        return rejected_ids
 
     def _fetch_items_for_source_type(
         self,
@@ -488,8 +592,8 @@ class RalphLoop:
         For RSS items: Uses major news pre-screening to prioritize breaking news
         and reserves a slot for the highest-scoring major news item.
 
-        For other types: Randomly selects from a larger pool to give older but
-        potentially interesting content a chance to be evaluated.
+        For other types: Selects from a larger pool using deterministic ranking
+        (source priority + recency) to favor stronger candidates.
         """
         if limit <= 0:
             return []
@@ -509,22 +613,44 @@ class RalphLoop:
 
             # Filter out already-selected items
             filtered = [item for item in items if item.get("id") not in exclude_ids]
-
-            # Randomly select from the pool instead of taking top N
-            if len(filtered) <= limit:
-                return filtered
-
-            return random.sample(filtered, limit)
+            ranked = sorted(filtered, key=self._item_sort_key, reverse=True)
+            return ranked[:limit]
 
     def _get_rss_items_for_mix(self, limit: int) -> List[Dict[str, Any]]:
         """Fetch unused RSS items for mixed-source selection."""
+        # Keep the pool fresh before selection. This is ingestion-only, no LLM usage.
+        if hasattr(self.rss_service, "refresh_active_sources"):
+            try:
+                self.rss_service.refresh_active_sources(
+                    per_source_limit=self.GENERATION_REFRESH_ITEMS_PER_SOURCE,
+                    max_sources=self.GENERATION_REFRESH_SOURCE_LIMIT,
+                )
+            except Exception as exc:
+                # Generation can continue with existing items if refresh fails.
+                try:
+                    self.supabase_service.log_agent_activity(
+                        agent_name="ralph-loop",
+                        activity_type="rss_refresh_before_generation_failed",
+                        success=False,
+                        error_message=str(exc),
+                        metadata={
+                            "source_limit": self.GENERATION_REFRESH_SOURCE_LIMIT,
+                            "items_per_source": self.GENERATION_REFRESH_ITEMS_PER_SOURCE,
+                        },
+                    )
+                except Exception:
+                    pass
+
         unused_items = self.rss_service.fetch_unused_items(limit=limit)
 
         if len(unused_items) < limit:
             sources = self.rss_service.fetch_active_sources()
             for source in sources:
                 try:
-                    self.rss_service.fetch_feed_items(source["id"], limit=10)
+                    self.rss_service.fetch_feed_items(
+                        source["id"],
+                        limit=self.GENERATION_REFRESH_ITEMS_PER_SOURCE,
+                    )
                 except Exception:
                     continue
 
@@ -537,7 +663,7 @@ class RalphLoop:
         for item in unused_items:
             item.setdefault("source_type", "rss")
 
-        return unused_items
+        return sorted(unused_items, key=self._item_sort_key, reverse=True)
 
     def _pre_screen_rss_pool(
         self,
@@ -669,7 +795,7 @@ class RalphLoop:
 
         Calls pre-screening to identify major news, reserves one slot for the
         highest-scoring major news item if found, then fills remaining slots
-        with random selection from the rest of the pool.
+        using ranked selection from the rest of the pool.
 
         Args:
             pool: Full pool of RSS items to select from
@@ -687,6 +813,7 @@ class RalphLoop:
 
         # Pre-screen the pool
         screening_result = self._pre_screen_rss_pool(filtered_pool)
+        self._selection_screening_cost_cents += screening_result.cost_cents
         selected: List[Dict[str, Any]] = []
 
         # Reserve slot for major news if found
@@ -702,12 +829,14 @@ class RalphLoop:
             remaining_count = count
             remaining_pool = screening_result.items_with_scores
 
-        # Fill remaining slots with random selection
+        # Fill remaining slots by ranked priority (urgency, source priority, recency)
         if remaining_count > 0 and remaining_pool:
-            additional = random.sample(
+            ranked_remaining = sorted(
                 remaining_pool,
-                min(remaining_count, len(remaining_pool))
+                key=self._item_sort_key,
+                reverse=True,
             )
+            additional = ranked_remaining[:remaining_count]
             selected.extend(additional)
 
         return selected
@@ -945,7 +1074,7 @@ class RalphLoop:
 
         # Check if today is a posting day (2-3 posts per week)
         if self.check_posting_day:
-            today_weekday = date.today().weekday()  # 0=Monday, 6=Sunday
+            today_weekday = datetime.now(timezone.utc).weekday()  # 0=Monday, 6=Sunday
             if today_weekday not in self.posting_days:
                 from uuid import uuid4
                 day_names = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
@@ -959,6 +1088,7 @@ class RalphLoop:
                         "reason": "not_a_posting_day",
                         "today": day_names[today_weekday],
                         "posting_days": posting_day_names,
+                        "timezone": "UTC",
                     },
                 )
                 return RalphLoopResult(
@@ -974,6 +1104,7 @@ class RalphLoop:
             timeout_minutes=self.timeout_minutes,
             cost_limit_cents=self.cost_limit_cents,
         )
+        self._selection_screening_cost_cents = 0
 
         # Get source items first
         source_items, source_mix_counts = self._get_source_items()
@@ -1006,6 +1137,7 @@ class RalphLoop:
                 "best_source": juice_result.best_source,
                 "potential_angle": juice_result.potential_angle,
                 "cost_cents": juice_result.cost_cents,
+                "selection_screening_cost_cents": self._selection_screening_cost_cents,
                 "source_mix": source_mix_counts,
                 "source_count": len(source_items),
             },
@@ -1033,6 +1165,10 @@ class RalphLoop:
                     "source_titles": [
                         item.get("title", "Untitled") for item in source_items[:5]
                     ],
+                    "source_item_ids": [
+                        item["id"] for item in source_items if item.get("id")
+                    ],
+                    "selection_screening_cost_cents": self._selection_screening_cost_cents,
                 },
             )
 
@@ -1046,7 +1182,9 @@ class RalphLoop:
                 blog_post_id=placeholder_id,
                 final_quality_score=0.0,
                 iteration_count=0,
-                total_cost_cents=juice_result.cost_cents,
+                total_cost_cents=(
+                    juice_result.cost_cents + self._selection_screening_cost_cents
+                ),
                 status="skipped_no_juice",
                 juice_score=juice_result.juice_score,
                 failure_reason=juice_result.reason,
@@ -1111,7 +1249,11 @@ class RalphLoop:
         last_crit_input = 0
         last_crit_output = 0
         # Include juice evaluation and strategy screening costs
-        total_cost_cents = juice_result.cost_cents + strategy_result.cost_cents
+        total_cost_cents = (
+            juice_result.cost_cents
+            + strategy_result.cost_cents
+            + self._selection_screening_cost_cents
+        )
 
         input_tokens, output_tokens = self.agent.get_total_tokens()
         generation_cost = calculate_api_cost(
@@ -1305,16 +1447,35 @@ class RalphLoop:
             current_content = improved_content
             quality_score = new_quality_score
 
+            # Hard stop after this iteration if the improvement call pushed cost over limit.
+            if timeout_manager.is_cost_limit_exceeded(total_cost_cents):
+                self.supabase_service.log_agent_activity(
+                    agent_name="ralph-loop",
+                    activity_type="cost_limit",
+                    success=False,
+                    context_id=blog_post_id,
+                    metadata={
+                        "final_iteration": iteration_count,
+                        "quality_score": quality_score,
+                        "total_cost_cents": total_cost_cents,
+                        "reason": "cost_limit_exceeded_after_improvement",
+                    },
+                )
+                break
+
         # Determine final status based on quality
         if quality_score >= self.quality_threshold:
             status = "published"
             failure_reason = None
-        elif quality_score >= 0.70:
+        elif quality_score >= self.quality_floor:
             status = "draft"
             failure_reason = None
         else:
             status = "failed"
-            failure_reason = f"Quality score {quality_score:.2f} below minimum threshold 0.70 after {iteration_count} iterations"
+            failure_reason = (
+                f"Quality score {quality_score:.2f} below minimum threshold "
+                f"{self.quality_floor:.2f} after {iteration_count} iterations"
+            )
 
         # Update blog post with final content and status
         client = self.supabase_service.get_supabase_client()

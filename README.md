@@ -30,6 +30,9 @@ python -m ralph.ralph_loop
 
 # Force run even if post exists today
 python -m ralph.ralph_loop --force
+
+# Refresh active RSS sources (ingestion only, no LLM/API token usage)
+python -m ralph.refresh_sources
 ```
 
 ### Environment Variables
@@ -38,11 +41,17 @@ Copy `.env.example` to `.env` and fill in:
 
 - `SUPABASE_URL` - Your Supabase project URL
 - `SUPABASE_KEY` - Supabase anon key (frontend/public use)
-- `SUPABASE_SECRET` - Supabase service role key (backend use, bypasses RLS)
+- `SUPABASE_SECRET` - Supabase service role key (required for backend/worker, bypasses RLS)
 - `ANTHROPIC_API_KEY` - Anthropic API key for Claude
 - `RALPH_TIMEOUT_MINUTES` - Max runtime per generation (minutes)
 - `RALPH_QUALITY_THRESHOLD` - Quality score to publish (0.0-1.0)
+- `RALPH_QUALITY_FLOOR` - Minimum score for draft status
+- `RALPH_JUICE_THRESHOLD` - Source-juice threshold gate
 - `RALPH_COST_LIMIT_CENTS` - Max cost per run (cents)
+- `RALPH_REFRESH_LIMIT_PER_SOURCE` - Hourly refresh items per feed
+- `RALPH_REFRESH_MAX_SOURCES` - Optional cap on feed refresh breadth
+- `RALPH_RSS_FAILURE_THRESHOLD` - Consecutive source failures before auto-disable
+- `RALPH_RSS_FETCH_RETRIES` - Per-source refresh attempts before marking failure
 
 ## Phase 1 - Core Ralph Loop
 

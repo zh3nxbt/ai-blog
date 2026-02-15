@@ -82,6 +82,62 @@
 
 ---
 
+## Ubuntu VPS Deployment (systemd)
+
+Use two timers in production:
+
+1. `ralph-refresh.timer` (hourly ingestion, no LLM calls)
+2. `ralph.timer` (daily generation)
+
+### Why two timers
+
+- Hourly refresh keeps RSS data fresh and deduplicated.
+- Daily generation runs after refresh, so source quality is better.
+- **Hourly refresh does not use Anthropic tokens.** It only fetches/stores feed entries.
+
+### Recommended schedule
+
+- Refresh: every hour at minute 5 (`*-*-* *:05:00 UTC`)
+- Generation: once daily at 14:12 UTC (`*-*-* 14:12:00 UTC`)
+
+### Install and enable (Ubuntu)
+
+From repo root on VPS:
+
+```bash
+sudo ./systemd/install.sh /opt/ralph
+sudo systemctl daemon-reload
+
+sudo systemctl enable --now ralph-refresh.timer
+sudo systemctl enable --now ralph.timer
+```
+
+### Verify timers and services
+
+```bash
+sudo systemctl list-timers ralph-refresh.timer ralph.timer
+sudo systemctl status ralph-refresh.timer ralph.timer
+sudo systemctl status ralph-refresh.service ralph.service
+```
+
+### Useful logs
+
+```bash
+sudo journalctl -u ralph-refresh.service -n 100 --no-pager
+sudo journalctl -u ralph.service -n 100 --no-pager
+```
+
+### Required env vars on VPS (`/etc/ralph/env`)
+
+- `SUPABASE_URL`
+- `SUPABASE_SECRET`
+- `ANTHROPIC_API_KEY`
+- `DATABASE_URL` or `SUPABASE_DB_PASSWORD` (required for SQL migration scripts)
+- `RALPH_JUICE_THRESHOLD`
+- `RALPH_REFRESH_LIMIT_PER_SOURCE`
+
+---
+
 ## Security Notes
 
 - **NEVER commit `.env` to git** (already in `.gitignore`)

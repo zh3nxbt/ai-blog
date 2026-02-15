@@ -1,0 +1,21 @@
+[Unit]
+Description=Ralph RSS Source Refresh
+Documentation=https://github.com/your-org/ai-blog
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=ralph
+Group=ralph
+WorkingDirectory=/opt/ralph
+EnvironmentFile=/etc/ralph/env
+ExecStart=/opt/ralph/.venv/bin/python -m ralph.refresh_sources
+Environment=PYTHONUNBUFFERED=1
+StandardOutput=journal
+StandardError=journal
+TimeoutStartSec=900
+Restart=no
+
+[Install]
+WantedBy=multi-user.target
