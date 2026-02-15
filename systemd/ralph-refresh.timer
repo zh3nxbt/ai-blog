@@ -1,0 +1,15 @@
+[Unit]
+Description=Hourly Ralph RSS Source Refresh Timer
+Documentation=https://github.com/your-org/ai-blog
+
+[Timer]
+# Run every hour at minute 5 UTC.
+OnCalendar=*-*-* *:05:00 UTC
+Unit=ralph-refresh.service
+OnBootSec=5min
+Persistent=true
+RandomizedDelaySec=60
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

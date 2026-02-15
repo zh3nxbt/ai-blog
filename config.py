@@ -22,6 +22,10 @@ class Settings(BaseSettings):
     ralph_quality_floor: float = 0.70
     ralph_cost_limit_cents: int = 100
     ralph_juice_threshold: float = 0.6
+    ralph_refresh_limit_per_source: int = 20
+    ralph_refresh_max_sources: int | None = None
+    ralph_rss_failure_threshold: int = 5
+    ralph_rss_fetch_retries: int = 2
 
     # Email Alerts
     email_provider: str | None = None  # "resend" or "smtp"

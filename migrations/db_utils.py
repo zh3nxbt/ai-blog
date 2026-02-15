@@ -11,7 +11,7 @@ from pathlib import Path
 try:
     import psycopg2
 except ImportError:
-    print("❌ psycopg2 not installed. Install with: pip install psycopg2-binary")
+    print("[ERROR] psycopg2 not installed. Install with: pip install psycopg2-binary")
     sys.exit(1)
 
 
@@ -29,10 +29,16 @@ def get_db_connection_string() -> str:
     Raises:
         SystemExit: If no valid connection method found
     """
-    # Check if DATABASE_URL is set
+    # Check if DATABASE_URL is set and usable.
     db_url = os.getenv("DATABASE_URL")
     if db_url:
-        return db_url
+        try:
+            conn = psycopg2.connect(db_url, connect_timeout=5)
+            conn.close()
+            print("[OK] Connected successfully via DATABASE_URL")
+            return db_url
+        except Exception as e:
+            print(f"[WARN] DATABASE_URL connection failed, falling back: {str(e)[:120]}")
 
     # Try to construct from Supabase URL and password
     supabase_url = os.getenv("SUPABASE_URL", "")
@@ -41,7 +47,7 @@ def get_db_connection_string() -> str:
     if not db_password:
         print()
         print("=" * 70)
-        print("❌ DATABASE CONNECTION STRING NOT FOUND")
+        print("[ERROR] DATABASE CONNECTION STRING NOT FOUND")
         print("=" * 70)
         print()
         print("To apply this migration automatically, you need to provide one of:")
@@ -62,6 +68,10 @@ def get_db_connection_string() -> str:
         print("  1. Copy the SQL from migrations/*.sql file")
         print("  2. Run in Supabase SQL Editor")
         print()
+        sys.exit(1)
+
+    if not supabase_url:
+        print("[ERROR] SUPABASE_URL is required when DATABASE_URL is unavailable")
         sys.exit(1)
 
     # Extract project ref from URL (e.g., https://abc123.supabase.co -> abc123)
@@ -97,14 +107,14 @@ def get_db_connection_string() -> str:
         try:
             conn = psycopg2.connect(conn_string, connect_timeout=5)
             conn.close()
-            print(f"✅ Connected successfully via: {host}")
+            print(f"[OK] Connected successfully via: {host}")
             return conn_string
         except Exception as e:
-            print(f"⚠️  Failed to connect via {host}: {str(e)[:80]}")
+            print(f"[WARN] Failed to connect via {host}: {str(e)[:80]}")
             continue
 
     print()
-    print("❌ Could not connect to database via any available host")
+    print("[ERROR] Could not connect to database via any available host")
     print("Tried:")
     for host, is_pooler in connection_attempts:
         conn_type = "pooler" if is_pooler else "direct"
@@ -135,28 +145,28 @@ def apply_migration(sql_filename: str, migration_name: str) -> int:
     # Read migration SQL
     migration_path = Path(__file__).parent / sql_filename
     if not migration_path.exists():
-        print(f"❌ Migration file not found: {migration_path}")
+        print(f"[ERROR] Migration file not found: {migration_path}")
         return 1
 
     with open(migration_path, "r") as f:
         sql = f.read()
 
     # Connect and execute
-    print("🔗 Connecting to database...")
+    print("Connecting to database...")
     conn = None
     cur = None
     try:
         conn = psycopg2.connect(conn_string)
         cur = conn.cursor()
 
-        print("📝 Executing migration SQL...")
+        print("Executing migration SQL...")
         cur.execute(sql)
 
         conn.commit()
         cur.close()
         conn.close()
 
-        print(f"✅ Migration applied successfully!")
+        print("Migration applied successfully!")
         print()
         print("Next step: Run verification")
         # Extract migration number from filename (e.g., "002" from "002_create_...")
@@ -179,7 +189,7 @@ def apply_migration(sql_filename: str, migration_name: str) -> int:
             except Exception:
                 pass
 
-        print(f"❌ Migration failed: {e}")
+        print(f"[ERROR] Migration failed: {e}")
         print()
         print("Try manual execution instead:")
         print(f"  1. Open {sql_filename} in a text editor")

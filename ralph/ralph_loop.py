@@ -95,6 +95,7 @@ def main() -> int:
 
     # Read configuration from environment with defaults
     quality_threshold = float(os.environ.get("RALPH_QUALITY_THRESHOLD", "0.85"))
+    quality_floor = float(os.environ.get("RALPH_QUALITY_FLOOR", "0.70"))
     timeout_minutes = int(os.environ.get("RALPH_TIMEOUT_MINUTES", "30"))
     cost_limit_cents = int(os.environ.get("RALPH_COST_LIMIT_CENTS", "100"))
     juice_threshold = float(os.environ.get("RALPH_JUICE_THRESHOLD", "0.6"))
@@ -103,6 +104,7 @@ def main() -> int:
 
     print("Starting RalphLoop blog generation...")
     print(f"  Quality threshold: {quality_threshold}")
+    print(f"  Quality floor: {quality_floor}")
     print(f"  Juice threshold: {juice_threshold}")
     print(f"  Timeout: {timeout_minutes} minutes")
     print(f"  Cost limit: {cost_limit_cents} cents")
@@ -113,6 +115,7 @@ def main() -> int:
     try:
         loop = RalphLoop(
             quality_threshold=quality_threshold,
+            quality_floor=quality_floor,
             timeout_minutes=timeout_minutes,
             cost_limit_cents=cost_limit_cents,
             juice_threshold=juice_threshold,

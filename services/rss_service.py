@@ -1,8 +1,10 @@
 """RSS feed fetching and storage service."""
 
+import os
+from datetime import datetime, timezone
+from typing import Any, Dict, List
+
 import feedparser
-from typing import List, Dict, Any
-from datetime import datetime
 
 from services.supabase_service import get_supabase_client
 
@@ -35,6 +37,95 @@ def fetch_active_sources() -> List[Dict[str, Any]]:
 fetch_active_feeds = fetch_active_sources
 
 
+def _get_fetch_retries() -> int:
+    """Return max fetch attempts per source for refresh jobs."""
+    raw_value = os.getenv("RALPH_RSS_FETCH_RETRIES", "2")
+    try:
+        retries = int(raw_value)
+    except ValueError:
+        retries = 2
+    return max(1, retries)
+
+
+def _get_failure_threshold() -> int:
+    """Return consecutive failure threshold before auto-disabling a source."""
+    raw_value = os.getenv("RALPH_RSS_FAILURE_THRESHOLD", "5")
+    try:
+        threshold = int(raw_value)
+    except ValueError:
+        threshold = 5
+    return max(1, threshold)
+
+
+def _truncate_error(error: str, max_len: int = 500) -> str:
+    """Clamp long feed errors so activity records stay readable."""
+    if len(error) <= max_len:
+        return error
+    return f"{error[:max_len - 3]}..."
+
+
+def _safe_update_source(source_id: str, payload: Dict[str, Any]) -> bool:
+    """
+    Best-effort source update helper.
+
+    Returns:
+        bool: True when update succeeded, False when schema/env constraints blocked it.
+    """
+    try:
+        client = get_supabase_client()
+        client.table("blog_rss_sources").update(payload).eq("id", source_id).execute()
+        return True
+    except Exception:
+        return False
+
+
+def _mark_source_fetch_success(source_id: str) -> None:
+    """Reset failure counters and update fetch timestamp after a successful poll."""
+    now_iso = datetime.now(timezone.utc).isoformat()
+    payload = {
+        "last_fetched_at": now_iso,
+        "consecutive_failures": 0,
+        "last_failed_at": None,
+        "last_error": None,
+    }
+    if _safe_update_source(source_id, payload):
+        return
+
+    # Fallback for environments that have not applied health-tracking migration yet.
+    _safe_update_source(source_id, {"last_fetched_at": now_iso})
+
+
+def _mark_source_fetch_failure(
+    source: Dict[str, Any],
+    error: str,
+    failure_threshold: int,
+) -> Dict[str, Any]:
+    """
+    Record a failed poll and optionally auto-disable noisy sources.
+
+    Returns:
+        Dict with updated failure count and disable flag for logging.
+    """
+    source_id = str(source.get("id"))
+    current_failures = int(source.get("consecutive_failures") or 0)
+    consecutive_failures = current_failures + 1
+    auto_disabled = consecutive_failures >= failure_threshold
+
+    payload: Dict[str, Any] = {
+        "consecutive_failures": consecutive_failures,
+        "last_failed_at": datetime.now(timezone.utc).isoformat(),
+        "last_error": _truncate_error(error),
+    }
+    if auto_disabled:
+        payload["active"] = False
+
+    updated = _safe_update_source(source_id, payload)
+    return {
+        "consecutive_failures": consecutive_failures,
+        "auto_disabled": auto_disabled and updated,
+    }
+
+
 def fetch_feed(url: str) -> feedparser.FeedParserDict:
     """
     Fetch and parse an RSS/Atom feed from a URL.
@@ -48,7 +139,10 @@ def fetch_feed(url: str) -> feedparser.FeedParserDict:
     Raises:
         ValueError: If the feed cannot be parsed or is invalid
     """
-    feed = feedparser.parse(url)
+    feed = feedparser.parse(
+        url,
+        request_headers={"User-Agent": "ralph-bot/1.0 (+https://masprecisionparts.com)"},
+    )
 
     if feed.bozo and not feed.entries:
         # bozo=1 means malformed feed, but sometimes still has entries
@@ -84,9 +178,9 @@ def store_rss_items(source_id: str, feed: feedparser.FeedParserDict, limit: int 
         # Parse published date
         published_at = None
         if hasattr(entry, 'published_parsed') and entry.published_parsed:
-            published_at = datetime(*entry.published_parsed[:6]).isoformat()
+            published_at = datetime(*entry.published_parsed[:6], tzinfo=timezone.utc).isoformat()
         elif hasattr(entry, 'updated_parsed') and entry.updated_parsed:
-            published_at = datetime(*entry.updated_parsed[:6]).isoformat()
+            published_at = datetime(*entry.updated_parsed[:6], tzinfo=timezone.utc).isoformat()
 
         if not url:
             continue  # Skip entries without URL
@@ -154,6 +248,9 @@ def fetch_feed_items(source_id: str, limit: int = 10) -> List[Dict[str, Any]]:
     # Store the items (duplicates are skipped automatically)
     stored_items = store_rss_items(source_id, feed, limit)
 
+    # Track successful fetch timing and reset failure counters.
+    _mark_source_fetch_success(str(source_id))
+
     return stored_items
 
 
@@ -182,7 +279,28 @@ def fetch_unused_items(limit: int = 5) -> List[Dict[str, Any]]:
     if not response.data:
         return []
 
-    return response.data
+    items = response.data
+    source_ids = list({item["source_id"] for item in items if item.get("source_id")})
+    if not source_ids:
+        return items
+
+    source_response = (
+        client.table("blog_rss_sources")
+        .select("id, name, priority, category")
+        .in_("id", source_ids)
+        .execute()
+    )
+
+    source_by_id = {row["id"]: row for row in (source_response.data or [])}
+    for item in items:
+        source_meta = source_by_id.get(item.get("source_id"))
+        if not source_meta:
+            continue
+        item["source_name"] = source_meta.get("name")
+        item["source_priority"] = source_meta.get("priority")
+        item["source_category"] = source_meta.get("category")
+
+    return items
 
 
 def mark_items_as_used(item_ids: List[str], blog_id: str) -> int:
@@ -224,3 +342,97 @@ def mark_items_as_used(item_ids: List[str], blog_id: str) -> int:
 
     # Return count of updated items
     return len(response.data) if response.data else 0
+
+
+def refresh_active_sources(
+    per_source_limit: int = 20,
+    max_sources: int | None = None,
+) -> Dict[str, Any]:
+    """
+    Refresh active RSS sources by fetching their latest items.
+
+    This is ingestion-only and does not call any LLM APIs.
+
+    Args:
+        per_source_limit: Max number of items fetched per source.
+        max_sources: Optional cap on number of active sources to refresh.
+
+    Returns:
+        Dict with counts and per-source results.
+    """
+    if per_source_limit < 1:
+        raise ValueError("per_source_limit must be >= 1")
+    if max_sources is not None and max_sources < 1:
+        raise ValueError("max_sources must be >= 1 when provided")
+
+    active_sources = fetch_active_sources()
+    if max_sources is not None:
+        active_sources = active_sources[:max_sources]
+
+    fetch_retries = _get_fetch_retries()
+    failure_threshold = _get_failure_threshold()
+
+    total_new_items = 0
+    refreshed_sources = 0
+    failed_sources = 0
+    source_results: List[Dict[str, Any]] = []
+
+    for source in active_sources:
+        source_id = source.get("id")
+        source_name = source.get("name", "Unknown source")
+        last_error = ""
+        new_items: List[Dict[str, Any]] = []
+        succeeded = False
+        attempts_used = 0
+
+        for attempt in range(1, fetch_retries + 1):
+            attempts_used = attempt
+            try:
+                new_items = fetch_feed_items(str(source_id), limit=per_source_limit)
+                succeeded = True
+                break
+            except Exception as exc:
+                last_error = str(exc)
+
+        if succeeded:
+            refreshed_sources += 1
+            total_new_items += len(new_items)
+            source_results.append(
+                {
+                    "source_id": source_id,
+                    "source_name": source_name,
+                    "success": True,
+                    "new_items": len(new_items),
+                    "attempts": attempts_used,
+                }
+            )
+            continue
+
+        failed_sources += 1
+        health = _mark_source_fetch_failure(
+            source=source,
+            error=last_error,
+            failure_threshold=failure_threshold,
+        )
+        source_results.append(
+            {
+                "source_id": source_id,
+                "source_name": source_name,
+                "success": False,
+                "new_items": 0,
+                "error": _truncate_error(last_error),
+                "attempts": attempts_used,
+                "consecutive_failures": health["consecutive_failures"],
+                "auto_disabled": health["auto_disabled"],
+            }
+        )
+
+    return {
+        "sources_total": len(active_sources),
+        "sources_refreshed": refreshed_sources,
+        "sources_failed": failed_sources,
+        "new_items_total": total_new_items,
+        "fetch_retries": fetch_retries,
+        "failure_threshold": failure_threshold,
+        "results": source_results,
+    }

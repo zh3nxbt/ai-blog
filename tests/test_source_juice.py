@@ -214,7 +214,9 @@ class TestEvaluateSourceJuice:
         assert result.juice_score == 0.75
         assert result.reason == "Good sources"
         assert result.best_source == "Top Article"
-        assert result.cost_cents > 0  # API call made
+        # Cost may round to 0 cents for small token counts on low-cost models.
+        assert result.cost_cents >= 0
+        ralph_loop_with_mocked_api._anthropic_client.messages.create.assert_called_once()
 
     def test_low_juice_score_fails(self):
         """Low juice score should cause should_proceed to be False."""
@@ -261,3 +263,40 @@ class TestEvaluateSourceJuice:
                 assert result.should_proceed is False
                 assert result.juice_score == 0.4
                 assert "below threshold" in result.reason.lower() or "0.40" in result.reason
+
+    def test_parse_failure_fails_closed_after_retry(self):
+        """Malformed evaluator output should fail closed after one retry."""
+        with patch("ralph_content.ralph_loop.ProductMarketingAgent"):
+            with patch("ralph_content.ralph_loop.CritiqueAgent"):
+                from ralph_content.ralph_loop import RalphLoop
+
+                mock_anthropic = MagicMock()
+                bad_response = MagicMock()
+                bad_response.usage.input_tokens = 200
+                bad_response.usage.output_tokens = 60
+                bad_response.content = [MagicMock(text="not valid json")]
+                mock_anthropic.messages.create.side_effect = [bad_response, bad_response]
+
+                loop = RalphLoop(
+                    rss_service=MagicMock(),
+                    topic_item_service=MagicMock(),
+                    supabase_service=MagicMock(),
+                    anthropic_client=mock_anthropic,
+                    juice_threshold=0.6,
+                )
+
+                now = datetime.now(timezone.utc)
+                sources = [
+                    {
+                        "id": "1",
+                        "title": "Fresh Item",
+                        "published_at": now.isoformat(),
+                        "source_type": "rss",
+                    },
+                ]
+                result = loop._evaluate_source_juice(sources)
+
+                assert result.should_proceed is False
+                assert result.juice_score == 0.0
+                assert "Failed to parse juice evaluation response" in result.reason
+                assert mock_anthropic.messages.create.call_count == 2

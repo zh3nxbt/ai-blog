@@ -28,14 +28,20 @@ PYTHONPATH=/workspace/ai-blog python migrations/verify_db_002.py
 - `007_seed_manufacturing_rss_sources.sql` - Initial RSS feed data
 - `008_create_blog_topic_sources_items.sql` - Unified topic source tables
 - `009_seed_evergreen_topics.sql` - Evergreen topic bank seed data
+- `010_seed_expanded_rss_sources.sql` - Expanded RSS source seed data
+- `011_add_input_output_data_to_blog_agent_activity.sql` - Adds structured IO logging columns
+- `012_seed_trade_policy_rss_sources.sql` - Trade and policy source seed data
+- `013_seed_authoritative_rss_sources.sql` - Authoritative gov/economic feeds + fragile feed cleanup
+- `014_seed_machinist_resources.sql` - High-signal machinist/manufacturing resource seed data
+- `015_add_rss_source_health_columns.sql` - RSS source health/failure tracking columns
 
 ### Application Scripts
-- `apply_db_002.py` through `apply_db_009.py` - Apply migrations automatically
+- `apply_db_002.py` through `apply_db_015.py` - Apply migrations automatically
 - `db_utils.py` - Shared connection and migration utilities
 
 ### Verification Scripts
 - `verify_db_001.py` - blog_posts schema verification
-- `verify_db_002.py` through `verify_db_009.py` - Comprehensive acceptance tests
+- `verify_db_002.py` through `verify_db_015.py` - Comprehensive acceptance tests
 
 ## How Migrations Work
 
