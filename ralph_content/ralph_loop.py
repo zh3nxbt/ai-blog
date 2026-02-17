@@ -1481,8 +1481,6 @@ class RalphLoop:
         client = self.supabase_service.get_supabase_client()
         update_data = {"content": markdown_to_html(current_content), "status": status}
         if status == "published":
-            from datetime import datetime, timezone
-
             update_data["published_at"] = datetime.now(timezone.utc).isoformat()
 
         client.table("blog_posts").update(update_data).eq("id", str(blog_post_id)).execute()
