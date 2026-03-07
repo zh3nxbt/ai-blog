@@ -35,6 +35,7 @@ AI_SLOP_KEYWORDS = [
     "fostering",
     "garner",
     "showcase",
+    "showcasing",
     "tapestry",
     "testament",
     "underscore",
@@ -47,17 +48,45 @@ AI_SLOP_KEYWORDS = [
     "profound",
     "nestled",
     "breathtaking",
+    "align with",
+    # --- From humanizer: promotional language ---
+    "stunning",
+    "boasts a",
+    "must-visit",
+    "rich cultural heritage",
+    # --- From humanizer: significance inflation ---
+    "vital role",
+    "indelible mark",
+    # --- From humanizer: superficial -ing analyses ---
+    "symbolizing",
+    "cultivating",
+    # --- From humanizer: copula avoidance phrases ---
+    "serves as",
+    "stands as",
+    # --- From humanizer: negative parallelisms ---
+    "it's not just about",
+    "it's not merely",
+    # --- From humanizer: filler phrases ---
+    "in order to",
+    "due to the fact that",
+    "at this point in time",
+    "has the ability to",
+    "in the event that",
+    "it is important to note",
+    # --- From humanizer: generic positive conclusions ---
+    "the future looks bright",
+    "exciting times lie ahead",
+    "continues to thrive",
+    "represents a major step",
     # --- From stop-slop: business jargon ---
     "unpack",
     "lean into",
     "double down",
+    "deep dive",
+    "take a step back",
+    "moving forward",
     "circle back",
-    # --- From humanizer: copula avoidance phrases ---
-    "serves as",
-    "stands as",
-    # --- From humanizer: promotional language ---
-    "must-visit",
-    "rich cultural heritage",
+    "on the same page",
     # --- Original forbidden phrases ---
     "in today's fast-paced world",
     "it's important to note",
@@ -67,27 +96,38 @@ AI_SLOP_KEYWORDS = [
     # --- From stop-slop: throat-clearing openers ---
     "here's the thing",
     "the uncomfortable truth is",
+    "it turns out",
+    "the truth is",
+    "I'm going to be honest",
+    "can we talk about",
+    "here's the problem though",
     "let me be clear",
     "here's what I find interesting",
     # --- From stop-slop: emphasis crutches ---
     "let that sink in",
     "make no mistake",
     "here's why that matters",
+    "this matters because",
     # --- From stop-slop: filler adverbs/phrases ---
     "at its core",
     "in a world where",
     "it's worth noting",
     "at the end of the day",
     "when it comes to",
-    # --- From humanizer: filler phrases ---
-    "in order to",
-    "due to the fact that",
-    "at this point in time",
-    "has the ability to",
-    # --- From humanizer: generic positive conclusions ---
-    "the future looks bright",
-    "exciting times lie ahead",
-    "continues to thrive",
+    "interestingly",
+    "importantly",
+    "crucially",
+    "the reality is",
+    # --- From stop-slop: meta-commentary ---
+    "plot twist",
+    "you already know this",
+    "but that's another post",
+    # --- From stop-slop: AI-overused intensifiers ---
+    "deeply",
+    "truly",
+    "fundamentally",
+    "inherently",
+    "inevitably",
 ]
 
 
@@ -357,10 +397,16 @@ BRAND_VOICE_FORBIDDEN = [
     "I hope this helps",
     "of course!",
     "certainly!",
+    "great question",
+    "you're absolutely right",
+    "that's an excellent point",
+    "would you like",
+    "let me know",
     # From humanizer: knowledge-cutoff disclaimers
     "as of my last",
     "up to my last training",
     "based on available information",
+    "while specific details are limited",
 ]
 
 
