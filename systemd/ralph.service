@@ -7,28 +7,29 @@ After=network-online.target
 [Service]
 Type=oneshot
 
-# Run as non-root user (create with: useradd -r -s /bin/false ralph)
+# Run as non-root user (needs /bin/bash shell for Claude CLI)
 User=ralph
 Group=ralph
 
 # Project location - adjust to your deployment path
-WorkingDirectory=/opt/ralph
+WorkingDirectory=/opt/ralph/ai-blog
 
 # Load environment from secure location
 EnvironmentFile=/etc/ralph/env
 
-# Execute using virtual environment Python
-ExecStart=/opt/ralph/.venv/bin/python -m ralph.ralph_loop
-
-# Flush logs in real time
+# Claude CLI needs HOME for auth tokens
+Environment=HOME=/home/ralph
 Environment=PYTHONUNBUFFERED=1
+
+# Execute blog generation via Claude Code CLI
+ExecStart=/bin/bash /opt/ralph/ai-blog/ralph/ralph-generate.sh
 
 # Logging to stdout/stderr (captured by journald)
 StandardOutput=journal
 StandardError=journal
 
-# Timeout for the entire operation (30 minutes default, matches RALPH_TIMEOUT_MINUTES)
-TimeoutStartSec=1800
+# Timeout: 45 minutes (Claude Code may be slower than direct API)
+TimeoutStartSec=2700
 
 # Restart policy for oneshot is ignored, but set for documentation
 Restart=no

@@ -12,16 +12,7 @@ class Settings(BaseSettings):
     supabase_secret: str | None = None
     database_url: str | None = None
 
-    # Anthropic
-    anthropic_api_key: str
-    anthropic_model: str = "claude-opus-4-5"
-
-    # Ralph
-    ralph_timeout_minutes: int = 30
-    ralph_quality_threshold: float = 0.85
-    ralph_quality_floor: float = 0.70
-    ralph_cost_limit_cents: int = 100
-    ralph_juice_threshold: float = 0.6
+    # RSS Refresh
     ralph_refresh_limit_per_source: int = 20
     ralph_refresh_max_sources: int | None = None
     ralph_rss_failure_threshold: int = 5

@@ -3,9 +3,9 @@ Description=Daily Ralph Blog Content Generation Timer
 Documentation=https://github.com/your-org/ai-blog
 
 [Timer]
-# Run daily at 2:12 PM UTC (14:12), shortly after hourly feed refresh at :05.
+# Run Mon/Wed/Fri at 2:12 PM UTC (14:12), shortly after hourly feed refresh at :05.
 # Format: DayOfWeek Year-Month-Day Hour:Minute:Second
-OnCalendar=*-*-* 14:12:00 UTC
+OnCalendar=Mon,Wed,Fri *-*-* 14:12:00 UTC
 Unit=ralph.service
 
 # If the system was off when the timer should have triggered,
