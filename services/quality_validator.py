@@ -9,9 +9,10 @@ from typing import List, Tuple
 
 
 # Forbidden AI slop keywords and phrases that should never appear in published content.
+# Sourced from hardikpandya/stop-slop and blader/humanizer.
 # Single words use word boundary matching, phrases match exactly.
 AI_SLOP_KEYWORDS = [
-    # Single words
+    # --- Original forbidden words ---
     "delve",
     "unveil",
     "landscape",
@@ -27,12 +28,66 @@ AI_SLOP_KEYWORDS = [
     "paradigm",
     "synergy",
     "game-changer",
-    # Phrases (matched with flexible whitespace)
+    # --- From humanizer: overused AI vocabulary ---
+    "additionally",
+    "crucial",
+    "pivotal",
+    "fostering",
+    "garner",
+    "showcase",
+    "tapestry",
+    "testament",
+    "underscore",
+    "vibrant",
+    "interplay",
+    "intricate",
+    "enduring",
+    "groundbreaking",
+    "renowned",
+    "profound",
+    "nestled",
+    "breathtaking",
+    # --- From stop-slop: business jargon ---
+    "unpack",
+    "lean into",
+    "double down",
+    "circle back",
+    # --- From humanizer: copula avoidance phrases ---
+    "serves as",
+    "stands as",
+    # --- From humanizer: promotional language ---
+    "must-visit",
+    "rich cultural heritage",
+    # --- Original forbidden phrases ---
     "in today's fast-paced world",
     "it's important to note",
     "let's explore",
     "dive deep",
     "best practices",
+    # --- From stop-slop: throat-clearing openers ---
+    "here's the thing",
+    "the uncomfortable truth is",
+    "let me be clear",
+    "here's what I find interesting",
+    # --- From stop-slop: emphasis crutches ---
+    "let that sink in",
+    "make no mistake",
+    "here's why that matters",
+    # --- From stop-slop: filler adverbs/phrases ---
+    "at its core",
+    "in a world where",
+    "it's worth noting",
+    "at the end of the day",
+    "when it comes to",
+    # --- From humanizer: filler phrases ---
+    "in order to",
+    "due to the fact that",
+    "at this point in time",
+    "has the ability to",
+    # --- From humanizer: generic positive conclusions ---
+    "the future looks bright",
+    "exciting times lie ahead",
+    "continues to thrive",
 ]
 
 
@@ -291,6 +346,21 @@ def validate_structure(content: str) -> Tuple[bool, List[str], float]:
 BRAND_VOICE_FORBIDDEN = [
     "revolutionary",
     "game-changer",
+    # From stop-slop: dramatic fragmentation and rhetorical setups
+    "that's it. that's the",
+    "think about it:",
+    "here's what I mean:",
+    "and that's okay",
+    # From stop-slop: performative emphasis
+    "full stop.",
+    # From humanizer: sycophantic/chatbot artifacts
+    "I hope this helps",
+    "of course!",
+    "certainly!",
+    # From humanizer: knowledge-cutoff disclaimers
+    "as of my last",
+    "up to my last training",
+    "based on available information",
 ]
 
 

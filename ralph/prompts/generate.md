@@ -16,6 +16,17 @@ Every helper outputs JSON to stdout. Parse the JSON to determine next steps.
 
 ## Step-by-Step Process
 
+### Step 0: Load Anti-Slop Skills
+
+Before doing anything else, read both anti-slop skill files:
+
+```
+skills/stop-slop/SKILL.md
+skills/humanizer/SKILL.md
+```
+
+Internalize every rule in both files. You will apply them during Step 4 (writing) and before Step 5 (validation).
+
 ### Step 1: Check Idempotency
 
 ```bash
@@ -62,12 +73,40 @@ Write the full blog post in markdown. Save it to `/tmp/ralph_post.md` using the 
 - Use specific numbers, measurements, and examples
 - Vary sentence structure — not every section needs bullet points
 
-**FORBIDDEN — These will fail validation:**
+**Anti-Slop Skills (MANDATORY):**
+
+Before writing, read and internalize these two skill files:
+1. `skills/stop-slop/SKILL.md` — Banned phrases, structural clichés, rhythm rules
+2. `skills/humanizer/SKILL.md` — 24 AI writing patterns to detect and eliminate
+
+Apply both skills during writing. After drafting, run the humanizer two-pass audit:
+- **Pass 1:** Check every sentence against all 24 humanizer patterns and all stop-slop banned phrases/structures. Fix every violation.
+- **Pass 2:** Re-read the full post and ask "does any sentence sound obviously AI generated?" Rewrite anything that does.
+
+**Key rules from these skills:**
+- No throat-clearing openers ("Here's the thing:", "The truth is,", "It turns out")
+- No emphasis crutches ("Let that sink in.", "Full stop.", "Make no mistake")
+- No binary contrasts ("Not because X. Because Y.", "[X] isn't the problem. [Y] is.")
+- No dramatic fragmentation ("[Noun]. That's it. That's the [thing].")
+- No significance inflation ("serves as", "testament to", "pivotal role")
+- No copula avoidance — use "is" instead of "serves as", "stands as", "represents"
+- No synonym cycling — use the same term consistently, don't rotate synonyms
+- No rule-of-three forcing — two items or one, not forced triads
+- No em dash overuse — one per paragraph max, prefer commas or periods
+- No generic positive conclusions ("The future looks bright", "Exciting times ahead")
+- Vary sentence rhythm — if three consecutive sentences match length, break one
+- Two items beat three. End paragraphs differently each time.
+
+**FORBIDDEN words/phrases — These will fail validation:**
 - "delve", "unveil", "landscape", "realm", "unlock", "leverage"
 - "utilize", "robust", "streamline", "cutting-edge", "revolutionary"
 - "harness", "paradigm", "synergy", "game-changer"
 - "in today's fast-paced world", "it's important to note"
 - "let's explore", "dive deep", "best practices"
+- "additionally", "crucial", "pivotal", "foster", "garner", "showcase"
+- "tapestry", "testament", "underscore", "vibrant", "interplay", "intricate"
+- "navigate" (challenges), "unpack", "lean into", "double down", "circle back"
+- "groundbreaking", "renowned", "profound", "nestled", "breathtaking"
 - Excessive exclamation marks (max 4 in the entire post)
 - Formulaic "Introduction → 3 Points → Conclusion" structure every time
 
@@ -80,6 +119,8 @@ Write the full blog post in markdown. Save it to `/tmp/ralph_post.md` using the 
 - "In the ever-evolving landscape of manufacturing..."
 - "Let's delve into the intricacies of..."
 - "It's important to note that..."
+- "This serves as a testament to the industry's resilience."
+- "The future of manufacturing looks bright."
 
 ### Step 5: Validate Content
 
