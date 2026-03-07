@@ -29,9 +29,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_PATH="${1:-$(dirname "$SCRIPT_DIR")}"
 
 # Validate project path
-if [[ ! -f "$PROJECT_PATH/ralph/ralph_loop.py" ]]; then
+if [[ ! -f "$PROJECT_PATH/ralph/ralph-generate.sh" ]]; then
     log_error "Invalid project path: $PROJECT_PATH"
-    log_error "Could not find ralph/ralph_loop.py"
+    log_error "Could not find ralph/ralph-generate.sh"
     exit 1
 fi
 
@@ -53,9 +53,16 @@ log_info "Project path: $PROJECT_PATH"
 if id "ralph" &>/dev/null; then
     log_info "User 'ralph' already exists"
 else
-    log_info "Creating user 'ralph'..."
-    useradd -r -s /bin/false ralph
+    # Claude CLI requires a real shell and home directory
+    log_info "Creating user 'ralph' with /bin/bash shell..."
+    useradd -r -m -s /bin/bash ralph
     log_info "User 'ralph' created"
+fi
+
+# Ensure ralph has a home directory for Claude CLI auth tokens
+if [[ ! -d /home/ralph ]]; then
+    mkdir -p /home/ralph
+    chown ralph:ralph /home/ralph
 fi
 
 # Step 2: Create environment directory and file
@@ -86,7 +93,7 @@ After=network-online.target
 [Service]
 Type=oneshot
 
-# Run as non-root user
+# Run as non-root user (needs /bin/bash shell for Claude CLI)
 User=ralph
 Group=ralph
 
@@ -96,16 +103,19 @@ WorkingDirectory=$PROJECT_PATH
 # Load environment from secure location
 EnvironmentFile=/etc/ralph/env
 
-# Execute using virtual environment Python
-ExecStart=$PROJECT_PATH/.venv/bin/python -m ralph.ralph_loop
+# Claude CLI needs HOME for auth tokens
+Environment=HOME=/home/ralph
 Environment=PYTHONUNBUFFERED=1
+
+# Execute blog generation via Claude Code CLI
+ExecStart=/bin/bash $PROJECT_PATH/ralph/ralph-generate.sh
 
 # Logging to stdout/stderr (captured by journald)
 StandardOutput=journal
 StandardError=journal
 
-# Timeout for the entire operation (30 minutes)
-TimeoutStartSec=1800
+# Timeout: 45 minutes (Claude Code may be slower than direct API)
+TimeoutStartSec=2700
 
 # Restart policy for oneshot is ignored, but set for documentation
 Restart=no
@@ -120,12 +130,12 @@ log_info "Service file installed to /etc/systemd/system/ralph.service"
 log_info "Installing generation timer..."
 cat > /etc/systemd/system/ralph.timer << EOF
 [Unit]
-Description=Daily Ralph Blog Content Generation Timer
+Description=Ralph Blog Content Generation Timer (Mon/Wed/Fri)
 Documentation=https://github.com/your-org/ai-blog
 
 [Timer]
-# Run daily at 2:12 PM UTC (14:12), shortly after hourly feed refresh.
-OnCalendar=*-*-* 14:12:00 UTC
+# Run Mon/Wed/Fri at 2:12 PM UTC (14:12), shortly after hourly feed refresh.
+OnCalendar=Mon,Wed,Fri *-*-* 14:12:00 UTC
 Unit=ralph.service
 
 # If the system was off when the timer should have triggered,
@@ -221,7 +231,7 @@ echo ""
 echo "  3. View logs:"
 echo "     journalctl -u ralph.service -f"
 echo ""
-echo "  4. Enable and start the timer for daily 2 PM UTC automation:"
+echo "  4. Enable and start the timer for Mon/Wed/Fri 2 PM UTC automation:"
 echo "     systemctl enable ralph.timer"
 echo "     systemctl start ralph.timer"
 echo ""
@@ -232,5 +242,9 @@ echo ""
 echo "  6. Verify timers are active:"
 echo "     systemctl list-timers ralph.timer"
 echo "     systemctl list-timers ralph-refresh.timer"
+echo ""
+echo "  7. Ensure Claude CLI is authenticated for the ralph user:"
+echo "     sudo -u ralph claude --version"
+echo "     (If not authenticated, run: sudo -u ralph -i claude login)"
 echo ""
 echo "=========================================="

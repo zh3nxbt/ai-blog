@@ -128,6 +128,11 @@ python -m ralph.ralph_loop             # Run blog generation
 
 ## LLM Guidelines
 
+**Cost control:**
+- **NEVER substitute a more expensive model** (e.g. Sonnet) for cheap screening calls that use Haiku
+- If the Haiku endpoint is down or overloaded, stop and ask the user — do not silently swap models
+- Pre-screening and juice evaluation calls exist specifically to be cheap; protect that
+
 **Output format:** Structured JSON only
 
 **Required fields:**
