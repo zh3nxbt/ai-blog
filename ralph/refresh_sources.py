@@ -11,9 +11,8 @@ import argparse
 import os
 import sys
 
-from dotenv import load_dotenv
-
 from services import rss_service, supabase_service
+from utils.env import load_local_env_if_available
 
 
 def _parse_args() -> argparse.Namespace:
@@ -40,7 +39,7 @@ def _parse_args() -> argparse.Namespace:
 
 
 def main() -> int:
-    load_dotenv()
+    load_local_env_if_available()
     args = _parse_args()
 
     required_vars = ["SUPABASE_URL", "SUPABASE_SECRET"]

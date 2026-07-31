@@ -2,6 +2,8 @@
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from utils.env import get_local_env_file
+
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
@@ -35,7 +37,7 @@ class Settings(BaseSettings):
     worker_enabled: bool = True
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=get_local_env_file(),
         env_file_encoding="utf-8",
         case_sensitive=False,
     )

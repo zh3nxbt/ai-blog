@@ -3,7 +3,7 @@
 Thin wrappers around existing services, exposed as argparse subcommands.
 All output is JSON to stdout. Designed to be called via:
 
-    .venv/bin/python -m ralph.generate_helpers <subcommand> [args]
+    python -m ralph.generate_helpers <subcommand> [args]
 """
 
 import argparse
@@ -11,6 +11,13 @@ import json
 import sys
 from datetime import datetime, timezone
 from uuid import UUID
+
+from utils.env import load_local_env_if_available
+
+
+# Manual and native-Windows runs do not have systemd injecting /etc/ralph/env.
+# python-dotenv keeps existing process variables authoritative by default.
+load_local_env_if_available()
 
 
 def _json_out(data: dict) -> None:

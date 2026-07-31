@@ -47,6 +47,11 @@ if [[ ! -d "$PROJECT_PATH/.venv" ]]; then
     exit 1
 fi
 
+if ! grep -Eq '^ANTHROPIC_API_KEY=.+$' "$PROJECT_PATH/.env"; then
+    log_warn "ANTHROPIC_API_KEY not found in .env"
+    log_warn "Headless claude -p runs will fail unless user 'ralph' is logged in via 'claude auth login'"
+fi
+
 log_info "Project path: $PROJECT_PATH"
 
 # Step 1: Create ralph user if it doesn't exist
