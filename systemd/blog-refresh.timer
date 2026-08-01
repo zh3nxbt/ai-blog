@@ -1,6 +1,6 @@
 [Unit]
 Description=Hourly Blog RSS Source Refresh Timer
-Documentation=https://github.com/your-org/ai-blog
+Documentation=https://github.com/zh3nxbt/mas-website-blog
 
 [Timer]
 # Run every hour at minute 5 UTC.

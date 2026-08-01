@@ -1,20 +1,20 @@
 # Database Migrations
 
-This directory contains SQL migrations and utilities for the ai-blog database schema.
+This directory contains SQL migrations and utilities for the mas-website-blog database schema.
 
 ## Quick Start
 
 ### Apply a Migration
 
 ```bash
-cd /workspace/ai-blog
+cd /workspace/mas-website-blog
 python migrations/apply_db_002.py
 ```
 
 ### Verify a Migration
 
 ```bash
-PYTHONPATH=/workspace/ai-blog python migrations/verify_db_002.py
+PYTHONPATH=/workspace/mas-website-blog python migrations/verify_db_002.py
 ```
 
 ## Migration Files
@@ -113,7 +113,7 @@ Available pooler regions:
 After applying a migration, always run the verification script:
 
 ```bash
-PYTHONPATH=/workspace/ai-blog python migrations/verify_db_002.py
+PYTHONPATH=/workspace/mas-website-blog python migrations/verify_db_002.py
 ```
 
 Verification scripts test:

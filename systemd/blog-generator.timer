@@ -1,6 +1,6 @@
 [Unit]
 Description=Blog Content Generation Timer
-Documentation=https://github.com/your-org/ai-blog
+Documentation=https://github.com/zh3nxbt/mas-website-blog
 
 [Timer]
 # Run Mon/Wed/Fri at 2:12 PM UTC (14:12), shortly after hourly feed refresh at :05.
