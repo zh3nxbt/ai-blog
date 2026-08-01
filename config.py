@@ -14,6 +14,10 @@ class Settings(BaseSettings):
     supabase_secret: str | None = None
     database_url: str | None = None
 
+    # Claude Code
+    anthropic_api_key: str | None = None
+    anthropic_model: str | None = None
+
     # RSS Refresh
     blog_refresh_limit_per_source: int = 20
     blog_refresh_max_sources: int | None = None

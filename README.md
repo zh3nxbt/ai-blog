@@ -104,12 +104,39 @@ sudo ./systemd/install.sh /opt/blog-backend
 sudo systemctl enable --now blog-refresh.timer blog-generator.timer
 ```
 
-On Windows, create two Task Scheduler entries:
+On Windows, use the repository launcher:
 
-- `.venv\Scripts\python.exe -m blog.refresh_sources`
-- Git Bash running `blog/generate.sh`
+```bat
+run-ai-blog.bat
+```
 
-Use the repository root as the working directory for both tasks.
+The launcher validates `.env`, Python, Git Bash, and Claude Code; installs or
+updates both Windows scheduled tasks; then runs the FastAPI server in the
+foreground. Rerunning it is safe and does not duplicate tasks.
+
+The Windows schedule mirrors the Linux timers:
+
+- `AI Blog - RSS Refresh` runs hourly at minute `05`.
+- `AI Blog - Post Generation` evaluates the schedule hourly at minute `12`,
+  then generates only on Monday, Wednesday, and Friday after `14:12 UTC`.
+
+The UTC gate keeps the generation time correct through daylight-saving changes.
+It checks for an existing post before starting Claude. Task Scheduler catches
+up after the computer was unavailable, while an ignored `.runtime` marker
+limits generation to one attempt per scheduled UTC date.
+
+Useful launcher modes:
+
+```bat
+run-ai-blog.bat check
+run-ai-blog.bat install-schedule
+run-ai-blog.bat refresh
+run-ai-blog.bat generate
+run-ai-blog.bat server
+```
+
+The scheduled tasks use the current Windows account and run while that account
+is logged on. Authenticate Claude Code under the same account.
 
 ## Project layout
 

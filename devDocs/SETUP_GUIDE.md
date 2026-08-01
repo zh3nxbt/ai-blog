@@ -42,6 +42,47 @@ Run generation only after the Supabase credentials and Claude authentication are
 bash blog/generate.sh
 ```
 
+## Windows deployment
+
+Run the launcher from Command Prompt or by double-clicking it:
+
+```bat
+run-ai-blog.bat
+```
+
+The default command performs three actions in order:
+
+1. Validates `.env`, the virtual environment, Git Bash, Claude Code, and the
+   Windows ScheduledTasks module.
+2. Creates or updates `AI Blog - RSS Refresh` and
+   `AI Blog - Post Generation` for the current Windows user.
+3. Starts the FastAPI server in the foreground using `API_HOST` and `API_PORT`.
+
+The refresh task runs hourly at minute `05`. The generation task wakes hourly
+at minute `12`, checks UTC, and proceeds only on Monday, Wednesday, or Friday
+after `14:12 UTC`. Before invoking Claude, it queries Supabase for an existing
+post on the current UTC date. This preserves the Linux schedule across Toronto
+daylight-saving changes. `StartWhenAvailable` catches missed triggers, and an
+ignored `.runtime/last-generation-attempt-utc.txt` marker prevents repeated
+Claude runs after a successful, failed, or intentionally skipped attempt.
+
+The launcher is idempotent. Use the narrower modes for maintenance:
+
+```bat
+run-ai-blog.bat check
+run-ai-blog.bat install-schedule
+run-ai-blog.bat refresh
+run-ai-blog.bat generate
+run-ai-blog.bat generate-if-due
+run-ai-blog.bat server
+```
+
+Tasks are registered with the current account's interactive logon token so its
+Claude authentication is available without storing a Windows password. That
+account must remain logged on. Task settings allow battery operation, prevent
+overlapping copies, start missed work when available, and limit refresh and
+generation runs to 15 and 45 minutes respectively.
+
 ## Linux deployment
 
 Install the systemd units from the repository root:

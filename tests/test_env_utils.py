@@ -53,3 +53,18 @@ def test_load_local_env_if_available_loads_readable_file(monkeypatch, tmp_path):
 
     assert env_utils.load_local_env_if_available() is True
     assert load_calls == [env_file]
+
+
+def test_settings_accepts_claude_code_environment_fields():
+    from config import Settings
+
+    settings = Settings(
+        supabase_url="https://example.supabase.co",
+        supabase_key="public-key",
+        anthropic_api_key="test-key",
+        anthropic_model="sonnet",
+        _env_file=None,
+    )
+
+    assert settings.anthropic_api_key == "test-key"
+    assert settings.anthropic_model == "sonnet"

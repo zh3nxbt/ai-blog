@@ -33,6 +33,7 @@ venv.bak/
 
 # Environment Variables
 .env
+.runtime/
 .env.local
 .env.*.local
 
