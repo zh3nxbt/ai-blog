@@ -91,7 +91,7 @@ log_info "Installing systemd service..."
 cat > /etc/systemd/system/blog-generator.service << EOF
 [Unit]
 Description=Blog Content Generator
-Documentation=https://github.com/your-org/ai-blog
+Documentation=https://github.com/zh3nxbt/mas-website-blog
 Wants=network-online.target
 After=network-online.target
 
@@ -136,7 +136,7 @@ log_info "Installing generation timer..."
 cat > /etc/systemd/system/blog-generator.timer << EOF
 [Unit]
 Description=Blog Content Generation Timer (Mon/Wed/Fri)
-Documentation=https://github.com/your-org/ai-blog
+Documentation=https://github.com/zh3nxbt/mas-website-blog
 
 [Timer]
 # Run Mon/Wed/Fri at 2:12 PM UTC (14:12), shortly after hourly feed refresh.
@@ -164,7 +164,7 @@ log_info "Installing RSS refresh service..."
 cat > /etc/systemd/system/blog-refresh.service << EOF
 [Unit]
 Description=Blog RSS Source Refresh
-Documentation=https://github.com/your-org/ai-blog
+Documentation=https://github.com/zh3nxbt/mas-website-blog
 Wants=network-online.target
 After=network-online.target
 
@@ -191,7 +191,7 @@ log_info "Installing RSS refresh timer..."
 cat > /etc/systemd/system/blog-refresh.timer << EOF
 [Unit]
 Description=Hourly Blog RSS Source Refresh Timer
-Documentation=https://github.com/your-org/ai-blog
+Documentation=https://github.com/zh3nxbt/mas-website-blog
 
 [Timer]
 OnCalendar=*-*-* *:05:00 UTC

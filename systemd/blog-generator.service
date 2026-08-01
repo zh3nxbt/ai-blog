@@ -1,6 +1,6 @@
 [Unit]
 Description=Blog Content Generator
-Documentation=https://github.com/your-org/ai-blog
+Documentation=https://github.com/zh3nxbt/mas-website-blog
 Wants=network-online.target
 After=network-online.target
 

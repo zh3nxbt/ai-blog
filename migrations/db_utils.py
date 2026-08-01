@@ -171,7 +171,10 @@ def apply_migration(sql_filename: str, migration_name: str) -> int:
         print("Next step: Run verification")
         # Extract migration number from filename (e.g., "002" from "002_create_...")
         migration_num = sql_filename.split("_")[0]
-        print(f"  PYTHONPATH=/workspace/ai-blog python migrations/verify_db_{migration_num}.py")
+        print(
+            f"  PYTHONPATH=/workspace/mas-website-blog "
+            f"python migrations/verify_db_{migration_num}.py"
+        )
         print()
         return 0
 
