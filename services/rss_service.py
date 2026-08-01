@@ -39,7 +39,7 @@ fetch_active_feeds = fetch_active_sources
 
 def _get_fetch_retries() -> int:
     """Return max fetch attempts per source for refresh jobs."""
-    raw_value = os.getenv("RALPH_RSS_FETCH_RETRIES", "2")
+    raw_value = os.getenv("BLOG_RSS_FETCH_RETRIES", "2")
     try:
         retries = int(raw_value)
     except ValueError:
@@ -49,7 +49,7 @@ def _get_fetch_retries() -> int:
 
 def _get_failure_threshold() -> int:
     """Return consecutive failure threshold before auto-disabling a source."""
-    raw_value = os.getenv("RALPH_RSS_FAILURE_THRESHOLD", "5")
+    raw_value = os.getenv("BLOG_RSS_FAILURE_THRESHOLD", "5")
     try:
         threshold = int(raw_value)
     except ValueError:
@@ -141,7 +141,7 @@ def fetch_feed(url: str) -> feedparser.FeedParserDict:
     """
     feed = feedparser.parse(
         url,
-        request_headers={"User-Agent": "ralph-bot/1.0 (+https://masprecisionparts.com)"},
+        request_headers={"User-Agent": "blog-bot/1.0 (+https://masprecisionparts.com)"},
     )
 
     if feed.bozo and not feed.entries:

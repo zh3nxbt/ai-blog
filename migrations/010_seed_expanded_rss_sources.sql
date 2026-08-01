@@ -1,6 +1,6 @@
 -- Migration 010: Seed expanded manufacturing RSS sources
 -- Story: db-008 - Seed expanded manufacturing RSS sources (Canada/Ontario focus)
--- Source: ralph/rss_sources_canada.csv
+-- Source: blog/rss_sources_canada.csv
 
 -- Insert 40 additional manufacturing industry RSS feed sources
 -- Uses ON CONFLICT to skip any duplicates

@@ -1,8 +1,8 @@
 """Hourly RSS refresh entrypoint (ingestion only, no LLM calls).
 
 Usage:
-    python -m ralph.refresh_sources
-    python -m ralph.refresh_sources --max-sources 20 --per-source-limit 15
+    python -m blog.refresh_sources
+    python -m blog.refresh_sources --max-sources 20 --per-source-limit 15
 """
 
 from __future__ import annotations
@@ -22,15 +22,15 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--per-source-limit",
         type=int,
-        default=int(os.environ.get("RALPH_REFRESH_LIMIT_PER_SOURCE", "20")),
+        default=int(os.environ.get("BLOG_REFRESH_LIMIT_PER_SOURCE", "20")),
         help="Maximum items fetched per source",
     )
     parser.add_argument(
         "--max-sources",
         type=int,
         default=(
-            int(os.environ["RALPH_REFRESH_MAX_SOURCES"])
-            if os.environ.get("RALPH_REFRESH_MAX_SOURCES")
+            int(os.environ["BLOG_REFRESH_MAX_SOURCES"])
+            if os.environ.get("BLOG_REFRESH_MAX_SOURCES")
             else None
         ),
         help="Optional cap on number of active sources to refresh",

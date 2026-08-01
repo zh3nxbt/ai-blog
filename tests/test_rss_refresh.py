@@ -43,7 +43,7 @@ def test_refresh_active_sources_validates_arguments():
 
 
 def test_refresh_active_sources_retries_before_success(monkeypatch):
-    monkeypatch.setenv("RALPH_RSS_FETCH_RETRIES", "2")
+    monkeypatch.setenv("BLOG_RSS_FETCH_RETRIES", "2")
     monkeypatch.setattr(
         rss_service, "fetch_active_sources", lambda: [{"id": "1", "name": "Feed A"}]
     )
@@ -74,8 +74,8 @@ def test_refresh_active_sources_retries_before_success(monkeypatch):
 
 
 def test_refresh_active_sources_reports_auto_disabled(monkeypatch):
-    monkeypatch.setenv("RALPH_RSS_FETCH_RETRIES", "1")
-    monkeypatch.setenv("RALPH_RSS_FAILURE_THRESHOLD", "3")
+    monkeypatch.setenv("BLOG_RSS_FETCH_RETRIES", "1")
+    monkeypatch.setenv("BLOG_RSS_FAILURE_THRESHOLD", "3")
     monkeypatch.setattr(
         rss_service,
         "fetch_active_sources",

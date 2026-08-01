@@ -10,7 +10,7 @@ WITH existing_source AS (
 ),
 inserted_source AS (
     INSERT INTO blog_topic_sources (source_type, name, category, priority, notes)
-    SELECT 'evergreen', 'Evergreen Topic Bank', 'evergreen', 5, 'Seeded evergreen topics for Ralph'
+    SELECT 'evergreen', 'Evergreen Topic Bank', 'evergreen', 5, 'Seeded evergreen topics for blog generation'
     WHERE NOT EXISTS (SELECT 1 FROM existing_source)
     RETURNING id
 ),

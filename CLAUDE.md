@@ -103,7 +103,7 @@ pip install -r requirements.txt
 
 # Development
 uvicorn api.main:app --reload          # API server
-python -m ralph.ralph_loop             # Run blog generation
+bash blog/generate.sh                 # Run blog generation
 ```
 
 ## Content Strategy
@@ -181,7 +181,7 @@ python -m ralph.ralph_loop             # Run blog generation
 ## Data Model
 
 ### blog_posts Table (Pre-existing)
-**Note:** This table existed before Ralph was created. It contains additional columns used by the existing website.
+**Note:** This table predates the automated generator. It contains additional columns used by the existing website.
 
 ```
 id               UUID
@@ -200,7 +200,7 @@ created_at       Timestamp (default NOW())
 updated_at       Timestamp (nullable)
 ```
 
-**Ralph usage:** Ralph only writes to: `title`, `slug`, `content`, `status`. Other columns are for the existing website.
+**Backend usage:** The generator writes `title`, `slug`, `content`, `status`, SEO metadata, and tags. Other columns are managed by the existing website.
 
 ## Code Style
 

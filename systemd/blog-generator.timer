@@ -1,12 +1,12 @@
 [Unit]
-Description=Daily Ralph Blog Content Generation Timer
+Description=Blog Content Generation Timer
 Documentation=https://github.com/your-org/ai-blog
 
 [Timer]
 # Run Mon/Wed/Fri at 2:12 PM UTC (14:12), shortly after hourly feed refresh at :05.
 # Format: DayOfWeek Year-Month-Day Hour:Minute:Second
 OnCalendar=Mon,Wed,Fri *-*-* 14:12:00 UTC
-Unit=ralph.service
+Unit=blog-generator.service
 
 # If the system was off when the timer should have triggered,
 # run it immediately on next boot

@@ -15,16 +15,10 @@ class Settings(BaseSettings):
     database_url: str | None = None
 
     # RSS Refresh
-    ralph_refresh_limit_per_source: int = 20
-    ralph_refresh_max_sources: int | None = None
-    ralph_rss_failure_threshold: int = 5
-    ralph_rss_fetch_retries: int = 2
-
-    # Email Alerts
-    email_provider: str | None = None  # "resend" or "smtp"
-    resend_api_key: str | None = None
-    email_from: str | None = None
-    email_to: str | None = None
+    blog_refresh_limit_per_source: int = 20
+    blog_refresh_max_sources: int | None = None
+    blog_rss_failure_threshold: int = 5
+    blog_rss_fetch_retries: int = 2
 
     # Environment
     environment: str = "development"

@@ -1,16 +1,16 @@
 [Unit]
-Description=Ralph RSS Source Refresh
+Description=Blog RSS Source Refresh
 Documentation=https://github.com/your-org/ai-blog
 Wants=network-online.target
 After=network-online.target
 
 [Service]
 Type=oneshot
-User=ralph
-Group=ralph
-WorkingDirectory=/opt/ralph
-EnvironmentFile=/etc/ralph/env
-ExecStart=/opt/ralph/.venv/bin/python -m ralph.refresh_sources
+User=blog
+Group=blog
+WorkingDirectory=/opt/blog-backend
+EnvironmentFile=/etc/blog-backend/env
+ExecStart=/opt/blog-backend/.venv/bin/python -m blog.refresh_sources
 Environment=PYTHONUNBUFFERED=1
 StandardOutput=journal
 StandardError=journal

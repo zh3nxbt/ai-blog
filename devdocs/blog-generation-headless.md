@@ -1,6 +1,6 @@
 # Running Claude Code headless with `claude -p`
 
-Technical reference for how Ralph uses the Claude Code CLI to run autonomous tasks without human interaction. Written so you can replicate the pattern in any system that shells out or calls APIs.
+Technical reference for how Blog uses the Claude Code CLI to run autonomous tasks without human interaction. Written so you can replicate the pattern in any system that shells out or calls APIs.
 
 ## What `claude -p` does
 
@@ -8,10 +8,10 @@ Technical reference for how Ralph uses the Claude Code CLI to run autonomous tas
 
 This is the equivalent of giving an engineer a written brief and letting them work autonomously — Claude reads files, runs shell commands, writes files, and chains tool calls together until the task is done.
 
-## Ralph's invocation
+## Blog's invocation
 
 ```bash
-PROMPT=$(cat ralph/prompts/generate.md)
+PROMPT=$(cat blog/prompts/generate.md)
 
 claude -p "$PROMPT" \
     --dangerously-skip-permissions \
@@ -44,7 +44,7 @@ claude -p "$PROMPT" \
 
 ## How the prompt works
 
-The prompt file (`ralph/prompts/generate.md`) is a self-contained instruction set. It tells Claude Code:
+The prompt file (`blog/prompts/generate.md`) is a self-contained instruction set. It tells Claude Code:
 
 1. Which files to read (skill files, config)
 2. Which shell commands to run (Python CLI helpers)
@@ -61,19 +61,17 @@ Claude Code has Bash access, so it can run arbitrary commands. But rather than l
 
 ```bash
 # Check if post already exists today
-.venv/bin/python -m ralph.generate_helpers check-today
+.venv/bin/python -m blog.generate_helpers check-today
 
 # Fetch source material
-.venv/bin/python -m ralph.generate_helpers fetch-sources --rss-limit 10
+.venv/bin/python -m blog.generate_helpers fetch-sources --rss-limit 10
 
 # Validate content quality
-.venv/bin/python -m ralph.generate_helpers validate --title "..." --content-file /tmp/ralph_post.md
+.venv/bin/python -m blog.generate_helpers validate --title "..." --content-file /tmp/blog_post.md
 
 # Save to database
-.venv/bin/python -m ralph.generate_helpers save-post --title "..." --content-file /tmp/ralph_post.md --status published
+.venv/bin/python -m blog.generate_helpers save-post --title "..." --content-file /tmp/blog_post.md --status published
 
-# Send notification
-.venv/bin/python -m ralph.generate_helpers notify --type SUCCESS --title "..."
 ```
 
 Every helper returns JSON to stdout. Claude parses it and decides the next step. This gives you:
@@ -86,7 +84,7 @@ Every helper returns JSON to stdout. Claude parses it and decides the next step.
 
 When `claude -p` runs from a directory containing a `CLAUDE.md` file, that file is automatically loaded into the system prompt. You don't pass it explicitly — Claude Code picks it up from the working directory.
 
-This means your `CLAUDE.md` acts as persistent project-level instructions that apply to every invocation. In Ralph's case it defines:
+This means your `CLAUDE.md` acts as persistent project-level instructions that apply to every invocation. In Blog's case it defines:
 
 - Database schema and connection details
 - Content rules and forbidden patterns
@@ -268,18 +266,18 @@ Claude Code needs:
 ### From systemd
 
 ```ini
-# ralph.service
+# blog-generator.service
 [Service]
 Type=oneshot
-WorkingDirectory=/opt/ralph/ai-blog
-ExecStart=/bin/bash ralph/ralph-generate.sh
+WorkingDirectory=/opt/blog-backend
+ExecStart=/bin/bash blog/generate.sh
 Environment=ANTHROPIC_API_KEY=sk-ant-...
 ```
 
 ### From cron
 
 ```cron
-0 8 * * * cd /opt/ralph/ai-blog && bash ralph/ralph-generate.sh >> /var/log/ralph.log 2>&1
+0 8 * * * cd /opt/blog-backend && bash blog/generate.sh >> /var/log/blog-generator.log 2>&1
 ```
 
 ### From Python (subprocess)
@@ -298,7 +296,7 @@ result = subprocess.run(
     ],
     capture_output=True,
     text=True,
-    cwd="/opt/ralph/ai-blog",
+    cwd="/opt/blog-backend",
     timeout=600,
 )
 
@@ -322,7 +320,7 @@ Pass the prompt via stdin or mount the prompt file and use `$(cat prompt.md)`.
 
 ## Cost control
 
-Ralph's generation typically costs $0.15-0.40 per run (Sonnet). To keep costs predictable:
+Blog's generation typically costs $0.15-0.40 per run (Sonnet). To keep costs predictable:
 
 1. **`--max-budget-usd`** — hard cap per invocation
 2. **`--allowedTools`** — fewer tools = fewer round trips = lower cost

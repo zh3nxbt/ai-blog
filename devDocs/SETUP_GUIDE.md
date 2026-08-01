@@ -1,166 +1,70 @@
-# Environment Variables Setup Guide
+# Environment and Deployment Guide
 
-## Required API Keys
+## Required configuration
 
-### 1. Supabase (Database)
+Create `.env` from `.env.example` and set:
 
-**Variables:**
-- `SUPABASE_URL` - Your Supabase project URL
-- `SUPABASE_KEY` - Supabase anon or service role key
+- `SUPABASE_URL`: project API URL.
+- `SUPABASE_KEY`: public key for frontend-compatible operations.
+- `SUPABASE_SECRET`: service-role key used by backend jobs.
 
-**Where to get:**
-1. Go to your Supabase project dashboard
-2. Click "Settings" → "API"
-3. Copy the Project URL
-4. Copy the `anon` key (for basic use) or `service_role` key (for full access)
+For direct SQL migrations, also set `DATABASE_URL` or `SUPABASE_DB_PASSWORD`. The migration utilities can use `SUPABASE_POOLER_HOST` when a specific IPv4-compatible pooler is required.
 
-**Required for:**
-- Storing blog posts and drafts
-- RSS feed management
-- Agent activity logging
-- All database operations
+## RSS refresh configuration
 
----
+- `BLOG_REFRESH_LIMIT_PER_SOURCE`: maximum items stored per source and run. Default: `20`.
+- `BLOG_REFRESH_MAX_SOURCES`: optional cap on active sources processed per run.
+- `BLOG_RSS_FAILURE_THRESHOLD`: consecutive failures before a feed is disabled. Default: `5`.
+- `BLOG_RSS_FETCH_RETRIES`: attempts per source and run. Default: `2`.
 
-### 2. Anthropic API (Claude AI)
+## Claude Code authentication
 
-**Variables:**
-- `ANTHROPIC_API_KEY` - Your Anthropic API key
-- `ANTHROPIC_MODEL` - Model to use (default: `claude-opus-4-5`)
-
-**Where to get:**
-1. Go to https://console.anthropic.com/
-2. Navigate to "API Keys"
-3. Create a new API key
-4. Copy the key (starts with `sk-ant-api03-...`)
-
-**Important:** This is separate from Claude Code CLI! Your application needs its own API key to:
-- Generate blog content via ProductMarketingAgent
-- Critique content for quality validation
-- Iterate on drafts until quality threshold is reached
-
-**Cost management:**
-- Set `RALPH_COST_LIMIT_CENTS` to control spending per generation run
-- Default: $1.00 per run (100 cents)
-- Average expected cost: $0.25 per published post
-
----
-
-## Ralph Configuration
-
-**Variables:**
-- `RALPH_TIMEOUT_MINUTES` - Max time per generation run (default: 30)
-- `RALPH_QUALITY_THRESHOLD` - Quality score to publish (default: 0.85)
-- `RALPH_QUALITY_FLOOR` - Minimum quality to save as draft (default: 0.70)
-- `RALPH_COST_LIMIT_CENTS` - Max API cost per run in cents (default: 100 = $1.00)
-
-**How it works:**
-1. Ralph generates initial draft
-2. Critiques and iterates until quality ≥ 0.85 → publishes
-3. If timeout/cost limit hit and quality ≥ 0.70 → saves as draft
-4. If quality < 0.70 at limits → fails explicitly
-
----
-
-## Setup Steps
-
-1. Copy the example file:
-   ```bash
-   cp .env.example .env
-   ```
-
-2. Get your Supabase credentials and add them to `.env`
-
-3. Get your Anthropic API key and add it to `.env`
-
-4. Adjust Ralph configuration values if needed (defaults are good)
-
-5. Verify configuration:
-   ```bash
-   python -c "from config import *; print('Config loaded successfully')"
-   ```
-
----
-
-## Ubuntu VPS Deployment (systemd)
-
-Use two timers in production:
-
-1. `ralph-refresh.timer` (hourly ingestion, no LLM calls)
-2. `ralph.timer` (daily generation)
-
-### Why two timers
-
-- Hourly refresh keeps RSS data fresh and deduplicated.
-- Daily generation runs after refresh, so source quality is better.
-- **Hourly refresh does not use Anthropic tokens.** It only fetches/stores feed entries.
-
-### Recommended schedule
-
-- Refresh: every hour at minute 5 (`*-*-* *:05:00 UTC`)
-- Generation: once daily at 14:12 UTC (`*-*-* 14:12:00 UTC`)
-
-### Install and enable (Ubuntu)
-
-From repo root on VPS:
+The generation runner calls `claude -p`. Authenticate the operating-system account that owns the scheduled job:
 
 ```bash
-sudo ./systemd/install.sh /opt/ralph
-sudo systemctl daemon-reload
-
-sudo systemctl enable --now ralph-refresh.timer
-sudo systemctl enable --now ralph.timer
+claude auth login
+claude auth status
 ```
 
-### Verify timers and services
+For unattended environments, `ANTHROPIC_API_KEY` may be supplied to the job environment instead. Keep it outside the repository.
+
+## Local verification
 
 ```bash
-sudo systemctl list-timers ralph-refresh.timer ralph.timer
-sudo systemctl status ralph-refresh.timer ralph.timer
-sudo systemctl status ralph-refresh.service ralph.service
+python -m blog.generate_helpers --help
+python -m blog.refresh_sources --help
+pytest
 ```
 
-### Useful logs
+Run generation only after the Supabase credentials and Claude authentication are configured:
 
 ```bash
-sudo journalctl -u ralph-refresh.service -n 100 --no-pager
-sudo journalctl -u ralph.service -n 100 --no-pager
+bash blog/generate.sh
 ```
 
-### Required env vars on VPS (`/etc/ralph/env`)
+## Linux deployment
 
-- `SUPABASE_URL`
-- `SUPABASE_SECRET`
-- `ANTHROPIC_API_KEY`
-- `DATABASE_URL` or `SUPABASE_DB_PASSWORD` (required for SQL migration scripts)
-- `RALPH_JUICE_THRESHOLD`
-- `RALPH_REFRESH_LIMIT_PER_SOURCE`
+Install the systemd units from the repository root:
 
----
+```bash
+sudo ./systemd/install.sh /opt/blog-backend
+sudo systemctl enable --now blog-refresh.timer blog-generator.timer
+```
 
-## Security Notes
+Check status and logs:
 
-- **NEVER commit `.env` to git** (already in `.gitignore`)
-- Use environment variables only, never hardcode secrets
-- Rotate API keys periodically
-- Use Supabase `service_role` key only if you need full admin access
-- Monitor API usage to avoid unexpected charges
+```bash
+sudo systemctl list-timers blog-refresh.timer blog-generator.timer
+sudo systemctl status blog-refresh.service blog-generator.service
+sudo journalctl -u blog-refresh.service -n 100 --no-pager
+sudo journalctl -u blog-generator.service -n 100 --no-pager
+```
 
----
+The installer copies `.env` to `/etc/blog-backend/env` with restricted permissions and runs both jobs as the dedicated `blog` user.
 
-## Cost Estimates
+## Security
 
-**Anthropic API (Claude Opus 4.5):**
-- Input: ~$15 per million tokens
-- Output: ~$75 per million tokens
-- Average blog post: 2-4 iterations
-- Expected cost: $0.50-$1.00 per published post
-
-**Supabase:**
-- Free tier includes 500MB database + 1GB file storage
-- Plenty for storing blog posts and metadata
-
-**Total monthly cost estimate (30 posts):**
-- Anthropic API: ~$22.50/month
-- Supabase: $0 (within free tier)
-- **Total: ~$22.50/month**
+- Never commit `.env`, API keys, database passwords, or service-role credentials.
+- Keep `/etc/blog-backend/env` readable only by root and the service account.
+- Run scheduled jobs as the unprivileged `blog` user.
+- Rotate credentials after any suspected exposure.

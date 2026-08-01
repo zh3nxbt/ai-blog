@@ -22,7 +22,7 @@ CREATE INDEX IF NOT EXISTS idx_blog_content_drafts_blog_post_id
     ON blog_content_drafts(blog_post_id);
 
 -- Add comment for documentation
-COMMENT ON TABLE blog_content_drafts IS 'Stores draft iterations for blog posts with quality scores and critique from the Ralph loop';
+COMMENT ON TABLE blog_content_drafts IS 'Stores draft iterations for blog posts with quality scores and critique from the generation pipeline';
 COMMENT ON COLUMN blog_content_drafts.iteration_number IS 'Sequential iteration number for this blog post (1, 2, 3, ...)';
 COMMENT ON COLUMN blog_content_drafts.quality_score IS 'Quality score from 0.00 to 1.00 (stored as numeric(3,2))';
 COMMENT ON COLUMN blog_content_drafts.critique IS 'JSON critique from quality validator with improvements suggested';

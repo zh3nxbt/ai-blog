@@ -3,7 +3,7 @@
 Thin wrappers around existing services, exposed as argparse subcommands.
 All output is JSON to stdout. Designed to be called via:
 
-    python -m ralph.generate_helpers <subcommand> [args]
+    python -m blog.generate_helpers <subcommand> [args]
 """
 
 import argparse
@@ -15,7 +15,7 @@ from uuid import UUID
 from utils.env import load_local_env_if_available
 
 
-# Manual and native-Windows runs do not have systemd injecting /etc/ralph/env.
+# Manual and native-Windows runs do not have systemd injecting /etc/blog-backend/env.
 # python-dotenv keeps existing process variables authoritative by default.
 load_local_env_if_available()
 
@@ -102,7 +102,7 @@ def cmd_validate(args: argparse.Namespace) -> None:
 
 def cmd_save_post(args: argparse.Namespace) -> None:
     """Save a blog post to Supabase."""
-    from ralph_content.core.markdown_renderer import markdown_to_html
+    from blog.markdown_renderer import markdown_to_html
     from services.supabase_service import create_blog_post
 
     try:
@@ -148,42 +148,6 @@ def cmd_mark_used(args: argparse.Namespace) -> None:
     _json_out({"marked": marked})
 
 
-def cmd_notify(args: argparse.Namespace) -> None:
-    """Send an email notification."""
-    from services.email_service import is_configured, send_alert, EmailServiceError
-
-    if not is_configured():
-        _json_out({"sent": False, "reason": "email not configured"})
-        return
-
-    alert_type = args.type
-    if alert_type == "SUCCESS":
-        # send_alert doesn't handle SUCCESS, use send_email directly
-        from services.email_service import send_email
-        subject = f"[SUCCESS] Ralph: {args.title}"
-        body = f"Ralph Blog Content Generator\n\nTitle: {args.title}\n\nDetails:\n{args.details}"
-        if args.blog_post_id:
-            body += f"\n\nBlog Post ID: {args.blog_post_id}"
-        body += "\n\n-- Ralph"
-        try:
-            email_id = send_email(subject, body)
-            _json_out({"sent": True, "email_id": email_id})
-        except EmailServiceError as e:
-            _json_out({"sent": False, "error": str(e)})
-        return
-
-    try:
-        email_id = send_alert(
-            alert_type=alert_type,
-            title=args.title,
-            details=args.details,
-            blog_post_id=args.blog_post_id,
-        )
-        _json_out({"sent": True, "email_id": email_id})
-    except EmailServiceError as e:
-        _json_out({"sent": False, "error": str(e)})
-
-
 def cmd_log_activity(args: argparse.Namespace) -> None:
     """Log agent activity to the database."""
     from services.supabase_service import log_agent_activity
@@ -214,7 +178,7 @@ def cmd_log_activity(args: argparse.Namespace) -> None:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="ralph.generate_helpers",
+        prog="blog.generate_helpers",
         description="CLI helpers for Claude Code blog generation",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -249,15 +213,6 @@ def build_parser() -> argparse.ArgumentParser:
     mark.add_argument("--topic-ids", default=None, help="Comma-separated topic item IDs")
     mark.add_argument("--blog-post-id", required=True, help="Blog post UUID")
 
-    # notify
-    notify = subparsers.add_parser("notify", help="Send email notification")
-    notify.add_argument("--type", required=True,
-                        choices=["SUCCESS", "SKIPPED", "FAILED", "ERROR"],
-                        help="Alert type")
-    notify.add_argument("--title", required=True, help="Alert title")
-    notify.add_argument("--details", required=True, help="Alert details")
-    notify.add_argument("--blog-post-id", default=None, help="Blog post UUID")
-
     # log-activity
     log = subparsers.add_parser("log-activity", help="Log agent activity")
     log.add_argument("--agent", required=True, help="Agent name")
@@ -284,7 +239,6 @@ def main() -> None:
         "validate": cmd_validate,
         "save-post": cmd_save_post,
         "mark-used": cmd_mark_used,
-        "notify": cmd_notify,
         "log-activity": cmd_log_activity,
     }
 

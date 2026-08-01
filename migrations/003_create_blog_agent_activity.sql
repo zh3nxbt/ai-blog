@@ -22,7 +22,7 @@ CREATE INDEX IF NOT EXISTS idx_blog_agent_activity_activity_type
     ON blog_agent_activity(activity_type, created_at DESC);
 
 -- Add comments for documentation
-COMMENT ON TABLE blog_agent_activity IS 'Logs all agent activity for monitoring and debugging the Ralph loop';
+COMMENT ON TABLE blog_agent_activity IS 'Logs generation activity for monitoring and debugging the blog pipeline';
 COMMENT ON COLUMN blog_agent_activity.agent_name IS 'Name of the agent (e.g., ProductMarketingAgent, CritiqueAgent)';
 COMMENT ON COLUMN blog_agent_activity.activity_type IS 'Type of activity (e.g., content_draft, critique, publish)';
 COMMENT ON COLUMN blog_agent_activity.context_id IS 'Optional UUID linking to related entity (e.g., blog_post_id)';

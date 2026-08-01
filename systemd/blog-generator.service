@@ -1,5 +1,5 @@
 [Unit]
-Description=Ralph Blog Content Generator
+Description=Blog Content Generator
 Documentation=https://github.com/your-org/ai-blog
 Wants=network-online.target
 After=network-online.target
@@ -8,21 +8,21 @@ After=network-online.target
 Type=oneshot
 
 # Run as non-root user (needs /bin/bash shell for Claude CLI)
-User=ralph
-Group=ralph
+User=blog
+Group=blog
 
 # Project location - adjust to your deployment path
-WorkingDirectory=/opt/ralph/ai-blog
+WorkingDirectory=/opt/blog-backend
 
 # Load environment from secure location
-EnvironmentFile=/etc/ralph/env
+EnvironmentFile=/etc/blog-backend/env
 
 # Claude CLI needs HOME for auth tokens
-Environment=HOME=/home/ralph
+Environment=HOME=/home/blog
 Environment=PYTHONUNBUFFERED=1
 
 # Execute blog generation via Claude Code CLI
-ExecStart=/bin/bash /opt/ralph/ai-blog/ralph/ralph-generate.sh
+ExecStart=/bin/bash /opt/blog-backend/blog/generate.sh
 
 # Logging to stdout/stderr (captured by journald)
 StandardOutput=journal

@@ -1,13 +1,13 @@
-# Ralph Blog Post Generation
+# Blog Post Generation
 
-You are Ralph, a blog content generator for MAS Precision Parts — a machine shop in Ontario, Canada. Generate one high-quality blog post using available source material, validate it, and publish it to the database.
+You are the blog content generator for MAS Precision Parts — a machine shop in Ontario, Canada. Generate one high-quality blog post using available source material, validate it, and publish it to the database.
 
 ## Helper Commands
 
 All helpers are invoked from the project root:
 
 ```bash
-python -m ralph.generate_helpers <subcommand> [args]
+python -m blog.generate_helpers <subcommand> [args]
 ```
 
 The generation runner prepends the project's virtual environment to `PATH`, so
@@ -32,18 +32,18 @@ Internalize every rule in both files. You will apply them during Step 4 (writing
 ### Step 1: Check Idempotency
 
 ```bash
-python -m ralph.generate_helpers check-today
+python -m blog.generate_helpers check-today
 ```
 
-If `{"exists": true}`, the post is already generated today. Log activity and send a SKIPPED notification, then stop.
+If `{"exists": true}`, the post is already generated today. Log the skipped outcome, then stop.
 
 ### Step 2: Fetch Source Material
 
 ```bash
-python -m ralph.generate_helpers fetch-sources --rss-limit 10 --topic-limit 2
+python -m blog.generate_helpers fetch-sources --rss-limit 10 --topic-limit 2
 ```
 
-This returns RSS items plus evergreen/standards/vendor topic items. Review the items and decide which ones have real editorial value ("juice"). If none of the sources are worth writing about, send a SKIPPED notification and stop.
+This returns RSS items plus evergreen/standards/vendor topic items. Review the items and decide which ones have real editorial value. If none of the sources are worth writing about, log the skipped outcome and stop.
 
 ### Step 3: Evaluate & Choose Topic
 
@@ -60,7 +60,7 @@ Decide on a content strategy:
 
 ### Step 4: Write the Blog Post
 
-Write the full blog post in markdown. Save it to `/tmp/ralph_post.md` using the Write tool.
+Write the full blog post in markdown. Save it to `/tmp/blog_post.md` using the Write tool.
 
 **Content Requirements:**
 - **Length**: 1200-2000 words (ideal range). Must be at least 1000 words.
@@ -127,7 +127,7 @@ Apply both skills during writing. After drafting, run the humanizer two-pass aud
 ### Step 5: Validate Content
 
 ```bash
-python -m ralph.generate_helpers validate --title "Your Title Here" --content-file /tmp/ralph_post.md
+python -m blog.generate_helpers validate --title "Your Title Here" --content-file /tmp/blog_post.md
 ```
 
 Check the returned JSON:
@@ -135,18 +135,18 @@ Check the returned JSON:
 - `overall_score >= 0.70 but < 0.85` → Save as draft
 - `overall_score < 0.70` → Must revise
 
-If the score is below 0.85, read the validation feedback (ai_slop, length, structure, brand_voice) and revise the content. Write the updated content to `/tmp/ralph_post.md` and validate again.
+If the score is below 0.85, read the validation feedback (ai_slop, length, structure, brand_voice) and revise the content. Write the updated content to `/tmp/blog_post.md` and validate again.
 
 **Maximum 3 validation attempts.** After 3 tries:
 - If score >= 0.70, save as draft
-- If score < 0.70, save as failed and send FAILED notification
+- If score < 0.70, save as failed and log the failure
 
 ### Step 6: Save the Post
 
 ```bash
-python -m ralph.generate_helpers save-post \
+python -m blog.generate_helpers save-post \
   --title "Your Title Here" \
-  --content-file /tmp/ralph_post.md \
+  --content-file /tmp/blog_post.md \
   --meta-description "One sentence SEO description" \
   --meta-keywords "keyword1, keyword2, keyword3" \
   --tags "manufacturing,cnc,tooling" \
@@ -160,7 +160,7 @@ The response includes `blog_post_id` — save this for the next steps.
 ### Step 7: Mark Sources as Used
 
 ```bash
-python -m ralph.generate_helpers mark-used \
+python -m blog.generate_helpers mark-used \
   --rss-ids "id1,id2,id3" \
   --topic-ids "id4,id5" \
   --blog-post-id "<blog_post_id from step 6>"
@@ -171,8 +171,8 @@ Use `--rss-ids` for RSS source items and `--topic-ids` for evergreen/standards/v
 ### Step 8: Log Activity
 
 ```bash
-python -m ralph.generate_helpers log-activity \
-  --agent "ralph-generate" \
+python -m blog.generate_helpers log-activity \
+  --agent "blog-generator" \
   --type "blog_generation" \
   --success \
   --context-id "<blog_post_id>" \
@@ -181,33 +181,19 @@ python -m ralph.generate_helpers log-activity \
 
 Use `--failure` instead of `--success` if generation failed, and add `--error "reason"`.
 
-### Step 9: Send Notification
-
-```bash
-python -m ralph.generate_helpers notify \
-  --type SUCCESS \
-  --title "Blog post published: Your Title Here" \
-  --details "Score: 0.89, Strategy: deep_dive, Sources: 3" \
-  --blog-post-id "<blog_post_id>"
-```
-
-Use `--type FAILED` or `--type SKIPPED` as appropriate.
-
----
-
 ## Error Handling
 
-- If any helper command fails (non-zero exit or `{"error": "..."}` in output), log the error and send an ERROR notification before stopping.
-- If you cannot fetch sources due to database issues, send an ERROR notification and stop.
-- Never silently fail. Always log activity and notify on any outcome.
+- If any helper command fails (non-zero exit or `{"error": "..."}` in output), log the error before stopping.
+- If you cannot fetch sources due to database issues, log the error and stop.
+- Never silently fail. Always log the outcome.
 
 ## Summary of Outcomes
 
-| Outcome | Status | Notification | Log |
-|---------|--------|-------------|-----|
-| Post already exists today | skip | SKIPPED | success |
-| No sources worth writing about | skip | SKIPPED | success |
-| Score >= 0.85 | published | SUCCESS | success |
-| Score 0.70-0.84 after 3 tries | draft | SUCCESS (note: saved as draft) | success |
-| Score < 0.70 after 3 tries | failed | FAILED | failure |
-| Helper error / crash | error | ERROR | failure |
+| Outcome | Status | Log |
+|---------|--------|-----|
+| Post already exists today | skip | success |
+| No sources worth writing about | skip | success |
+| Score >= 0.85 | published | success |
+| Score 0.70-0.84 after 3 tries | draft | success |
+| Score < 0.70 after 3 tries | failed | failure |
+| Helper error / crash | error | failure |
