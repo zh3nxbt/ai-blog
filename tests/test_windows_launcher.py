@@ -31,6 +31,9 @@ def test_windows_launcher_is_idempotent_and_bounded():
     content = LAUNCHER.read_text(encoding="utf-8")
 
     assert content.count("Register-ScheduledTask") >= 3
+    assert content.count("call :install_scheduled_tasks install") == 2
+    assert "$quote = [char]34" in content
+    assert "$quote + $quote + $script + $quote" in content
     assert "-Force | Out-Null" in content
     assert "-StartWhenAvailable" in content
     assert "-MultipleInstances IgnoreNew" in content

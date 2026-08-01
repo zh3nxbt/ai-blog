@@ -30,7 +30,7 @@ exit /b 2
 call :check_requirements
 if errorlevel 1 exit /b %ERRORLEVEL%
 
-call :install_scheduled_tasks
+call :install_scheduled_tasks install
 if errorlevel 1 exit /b %ERRORLEVEL%
 
 call :run_server
@@ -44,7 +44,7 @@ exit /b %ERRORLEVEL%
 call :check_requirements
 if errorlevel 1 exit /b %ERRORLEVEL%
 
-call :install_scheduled_tasks
+call :install_scheduled_tasks install
 exit /b %ERRORLEVEL%
 
 :refresh
@@ -155,8 +155,9 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -Command ^
     "$project = $env:AI_BLOG_PROJECT;" ^
     "$user = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name;" ^
     "$principal = New-ScheduledTaskPrincipal -UserId $user -LogonType Interactive -RunLevel Limited;" ^
-    "$refreshArguments = '/d /c ""' + $script + '" refresh"';" ^
-    "$generationArguments = '/d /c ""' + $script + '" generate-if-due"';" ^
+    "$quote = [char]34;" ^
+    "$refreshArguments = '/d /c ' + $quote + $quote + $script + $quote + ' refresh' + $quote;" ^
+    "$generationArguments = '/d /c ' + $quote + $quote + $script + $quote + ' generate-if-due' + $quote;" ^
     "$refreshAction = New-ScheduledTaskAction -Execute $env:ComSpec -Argument $refreshArguments -WorkingDirectory $project;" ^
     "$generationAction = New-ScheduledTaskAction -Execute $env:ComSpec -Argument $generationArguments -WorkingDirectory $project;" ^
     "$now = Get-Date;" ^
@@ -169,8 +170,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -Command ^
     "$refreshSettings = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Minutes 15) -MultipleInstances IgnoreNew;" ^
     "$generationSettings = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Minutes 45) -MultipleInstances IgnoreNew;" ^
     "if ($env:AI_BLOG_SCHEDULE_MODE -eq 'validate') {" ^
-    "    if ($refreshAction.Arguments -notlike '* refresh*') { throw 'Refresh action arguments are malformed' };" ^
-    "    if ($generationAction.Arguments -notlike '* generate-if-due*') { throw 'Generation action arguments are malformed' };" ^
+    "    if ($refreshAction.Arguments -notlike ('*' + $quote + $quote + $script + $quote + ' refresh' + $quote)) { throw 'Refresh action arguments are malformed' };" ^
+    "    if ($generationAction.Arguments -notlike ('*' + $quote + $quote + $script + $quote + ' generate-if-due' + $quote)) { throw 'Generation action arguments are malformed' };" ^
     "    if ($refreshTrigger.Repetition.Interval -ne 'PT1H') { throw 'Refresh trigger is not hourly' };" ^
     "    if ($generationTrigger.Repetition.Interval -ne 'PT1H') { throw 'Generation trigger is not hourly' };" ^
     "    exit 0;" ^
