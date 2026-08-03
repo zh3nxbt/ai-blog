@@ -160,10 +160,13 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -Command ^
     "$user = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name;" ^
     "$principal = New-ScheduledTaskPrincipal -UserId $user -LogonType Interactive -RunLevel Limited;" ^
     "$quote = [char]34;" ^
-    "$refreshArguments = '/d /c ' + $quote + $quote + $script + $quote + ' refresh' + $quote;" ^
-    "$generationArguments = '/d /c ' + $quote + $quote + $script + $quote + ' generate-if-due' + $quote;" ^
-    "$refreshAction = New-ScheduledTaskAction -Execute $env:ComSpec -Argument $refreshArguments -WorkingDirectory $project;" ^
-    "$generationAction = New-ScheduledTaskAction -Execute $env:ComSpec -Argument $generationArguments -WorkingDirectory $project;" ^
+    "$apostrophe = [char]39;" ^
+    "$powershell = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe';" ^
+    "$actionPrefix = '-NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -Command ';" ^
+    "$refreshArguments = $actionPrefix + $quote + '& ' + $apostrophe + $script + $apostrophe + ' refresh' + $quote;" ^
+    "$generationArguments = $actionPrefix + $quote + '& ' + $apostrophe + $script + $apostrophe + ' generate-if-due' + $quote;" ^
+    "$refreshAction = New-ScheduledTaskAction -Execute $powershell -Argument $refreshArguments -WorkingDirectory $project;" ^
+    "$generationAction = New-ScheduledTaskAction -Execute $powershell -Argument $generationArguments -WorkingDirectory $project;" ^
     "$now = Get-Date;" ^
     "$refreshStart = $now.Date.AddMinutes(5);" ^
     "while ($refreshStart -le $now) { $refreshStart = $refreshStart.AddHours(1) };" ^
@@ -174,8 +177,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -Command ^
     "$refreshSettings = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Minutes 15) -MultipleInstances IgnoreNew;" ^
     "$generationSettings = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Minutes 45) -MultipleInstances IgnoreNew;" ^
     "if ($env:AI_BLOG_SCHEDULE_MODE -eq 'validate') {" ^
-    "    if ($refreshAction.Arguments -notlike ('*' + $quote + $quote + $script + $quote + ' refresh' + $quote)) { throw 'Refresh action arguments are malformed' };" ^
-    "    if ($generationAction.Arguments -notlike ('*' + $quote + $quote + $script + $quote + ' generate-if-due' + $quote)) { throw 'Generation action arguments are malformed' };" ^
+    "    if ($refreshAction.Arguments -notlike ('*' + $apostrophe + $script + $apostrophe + ' refresh' + $quote)) { throw 'Refresh action arguments are malformed' };" ^
+    "    if ($generationAction.Arguments -notlike ('*' + $apostrophe + $script + $apostrophe + ' generate-if-due' + $quote)) { throw 'Generation action arguments are malformed' };" ^
     "    if ($refreshTrigger.Repetition.Interval -ne 'PT1H') { throw 'Refresh trigger is not hourly' };" ^
     "    if ($generationTrigger.Repetition.Interval -ne 'PT1H') { throw 'Generation trigger is not hourly' };" ^
     "    exit 0;" ^

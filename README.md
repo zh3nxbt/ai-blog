@@ -95,73 +95,115 @@ Run tests:
 pytest
 ```
 
-## Production deployment
+## Windows production deployment
 
-Linux deployment units are in `systemd/`:
+Windows is the primary production target. Use a dedicated Windows account for
+the blog runtime, and run every setup command while signed in as that account.
+The same account must own the Claude login and the scheduled tasks.
 
-- `blog-api.service` keeps the FastAPI application running.
-- `blog-refresh.timer` refreshes RSS sources hourly.
-- `blog-generator.timer` starts generation on Monday, Wednesday, and Friday.
+### 1. Install and configure
 
-On the Ubuntu production server, place the repository at `/opt/blog-backend`,
-create `.env` with the production values described above, then install and
-start the runtime:
-
-```bash
-cd /opt/blog-backend
-python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
-sudo ./systemd/install.sh /opt/blog-backend
-sudo systemctl enable --now blog-api.service blog-refresh.timer blog-generator.timer
-curl http://127.0.0.1:8000/health
-```
-
-The installer creates the unprivileged `blog` account, copies `.env` to
-`/etc/blog-backend/env`, installs the API service and job timers, and reloads
-systemd. See `systemd/README.md` for status, log, and manual-run commands.
-Expose the API port only through the production firewall or reverse proxy.
-
-## Windows local operation
-
-Use the repository launcher to start only the FastAPI server in the foreground:
+Open Command Prompt in the production checkout:
 
 ```bat
-run-ai-blog.bat
+cd /d D:\path\to\mas-website-blog
+py -3.12 -m venv .venv
+.venv\Scripts\python.exe -m pip install -r requirements.txt
+copy .env.example .env
+notepad .env
 ```
 
-The default command does not create or change scheduled tasks. Install local
-Windows automation only when this machine is intentionally acting as the job
-runner:
+Set the production Supabase credentials, `ENVIRONMENT=production`,
+`API_HOST`, and `API_PORT`. Keep `.env` restricted to the production account
+and administrators.
+
+Authenticate and verify Claude under that same Windows account:
+
+```bat
+claude auth login
+claude auth status
+run-ai-blog.bat check
+```
+
+### 2. Install production schedules
+
+Scheduling is deliberately opt-in so a development checkout cannot become a
+job runner merely by starting the API:
 
 ```bat
 run-ai-blog.bat install-schedule
 ```
 
-The Windows schedule mirrors the Linux timers:
+This creates or updates:
 
-- `AI Blog - RSS Refresh` runs hourly at minute `05`.
-- `AI Blog - Post Generation` evaluates the schedule hourly at minute `12`,
-  then generates only on Monday, Wednesday, and Friday after `14:12 UTC`.
+- `AI Blog - RSS Refresh`, which runs hourly at minute `05`.
+- `AI Blog - Post Generation`, which checks hourly at minute `12` and generates
+  only on Monday, Wednesday, and Friday after `14:12 UTC`.
 
-The UTC gate keeps the generation time correct through daylight-saving changes.
-It checks for an existing post before starting Claude. Task Scheduler catches
-up after the computer was unavailable, while an ignored `.runtime` marker
+The jobs use the current account's interactive logon token so Claude
+authentication is available without storing the Windows password. Keep that
+account logged on. They launch in hidden PowerShell windows, so hourly jobs do
+not interrupt the production desktop. `StartWhenAvailable` catches missed runs,
+overlapping copies are blocked, and `.runtime/last-generation-attempt-utc.txt`
 limits generation to one attempt per scheduled UTC date.
 
-Useful launcher modes:
+### 3. Start and verify the API
+
+Start FastAPI in the foreground:
 
 ```bat
-run-ai-blog.bat check
-run-ai-blog.bat install-schedule
-run-ai-blog.bat refresh
-run-ai-blog.bat generate
 run-ai-blog.bat server
 ```
 
-The scheduled tasks use the current Windows account and run while that account
-is logged on. Authenticate Claude Code under the same account. Do not install
-these tasks on a development workstation when the Linux production timers are
-already enabled.
+Keep that Command Prompt open. From another terminal, verify the API and tasks:
+
+```bat
+curl.exe http://127.0.0.1:8000/health
+schtasks /Query /TN "AI Blog - RSS Refresh" /V /FO LIST
+schtasks /Query /TN "AI Blog - Post Generation" /V /FO LIST
+```
+
+After a Windows restart, sign in to the production account and start
+`run-ai-blog.bat server` again. The API is not currently installed as a Windows
+service. Restrict `API_PORT` with Windows Firewall or place it behind the
+production reverse proxy; do not expose the administrative API directly.
+
+### Operations
+
+```bat
+run-ai-blog.bat check
+run-ai-blog.bat refresh
+run-ai-blog.bat generate
+run-ai-blog.bat generate-if-due
+run-ai-blog.bat server
+```
+
+Running `run-ai-blog.bat` without an argument is equivalent to the `server`
+mode and never installs scheduled tasks.
+
+To pause production automation without deleting its configuration, run in
+PowerShell:
+
+```powershell
+Disable-ScheduledTask -TaskName "AI Blog - RSS Refresh"
+Disable-ScheduledTask -TaskName "AI Blog - Post Generation"
+```
+
+Use `Enable-ScheduledTask` with the same names to resume it. Rerun
+`install-schedule` after changing the launcher so Task Scheduler receives the
+updated action definitions.
+
+## Development workstation
+
+Create `.env` and `.venv` normally, then use `run-ai-blog.bat` to start only
+the API. Do not run `install-schedule`; production automation belongs on the
+Windows production machine.
+
+## Optional Linux/systemd deployment
+
+The `systemd/` directory remains available for an optional Linux host. It is
+not the primary MAS production configuration. See `systemd/README.md` for its
+API service, timers, installation, status, and log commands.
 
 ## Project layout
 

@@ -87,11 +87,14 @@ postgresql://postgres.{project_ref}:{password}@aws-0-us-east-1.pooler.supabase.c
 
 ## Environment Constraints
 
-### DigitalOcean Ubuntu
-- systemd service for API
-- systemd timer or cron for worker
+### Windows production
+- FastAPI runs from `run-ai-blog.bat server` under the dedicated production account
+- Windows scheduled tasks are installed only with `run-ai-blog.bat install-schedule`
+- The scheduled-task account must remain logged on so Claude authentication is available
 - Environment variables for secrets only
 - Always use Python virtual environments
+
+The `systemd/` deployment remains an optional Linux alternative, not the primary production target.
 
 ## Local Workflow
 

@@ -45,57 +45,108 @@ Run generation only after the Supabase credentials and Claude authentication are
 bash blog/generate.sh
 ```
 
-## Windows local operation
+## Windows production deployment
 
-Run the launcher from Command Prompt or by double-clicking it:
+Windows is the primary production environment. Use a dedicated Windows account
+and complete the entire installation while signed in as that account.
+
+### Install the runtime
+
+Open Command Prompt in the production checkout:
 
 ```bat
-run-ai-blog.bat
+cd /d D:\path\to\mas-website-blog
+py -3.12 -m venv .venv
+.venv\Scripts\python.exe -m pip install -r requirements.txt
+copy .env.example .env
+notepad .env
 ```
 
-The default command performs two actions:
+Set the production credentials, `ENVIRONMENT=production`, `API_HOST`, and
+`API_PORT`. Confirm that Git Bash and the Claude CLI are on the production
+account's `PATH`, then authenticate and validate everything:
 
-1. Validates `.env`, the virtual environment, and the FastAPI runtime.
-2. Starts the FastAPI server in the foreground using `API_HOST` and `API_PORT`.
+```bat
+claude auth login
+claude auth status
+run-ai-blog.bat check
+```
 
-The default command does not create or change scheduled tasks. To make a
-Windows machine an intentional job runner, install the schedules explicitly:
+### Install the scheduled jobs
+
+Install the schedules explicitly:
 
 ```bat
 run-ai-blog.bat install-schedule
 ```
 
-The refresh task runs hourly at minute `05`. The generation task wakes hourly
-at minute `12`, checks UTC, and proceeds only on Monday, Wednesday, or Friday
-after `14:12 UTC`. Before invoking Claude, it queries Supabase for an existing
-post on the current UTC date. This preserves the Linux schedule across Toronto
-daylight-saving changes. `StartWhenAvailable` catches missed triggers, and an
-ignored `.runtime/last-generation-attempt-utc.txt` marker prevents repeated
-Claude runs after a successful, failed, or intentionally skipped attempt.
+The command is idempotent and creates or updates:
 
-Schedule installation is idempotent. Use these modes for maintenance:
+- `AI Blog - RSS Refresh`: hourly at minute `05`, with a 15-minute limit.
+- `AI Blog - Post Generation`: checks hourly at minute `12`, with a 45-minute
+  limit, and generates only Monday, Wednesday, and Friday after `14:12 UTC`.
+
+Before generation, the task checks Supabase for an existing post on the current
+UTC date. `StartWhenAvailable` catches missed triggers, overlapping copies are
+blocked, and `.runtime/last-generation-attempt-utc.txt` prevents repeated
+Claude runs after an attempted scheduled date.
+
+The jobs use the production account's interactive logon token so its Claude
+authentication is available without storing a Windows password. Keep that
+account logged on. Task actions use hidden PowerShell windows so scheduled runs
+do not interrupt the production desktop.
+
+### Start and verify the API
+
+```bat
+run-ai-blog.bat server
+```
+
+Keep the server Command Prompt open. Verify from another terminal:
+
+```bat
+curl.exe http://127.0.0.1:8000/health
+schtasks /Query /TN "AI Blog - RSS Refresh" /V /FO LIST
+schtasks /Query /TN "AI Blog - Post Generation" /V /FO LIST
+```
+
+After rebooting Windows, sign in to the production account and start the server
+again. The API is not currently installed as a Windows service. Running
+`run-ai-blog.bat` without an argument also starts only the server and never
+installs schedules.
+
+### Operations
 
 ```bat
 run-ai-blog.bat check
-run-ai-blog.bat install-schedule
 run-ai-blog.bat refresh
 run-ai-blog.bat generate
 run-ai-blog.bat generate-if-due
 run-ai-blog.bat server
 ```
 
-Tasks are registered with the current account's interactive logon token so its
-Claude authentication is available without storing a Windows password. That
-account must remain logged on. Task settings allow battery operation, prevent
-overlapping copies, start missed work when available, and limit refresh and
-generation runs to 15 and 45 minutes respectively.
+Pause or resume production automation from PowerShell:
 
-Do not install these tasks on a development workstation when the Linux
-production timers are already responsible for the jobs.
+```powershell
+Disable-ScheduledTask -TaskName "AI Blog - RSS Refresh"
+Disable-ScheduledTask -TaskName "AI Blog - Post Generation"
 
-## Linux deployment
+Enable-ScheduledTask -TaskName "AI Blog - RSS Refresh"
+Enable-ScheduledTask -TaskName "AI Blog - Post Generation"
+```
 
-On the Ubuntu production server, place the repository at
+Rerun `run-ai-blog.bat install-schedule` after changing the launcher so the
+registered task actions and settings are refreshed.
+
+## Development workstation
+
+Use `run-ai-blog.bat` to start the local API. Do not run `install-schedule` on a
+development machine; the production Windows host owns RSS refresh and post
+generation.
+
+## Optional Linux/systemd deployment
+
+On an optional Ubuntu server, place the repository at
 `/opt/blog-backend`. From that directory, create the environment and install
 dependencies:
 
@@ -106,7 +157,7 @@ python3 -m venv .venv
 cp .env.example .env
 ```
 
-Edit `.env` with the production Supabase and Claude credentials, set
+Edit `.env` with the server's Supabase and Claude credentials, set
 `ENVIRONMENT=production`, and confirm `API_HOST` and `API_PORT`. Then install
 the systemd units and start the runtime:
 
@@ -139,12 +190,13 @@ sudo -u blog -i claude auth login
 sudo -u blog -i claude auth status
 ```
 
-Keep port `8000` behind the production firewall or reverse proxy; do not expose
+Keep port `8000` behind the server firewall or reverse proxy; do not expose
 the administrative API directly to the public internet.
 
 ## Security
 
 - Never commit `.env`, API keys, database passwords, or service-role credentials.
-- Keep `/etc/blog-backend/env` readable only by root and the service account.
-- Run scheduled jobs as the unprivileged `blog` user.
+- Restrict the Windows `.env` file to the production account and administrators.
+- Run the API and scheduled jobs under the dedicated production account.
+- Keep `/etc/blog-backend/env` restricted when using the optional Linux deployment.
 - Rotate credentials after any suspected exposure.
