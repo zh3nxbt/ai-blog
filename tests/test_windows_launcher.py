@@ -31,7 +31,7 @@ def test_windows_launcher_is_idempotent_and_bounded():
     content = LAUNCHER.read_text(encoding="utf-8")
 
     assert content.count("Register-ScheduledTask") >= 3
-    assert content.count("call :install_scheduled_tasks install") == 2
+    assert content.count("call :install_scheduled_tasks install") == 1
     assert "$quote = [char]34" in content
     assert "$quote + $quote + $script + $quote" in content
     assert "-Force | Out-Null" in content
@@ -39,3 +39,17 @@ def test_windows_launcher_is_idempotent_and_bounded():
     assert "-MultipleInstances IgnoreNew" in content
     assert "New-TimeSpan -Minutes 15" in content
     assert "New-TimeSpan -Minutes 45" in content
+
+
+def test_default_and_server_modes_do_not_install_scheduled_tasks():
+    content = LAUNCHER.read_text(encoding="utf-8")
+
+    default_block = content.split("\n:default\n", 1)[1].split("\n:check\n", 1)[0]
+    server_block = content.split("\n:server\n", 1)[1].split(
+        "\n:check_server_requirements\n", 1
+    )[0]
+
+    assert "install_scheduled_tasks" not in default_block
+    assert "install_scheduled_tasks" not in server_block
+    assert "call :check_server_requirements" in default_block
+    assert "call :check_server_requirements" in server_block

@@ -4,10 +4,11 @@ Backend service that collects stable manufacturing sources, generates blog posts
 
 ## Runtime
 
-The production workflow has two independent jobs:
+Production runs a FastAPI service plus two independent jobs:
 
-1. `python -m blog.refresh_sources` fetches active RSS feeds and stores new, deduplicated source items.
-2. `blog/generate.sh` runs the Claude Code CLI with `blog/prompts/generate.md`, validates the result, and saves one post.
+1. `api.main:app` provides health and administrative HTTP endpoints.
+2. `python -m blog.refresh_sources` fetches active RSS feeds and stores new, deduplicated source items.
+3. `blog/generate.sh` runs the Claude Code CLI with `blog/prompts/generate.md`, validates the result, and saves one post.
 
 Generation is idempotent. If a post already exists for the current UTC day, the job records a skipped outcome and stops.
 
@@ -50,6 +51,10 @@ SUPABASE_SECRET=your-service-role-key
 BLOG_REFRESH_LIMIT_PER_SOURCE=20
 BLOG_RSS_FAILURE_THRESHOLD=5
 BLOG_RSS_FETCH_RETRIES=2
+
+ENVIRONMENT=production
+API_HOST=0.0.0.0
+API_PORT=8000
 ```
 
 `SUPABASE_SECRET` is required by backend jobs. Never commit `.env` or service-role credentials.
@@ -90,29 +95,47 @@ Run tests:
 pytest
 ```
 
-## Scheduling
+## Production deployment
 
 Linux deployment units are in `systemd/`:
 
+- `blog-api.service` keeps the FastAPI application running.
 - `blog-refresh.timer` refreshes RSS sources hourly.
 - `blog-generator.timer` starts generation on Monday, Wednesday, and Friday.
 
-Install them with:
+On the Ubuntu production server, place the repository at `/opt/blog-backend`,
+create `.env` with the production values described above, then install and
+start the runtime:
 
 ```bash
+cd /opt/blog-backend
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
 sudo ./systemd/install.sh /opt/blog-backend
-sudo systemctl enable --now blog-refresh.timer blog-generator.timer
+sudo systemctl enable --now blog-api.service blog-refresh.timer blog-generator.timer
+curl http://127.0.0.1:8000/health
 ```
 
-On Windows, use the repository launcher:
+The installer creates the unprivileged `blog` account, copies `.env` to
+`/etc/blog-backend/env`, installs the API service and job timers, and reloads
+systemd. See `systemd/README.md` for status, log, and manual-run commands.
+Expose the API port only through the production firewall or reverse proxy.
+
+## Windows local operation
+
+Use the repository launcher to start only the FastAPI server in the foreground:
 
 ```bat
 run-ai-blog.bat
 ```
 
-The launcher validates `.env`, Python, Git Bash, and Claude Code; installs or
-updates both Windows scheduled tasks; then runs the FastAPI server in the
-foreground. Rerunning it is safe and does not duplicate tasks.
+The default command does not create or change scheduled tasks. Install local
+Windows automation only when this machine is intentionally acting as the job
+runner:
+
+```bat
+run-ai-blog.bat install-schedule
+```
 
 The Windows schedule mirrors the Linux timers:
 
@@ -136,7 +159,9 @@ run-ai-blog.bat server
 ```
 
 The scheduled tasks use the current Windows account and run while that account
-is logged on. Authenticate Claude Code under the same account.
+is logged on. Authenticate Claude Code under the same account. Do not install
+these tasks on a development workstation when the Linux production timers are
+already enabled.
 
 ## Project layout
 

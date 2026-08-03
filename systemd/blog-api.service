@@ -1,0 +1,20 @@
+[Unit]
+Description=AI Blog FastAPI Service
+Documentation=https://github.com/zh3nxbt/mas-website-blog
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=blog
+Group=blog
+WorkingDirectory=/opt/blog-backend
+EnvironmentFile=/etc/blog-backend/env
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/opt/blog-backend/.venv/bin/python -c "from config import settings; import uvicorn; uvicorn.run('api.main:app', host=settings.api_host, port=settings.api_port)"
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target

@@ -84,8 +84,34 @@ log_info "Setting ownership of project directory..."
 chown -R blog:blog "$PROJECT_PATH"
 log_info "Project directory owned by blog:blog"
 
-# Step 4: Generate and install systemd service file
-log_info "Installing systemd service..."
+# Step 4: Install API service
+log_info "Installing API service..."
+cat > /etc/systemd/system/blog-api.service << EOF
+[Unit]
+Description=AI Blog FastAPI Service
+Documentation=https://github.com/zh3nxbt/mas-website-blog
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=blog
+Group=blog
+WorkingDirectory=$PROJECT_PATH
+EnvironmentFile=/etc/blog-backend/env
+Environment=PYTHONUNBUFFERED=1
+ExecStart=$PROJECT_PATH/.venv/bin/python -c "from config import settings; import uvicorn; uvicorn.run('api.main:app', host=settings.api_host, port=settings.api_port)"
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target
+EOF
+log_info "API service installed to /etc/systemd/system/blog-api.service"
+
+# Step 5: Generate and install generation service file
+log_info "Installing generation service..."
 
 # Create service file with correct paths
 cat > /etc/systemd/system/blog-generator.service << EOF
@@ -131,7 +157,7 @@ EOF
 
 log_info "Service file installed to /etc/systemd/system/blog-generator.service"
 
-# Step 5: Install generation timer file
+# Step 6: Install generation timer file
 log_info "Installing generation timer..."
 cat > /etc/systemd/system/blog-generator.timer << EOF
 [Unit]
@@ -159,7 +185,7 @@ EOF
 
 log_info "Generation timer file installed to /etc/systemd/system/blog-generator.timer"
 
-# Step 6: Install RSS refresh service
+# Step 7: Install RSS refresh service
 log_info "Installing RSS refresh service..."
 cat > /etc/systemd/system/blog-refresh.service << EOF
 [Unit]
@@ -186,7 +212,7 @@ WantedBy=multi-user.target
 EOF
 log_info "RSS refresh service installed to /etc/systemd/system/blog-refresh.service"
 
-# Step 7: Install RSS refresh timer
+# Step 8: Install RSS refresh timer
 log_info "Installing RSS refresh timer..."
 cat > /etc/systemd/system/blog-refresh.timer << EOF
 [Unit]
@@ -206,11 +232,11 @@ WantedBy=timers.target
 EOF
 log_info "RSS refresh timer installed to /etc/systemd/system/blog-refresh.timer"
 
-# Step 8: Reload systemd
+# Step 9: Reload systemd
 log_info "Reloading systemd daemon..."
 systemctl daemon-reload
 
-# Step 9: Verify installation
+# Step 10: Verify installation
 log_info "Verifying installation..."
 echo ""
 echo "=========================================="
@@ -219,30 +245,31 @@ echo "=========================================="
 echo ""
 echo "Project path:    $PROJECT_PATH"
 echo "Environment:     /etc/blog-backend/env"
-echo "Service file:    /etc/systemd/system/blog-generator.service"
-echo "Timer file:      /etc/systemd/system/blog-generator.timer"
+echo "API service:     /etc/systemd/system/blog-api.service"
+echo "Generator svc:   /etc/systemd/system/blog-generator.service"
+echo "Generator timer: /etc/systemd/system/blog-generator.timer"
 echo "Refresh svc:     /etc/systemd/system/blog-refresh.service"
 echo "Refresh timer:   /etc/systemd/system/blog-refresh.timer"
 echo "Service user:    blog"
 echo ""
 echo "Next steps:"
 echo ""
-echo "  1. Test manual execution:"
-echo "     systemctl start blog-generator.service"
+echo "  1. Enable and start the API and scheduled jobs:"
+echo "     systemctl enable --now blog-api.service blog-refresh.timer blog-generator.timer"
 echo ""
 echo "  2. Check status:"
-echo "     systemctl status blog-generator.service"
+echo "     systemctl status blog-api.service blog-refresh.timer blog-generator.timer"
 echo ""
 echo "  3. View logs:"
-echo "     journalctl -u blog-generator.service -f"
+echo "     journalctl -u blog-api.service -f"
 echo ""
-echo "  4. Enable and start the timer for Mon/Wed/Fri 2 PM UTC automation:"
-echo "     systemctl enable blog-generator.timer"
-echo "     systemctl start blog-generator.timer"
+echo "  4. Test the jobs manually:"
+echo "     systemctl start blog-refresh.service"
+echo "     systemctl start blog-generator.service"
 echo ""
-echo "  5. Enable and start hourly RSS refresh:"
-echo "     systemctl enable blog-refresh.timer"
-echo "     systemctl start blog-refresh.timer"
+echo "  5. View job logs:"
+echo "     journalctl -u blog-refresh.service -n 100 --no-pager"
+echo "     journalctl -u blog-generator.service -n 100 --no-pager"
 echo ""
 echo "  6. Verify timers are active:"
 echo "     systemctl list-timers blog-generator.timer"

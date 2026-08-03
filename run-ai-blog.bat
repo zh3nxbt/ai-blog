@@ -27,10 +27,7 @@ echo Usage: %~nx0 [check^|install-schedule^|refresh^|generate^|generate-if-due^|
 exit /b 2
 
 :default
-call :check_requirements
-if errorlevel 1 exit /b %ERRORLEVEL%
-
-call :install_scheduled_tasks install
+call :check_server_requirements
 if errorlevel 1 exit /b %ERRORLEVEL%
 
 call :run_server
@@ -60,13 +57,13 @@ call :run_generation_if_due
 exit /b %ERRORLEVEL%
 
 :server
-call :check_requirements
+call :check_server_requirements
 if errorlevel 1 exit /b %ERRORLEVEL%
 
 call :run_server
 exit /b %ERRORLEVEL%
 
-:check_requirements
+:check_server_requirements
 if not exist "%PYTHON_EXE%" (
     echo ERROR: Python virtual environment not found: "%PYTHON_EXE%" 1>&2
     echo Create it with: py -3.12 -m venv .venv 1>&2
@@ -78,6 +75,21 @@ if not exist "%ENV_FILE%" (
     echo Copy .env.example to .env and configure it first. 1>&2
     exit /b 1
 )
+
+pushd "%PROJECT_DIR%" >nul
+"%PYTHON_EXE%" -c "from config import settings; import uvicorn" >nul 2>&1
+set "CONFIG_STATUS=%ERRORLEVEL%"
+popd
+if not "%CONFIG_STATUS%"=="0" (
+    echo ERROR: Python could not load the project configuration. Check .env. 1>&2
+    exit /b %CONFIG_STATUS%
+)
+
+exit /b 0
+
+:check_requirements
+call :check_server_requirements
+if errorlevel 1 exit /b %ERRORLEVEL%
 
 if not exist "%GENERATION_SCRIPT%" (
     echo ERROR: Missing generation script: "%GENERATION_SCRIPT%" 1>&2
@@ -102,14 +114,6 @@ if errorlevel 1 (
 )
 
 pushd "%PROJECT_DIR%" >nul
-"%PYTHON_EXE%" -c "from config import settings; import uvicorn" >nul 2>&1
-set "CONFIG_STATUS=%ERRORLEVEL%"
-if not "%CONFIG_STATUS%"=="0" (
-    popd
-    echo ERROR: Python could not load the project configuration. Check .env. 1>&2
-    exit /b %CONFIG_STATUS%
-)
-
 "%PYTHON_EXE%" -m blog.generate_helpers --help >nul 2>&1
 set "HELPER_STATUS=%ERRORLEVEL%"
 if not "%HELPER_STATUS%"=="0" (
